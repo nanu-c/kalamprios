@@ -208,31 +208,22 @@ export class KampfSzene extends Phaser.Scene {
     const vonVerteidiger = this.anzeige.get(verteidiger);
 
     this.sagen(`${angreifer.name} setzt ${attacke.name} ein!`);
-    await this.warten(400);
+    await this.warten(300);
 
-    // Anlauf: kurz auf den Gegner zuspringen und zurück
-    await this.bewegen({
-      targets: vonAngreifer.bild,
-      x: vonAngreifer.bild.x + vonAngreifer.richtung * 50,
-      duration: 120,
-      yoyo: true,
-      ease: 'Quad.easeOut',
-    });
-
-    // Die Animation der Attacke: Sie fliegt vom Angreifer zum Gegner.
-    const mitte = (bild) => ({ x: bild.x, y: bild.y - bild.displayHeight / 2 });
+    // Die Animation der Attacke: aufladen, zum Gegner fliegen, treffen
+    // (siehe attackenEffekte.js).
     await attackeAnimieren(
       this,
       attacke.effekt ?? angreifer.element,
-      mitte(vonAngreifer.bild),
-      mitte(vonVerteidiger.bild),
+      angreifer.element,
+      vonAngreifer.bild,
+      vonVerteidiger.bild,
       attacke.pause > 0,
+      vonAngreifer.richtung,
     );
 
-    // Treffer: wackeln, blinken, Schadenszahl, Lebensbalken schrumpft
-    this.cameras.main.shake(180, 0.006);
+    // Schadenszahl, Lebensbalken schrumpft
     this.schadenZeigen(vonVerteidiger.bild, schaden);
-    this.tweens.add({ targets: vonVerteidiger.bild, alpha: 0.25, duration: 70, yoyo: true, repeat: 2 });
     await this.bewegen({
       targets: { kp: kpVorher },
       kp: verteidiger.kp,

@@ -10,8 +10,9 @@
 // pause:    wie viele Runden die Attacke danach aussetzen muss.
 //           0 bedeutet: Sie geht jede Runde.
 // effekt:   (freiwillig) wie die Attacke aussieht, als Kurzname eines Elements
-//           aus elemente.js, zum Beispiel effekt: 'wasser'. Ohne effekt sieht
-//           sie so aus wie das Element des Kalamprios.
+//           aus elemente.js, zum Beispiel effekt: 'wasser', oder 'herz' für
+//           fliegende Herzen. Ohne effekt sieht sie so aus wie das Element
+//           des Kalamprios.
 //           Starke Attacken (mit Pause) sehen größer aus.
 //
 // Wichtig: Jedes Kalamprio braucht mindestens eine Attacke mit pause: 0,
@@ -32,8 +33,8 @@ export const ATTACKEN = {
   felsenfall: { name: 'Felsenfall', staerke: 19, pause: 2 },
 
   // Qalutu
-  funkelherz: { name: 'Funkelherz', staerke: 10, pause: 0 },
-  kristallregen: { name: 'Kristallregen', staerke: 18, pause: 2 },
+  funkelherz: { name: 'Funkelherz', staerke: 10, pause: 0, effekt: 'herz' },
+  kristallregen: { name: 'Kristallregen', staerke: 18, pause: 2, effekt: 'herz' },
 
   // Bolo
   blubberstrahl: { name: 'Blubberstrahl', staerke: 10, pause: 0 },
