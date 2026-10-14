@@ -1,5 +1,6 @@
 // Malt eine einfache lila Landschaft als Hintergrund, passend zum Ort:
-// 'wald', 'dorf', 'mine' oder 'see'.
+// 'wald', 'dorf', 'mine' oder 'see'. 'geschichte' ist der Wald ohne Kristalle,
+// die stellt die Geschichte selbst hin, damit sie dunkel werden können.
 // Das ist nur ein Platzhalter, bis es gemalte Landschaftsbilder gibt.
 
 import { BREITE, HOEHE } from './stil.js';
@@ -115,10 +116,12 @@ export function hintergrundMalen(szene, stil = 'wald') {
     return;
   }
 
-  kristall(stift, 70, 70, 190, 0x6b4fd8);
-  kristall(stift, 560, 60, 150, 0x5b8fe0);
-  kristall(stift, 725, 80, 210, 0x8a5be0);
-  kristall(stift, 1215, 70, 170, 0x5b8fe0);
+  if (stil !== 'geschichte') {
+    kristall(stift, 70, 70, 190, 0x6b4fd8);
+    kristall(stift, 560, 60, 150, 0x5b8fe0);
+    kristall(stift, 725, 80, 210, 0x8a5be0);
+    kristall(stift, 1215, 70, 170, 0x5b8fe0);
+  }
   baum(stift, 150, 250);
   baum(stift, 480, 200);
   baum(stift, 810, 230);

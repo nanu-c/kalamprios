@@ -317,7 +317,7 @@ function bodenMalen(stift, ort) {
 }
 
 // Malt jedes Bild einmal und merkt es sich unter einem Namen.
-function bilderErzeugen(szene) {
+export function bilderErzeugen(szene) {
   if (szene.textures.exists('baum')) return;
   const stift = szene.add.graphics();
   const malen = (name, wie) => {

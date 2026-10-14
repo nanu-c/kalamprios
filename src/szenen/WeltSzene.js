@@ -9,6 +9,7 @@ import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
 import { spielstand } from '../spielstand.js';
+import { verstummen, vorlesen } from '../vorlesen.js';
 import {
   abstand,
   ankunft,
@@ -403,6 +404,7 @@ export class WeltSzene extends Phaser.Scene {
     const zeigen = (nummer) => {
       this.gespraechSchliessen();
       const letzter = nummer === saetze.length - 1;
+      vorlesen(saetze[nummer]);
       this.gespraechZeigen(saetze[nummer], [
         [
           letzter ? 'Danke!' : 'Weiter',
@@ -541,6 +543,7 @@ export class WeltSzene extends Phaser.Scene {
 
   gespraechSchliessen() {
     if (!this.gespraech) return;
+    verstummen();
     for (const teil of this.gespraech) teil.destroy();
     this.gespraech = null;
   }

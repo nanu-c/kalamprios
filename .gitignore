@@ -6,3 +6,7 @@ dist/
 Kalamprios/
 Charaktere/
 Landschaft/
+
+# Geheime Schlüssel (zum Beispiel für die Vorlese-Stimme) bleiben auf diesem Computer.
+.env
+*.swp
