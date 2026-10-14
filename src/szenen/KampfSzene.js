@@ -13,6 +13,7 @@ import {
   werZuerst,
 } from '../kampf/kampflogik.js';
 import { spielstand } from '../spielstand.js';
+import { attackeAnimieren } from './attackenEffekte.js';
 import { feld, textKnopf } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
 import { BREITE, FARBEN, farbeAlsText, schrift } from './stil.js';
@@ -207,16 +208,26 @@ export class KampfSzene extends Phaser.Scene {
     const vonVerteidiger = this.anzeige.get(verteidiger);
 
     this.sagen(`${angreifer.name} setzt ${attacke.name} ein!`);
-    await this.warten(500);
+    await this.warten(400);
 
     // Anlauf: kurz auf den Gegner zuspringen und zurück
     await this.bewegen({
       targets: vonAngreifer.bild,
-      x: vonAngreifer.bild.x + vonAngreifer.richtung * 90,
-      duration: 150,
+      x: vonAngreifer.bild.x + vonAngreifer.richtung * 50,
+      duration: 120,
       yoyo: true,
       ease: 'Quad.easeOut',
     });
+
+    // Die Animation der Attacke: Sie fliegt vom Angreifer zum Gegner.
+    const mitte = (bild) => ({ x: bild.x, y: bild.y - bild.displayHeight / 2 });
+    await attackeAnimieren(
+      this,
+      attacke.effekt ?? angreifer.element,
+      mitte(vonAngreifer.bild),
+      mitte(vonVerteidiger.bild),
+      attacke.pause > 0,
+    );
 
     // Treffer: wackeln, blinken, Schadenszahl, Lebensbalken schrumpft
     this.cameras.main.shake(180, 0.006);

@@ -9,6 +9,10 @@
 // staerke:  wie viel Schaden die Attacke macht. 10 ist normal, 20 ist stark.
 // pause:    wie viele Runden die Attacke danach aussetzen muss.
 //           0 bedeutet: Sie geht jede Runde.
+// effekt:   (freiwillig) wie die Attacke aussieht, als Kurzname eines Elements
+//           aus elemente.js, zum Beispiel effekt: 'wasser'. Ohne effekt sieht
+//           sie so aus wie das Element des Kalamprios.
+//           Starke Attacken (mit Pause) sehen größer aus.
 //
 // Wichtig: Jedes Kalamprio braucht mindestens eine Attacke mit pause: 0,
 // sonst hat es in manchen Runden nichts zu tun.

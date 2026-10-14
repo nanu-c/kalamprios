@@ -24,6 +24,9 @@ export function datenPruefen() {
     if (!Number.isInteger(attacke.pause) || attacke.pause < 0) {
       fehler.push(`Attacke "${kurzname}": pause muss 0 oder eine ganze Zahl sein.`);
     }
+    if (attacke.effekt !== undefined && !ELEMENTE[attacke.effekt]) {
+      fehler.push(`Attacke "${kurzname}": Den effekt "${attacke.effekt}" gibt es nicht. Nimm einen Kurznamen aus elemente.js.`);
+    }
   }
 
   for (const tier of Object.values(KALAMPRIOS)) {
