@@ -1,0 +1,8 @@
+node_modules/
+dist/
+
+# Die Original-Fotos der Zeichnungen bleiben nur auf diesem Computer.
+# Online sind nur die fertigen Spielbilder aus public/bilder.
+Kalamprios/
+Charaktere/
+Landschaft/
