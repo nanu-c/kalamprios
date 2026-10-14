@@ -47,7 +47,7 @@ export class AuswahlSzene extends Phaser.Scene {
   }
 }
 
-// Alle Kalamprios außer dem geheimen
+// Die Kalamprios mit zumStart: true. Die anderen fängt man später.
 function waehlbare() {
-  return Object.keys(KALAMPRIOS).filter((kurzname) => !KALAMPRIOS[kurzname].geheim);
+  return Object.keys(KALAMPRIOS).filter((kurzname) => KALAMPRIOS[kurzname].zumStart);
 }

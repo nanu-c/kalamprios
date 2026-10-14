@@ -12,6 +12,8 @@
 // verteidigung: je höher, desto weniger Schaden bekommt es
 // tempo:        wer mehr Tempo hat, greift in der Runde zuerst an
 // attacken:     Kurznamen aus attacken.js, am Anfang zwei Stück
+// zumStart:     true bedeutet: Dieses Kalamprio kann man am Anfang auswählen.
+//               Alle anderen muss man später fangen.
 // geheim:       (nur beim geheimen Kalamprio) true bedeutet: Man kann es am
 //               Anfang nicht auswählen, man kann es nur ganz selten treffen.
 //
@@ -29,6 +31,7 @@ export const KALAMPRIOS = {
     verteidigung: 10,
     tempo: 12,
     attacken: ['mondstrahl', 'traumwelle'],
+    zumStart: true,
   },
 
   bisakatze: {
@@ -41,6 +44,7 @@ export const KALAMPRIOS = {
     verteidigung: 9,
     tempo: 14,
     attacken: ['funkenpfote', 'blitzknospe'],
+    zumStart: true,
   },
 
   kapapa: {

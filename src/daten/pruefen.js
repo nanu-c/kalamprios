@@ -61,8 +61,8 @@ export function datenPruefen() {
     }
   }
 
-  if (Object.values(KALAMPRIOS).filter((tier) => !tier.geheim).length < 2) {
-    fehler.push('Es braucht mindestens zwei Kalamprios ohne geheim: eins für dich und eins für die Rivalin.');
+  if (Object.values(KALAMPRIOS).filter((tier) => tier.zumStart).length < 2) {
+    fehler.push('Es braucht mindestens zwei Kalamprios mit zumStart: true: eins für dich und eins für die Rivalin.');
   }
 
   if (!ORTE[START_ORT]?.start) {
