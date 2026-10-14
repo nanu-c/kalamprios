@@ -14,7 +14,7 @@ export const FARBEN = {
 
 export function schrift(groesse, farbe = '#ffffff', extras = {}) {
   return {
-    fontFamily: '"Trebuchet MS", "Segoe UI", Verdana, sans-serif',
+    fontFamily: 'Fredoka, "Trebuchet MS", "Segoe UI", Verdana, sans-serif',
     fontSize: `${groesse}px`,
     color: farbe,
     ...extras,

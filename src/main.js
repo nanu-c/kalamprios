@@ -1,12 +1,16 @@
 // Hier startet das Spiel.
 
+import '@fontsource/fredoka/400.css';
+import '@fontsource/fredoka/600.css';
 import Phaser from 'phaser';
 import { AuswahlSzene } from './szenen/AuswahlSzene.js';
 import { CharakterSzene } from './szenen/CharakterSzene.js';
+import { GeschichteSzene } from './szenen/GeschichteSzene.js';
 import { KampfSzene } from './szenen/KampfSzene.js';
 import { LadeSzene } from './szenen/LadeSzene.js';
 import { WeltSzene } from './szenen/WeltSzene.js';
 import { BREITE, HOEHE } from './szenen/stil.js';
+import { vollbildKnopfEinrichten } from './vollbild.js';
 
 export const spiel = new Phaser.Game({
   type: Phaser.AUTO,
@@ -19,5 +23,7 @@ export const spiel = new Phaser.Game({
     height: HOEHE,
   },
   // Die Bildschirme des Spiels. Der erste in der Liste wird zuerst gezeigt.
-  scene: [LadeSzene, CharakterSzene, AuswahlSzene, WeltSzene, KampfSzene],
+  scene: [LadeSzene, GeschichteSzene, CharakterSzene, AuswahlSzene, WeltSzene, KampfSzene],
 });
+
+vollbildKnopfEinrichten();

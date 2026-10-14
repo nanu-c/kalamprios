@@ -14,6 +14,7 @@
 //                  Wichtig: Der andere Ort braucht einen Weg zurück.
 // start:           (nur im Startort) hier beginnt die Figur
 // rivalin:         (nur im Wald) hier wartet die Figur, die man nicht gewählt hat
+// dunklerKristall: hier steht der dunkle Kristall, der die Geschichte flüstert
 // wildeKalamprios: diese Tiere laufen sichtbar herum. art ist ein Kurzname
 //                  aus kalamprios.js.
 // hohesGras:       Rechtecke mit hohem Gras (in der Mine ist es Geröll, am See
@@ -35,6 +36,9 @@ export const KRISTALLWALD = {
   ],
 
   rivalin: { x: 2040, y: 430 },
+
+  // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
+  dunklerKristall: { x: 400, y: 700 },
 
   wildeKalamprios: [
     { art: 'bisakatze', x: 960, y: 540 },

@@ -12,6 +12,9 @@ export const LILA_DORF = {
 
   start: { x: 520, y: 700 },
 
+  // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
+  dunklerKristall: { x: 300, y: 720 },
+
   wildeKalamprios: [],
   tiereImGras: [],
   hohesGras: [],

@@ -4,6 +4,7 @@
 
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
+import { GESCHICHTE } from '../daten/geschichte.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
@@ -25,6 +26,7 @@ import { BREITE, FARBEN, HOEHE, schrift } from './stil.js';
 const SPIELER_RADIUS = 18;
 const WILD_RADIUS = 30;
 const RIVALIN_RADIUS = 56;
+const KRISTALL_RADIUS = 30;
 const FIGUR_HOEHE = 150; // so groß sind Kala und Pflanstaria im Wald
 const WILD_HOEHE = 115;
 const WILD_TEMPO = 55; // Pixel pro Sekunde
@@ -63,6 +65,13 @@ export class WeltSzene extends Phaser.Scene {
         .setDepth(platz.y);
     }
 
+    // Der dunkle Kristall: Solange man ihn noch nicht gehört hat, schimmert er.
+    const dunkel = this.ort.dunklerKristall;
+    if (dunkel && !spielstand.geschichteGehoert[this.ortName]) {
+      this.schimmer = this.add.circle(dunkel.x, dunkel.y - 70, 60, 0xc9b8ff, 0.25).setDepth(dunkel.y + 1);
+      this.tweens.add({ targets: this.schimmer, alpha: 0.05, scale: 1.4, duration: 1100, yoyo: true, repeat: -1 });
+    }
+
     this.wilde = this.ort.wildeKalamprios.map((eintrag, nummer) => ({
       ...this.figurBauen(eintrag.art, WILD_HOEHE, eintrag),
       nummer,
@@ -79,8 +88,10 @@ export class WeltSzene extends Phaser.Scene {
       FIGUR_HOEHE,
       spielstand.position ?? this.ort.start,
     );
-    // Wer nach einem Kampf neben der Rivalin steht, wird nicht sofort wieder angesprochen.
+    // Wer nach einem Kampf neben der Rivalin oder dem Kristall steht, wird
+    // nicht sofort wieder angesprochen.
     this.warBeiRivalin = this.istBeiRivalin();
+    this.warBeimKristall = this.istBeimKristall();
 
     this.zielMarke = this.add.circle(0, 0, 14).setStrokeStyle(3, 0xf6f0ff, 0.8).setDepth(2);
 
@@ -326,10 +337,20 @@ export class WeltSzene extends Phaser.Scene {
     return abstand(this.spieler.ort, this.ort.rivalin) < SPIELER_RADIUS + RIVALIN_RADIUS + 14;
   }
 
+  istBeimKristall() {
+    const dunkel = this.ort.dunklerKristall;
+    if (!dunkel || !GESCHICHTE.orte[this.ortName]) return false;
+    return abstand(this.spieler.ort, dunkel) < SPIELER_RADIUS + KRISTALL_RADIUS + 22;
+  }
+
   begegnungenPruefen() {
     const beiRivalin = this.istBeiRivalin();
     if (beiRivalin && !this.warBeiRivalin) this.rivalinSpricht();
     this.warBeiRivalin = beiRivalin;
+
+    const beimKristall = this.istBeimKristall();
+    if (beimKristall && !this.warBeimKristall && !this.gespraech) this.kristallErzaehlt();
+    this.warBeimKristall = beimKristall;
 
     if (this.gespraech || !this.kampfbereit()) return;
     for (const wild of this.wilde) {
@@ -374,6 +395,31 @@ export class WeltSzene extends Phaser.Scene {
       ],
       ['Lieber nicht', () => this.gespraechSchliessen()],
     ]);
+  }
+
+  // Der dunkle Kristall erzählt seine Sätze aus geschichte.js, einen nach dem anderen.
+  kristallErzaehlt() {
+    const saetze = GESCHICHTE.orte[this.ortName];
+    const zeigen = (nummer) => {
+      this.gespraechSchliessen();
+      const letzter = nummer === saetze.length - 1;
+      this.gespraechZeigen(saetze[nummer], [
+        [
+          letzter ? 'Danke!' : 'Weiter',
+          () => {
+            if (!letzter) {
+              zeigen(nummer + 1);
+              return;
+            }
+            this.gespraechSchliessen();
+            spielstand.geschichteGehoert[this.ortName] = true;
+            this.schimmer?.destroy();
+            this.schimmer = null;
+          },
+        ],
+      ]);
+    };
+    zeigen(0);
   }
 
   // Blendet aus und wechselt zum Kampf. beiSieg wird nur nach einem Sieg aufgerufen.

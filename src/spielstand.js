@@ -20,5 +20,6 @@ export const spielstand = {
   ruheBis: 0, // kurze Verschnaufpause nach jedem Kampf
   wildeWiederDa: {}, // Ort und Nummer des wilden Kalamprios -> ab wann es wieder da ist
 
+  geschichteGehoert: {}, // Kurzname des Ortes -> true, wenn der dunkle Kristall erzählt hat
   hinweisGesehen: false, // der Tipp zur Steuerung wird nur einmal gezeigt
 };

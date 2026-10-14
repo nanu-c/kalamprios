@@ -10,6 +10,9 @@ export const MONDSEE = {
 
   ausgaenge: [{ nach: 'prismastahlMine', seite: 'links', mitte: 500 }],
 
+  // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
+  dunklerKristall: { x: 480, y: 600 },
+
   wildeKalamprios: [
     { art: 'bolo', x: 640, y: 760 },
     { art: 'mola', x: 1400, y: 340 },

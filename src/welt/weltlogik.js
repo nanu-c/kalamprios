@@ -86,6 +86,7 @@ export function hindernisseAmOrt(ort) {
   return [
     ...liste('baeume').map((baum) => ({ x: baum.x, y: baum.y - 6, radius: 22 })),
     ...liste('kristalle').map((kristall) => ({ x: kristall.x, y: kristall.y - 8, radius: 30 })),
+    ...(ort.dunklerKristall ? [{ x: ort.dunklerKristall.x, y: ort.dunklerKristall.y - 8, radius: 30 }] : []),
     ...liste('prismastahl').map((stahl) => ({ x: stahl.x, y: stahl.y - 8, radius: 30 })),
     ...liste('felsen').map((fels) => ({ x: fels.x, y: fels.y - 14, radius: 44 })),
     // Ein Haus ist breit: drei Kreise nebeneinander.

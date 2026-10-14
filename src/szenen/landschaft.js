@@ -10,6 +10,7 @@ const BILDER = {
   baum: { breite: 220, hoehe: 270, fuss: 255 },
   'kristall-lila': { breite: 110, hoehe: 170, fuss: 160 },
   'kristall-blau': { breite: 110, hoehe: 170, fuss: 160 },
+  'kristall-dunkel': { breite: 110, hoehe: 170, fuss: 160 },
   prismastahl: { breite: 120, hoehe: 180, fuss: 168 },
   felsen: { breite: 170, hoehe: 140, fuss: 126 },
   haus: { breite: 280, hoehe: 270, fuss: 256 },
@@ -309,6 +310,7 @@ function bodenMalen(stift, ort) {
   stift.fillStyle(0x170b2c, 0.4);
   for (const baum of ort.baeume ?? []) stift.fillEllipse(baum.x, baum.y, 120, 36);
   for (const kristall of ort.kristalle ?? []) stift.fillEllipse(kristall.x, kristall.y, 96, 26);
+  if (ort.dunklerKristall) stift.fillEllipse(ort.dunklerKristall.x, ort.dunklerKristall.y, 96, 26);
   for (const stahl of ort.prismastahl ?? []) stift.fillEllipse(stahl.x, stahl.y, 100, 28);
   for (const fels of ort.felsen ?? []) stift.fillEllipse(fels.x, fels.y - 4, 170, 40);
   for (const haus of ort.haeuser ?? []) stift.fillEllipse(haus.x, haus.y, 260, 40);
@@ -326,6 +328,7 @@ function bilderErzeugen(szene) {
   malen('baum', baumMalen);
   malen('kristall-lila', (s) => kristallMalen(s, 0x8a5be0, 0xb99cf0));
   malen('kristall-blau', (s) => kristallMalen(s, 0x5b8fe0, 0x9cc0f2));
+  malen('kristall-dunkel', (s) => kristallMalen(s, 0x2a2238, 0x4a4060));
   malen('prismastahl', prismastahlMalen);
   malen('felsen', felsenMalen);
   malen('haus', hausMalen);
@@ -372,6 +375,7 @@ export function ortAufbauen(szene, schluessel) {
   });
   for (const stahl of ort.prismastahl ?? []) stellen('prismastahl', stahl.x, stahl.y);
   for (const fels of ort.felsen ?? []) stellen('felsen', fels.x, fels.y);
+  if (ort.dunklerKristall) stellen('kristall-dunkel', ort.dunklerKristall.x, ort.dunklerKristall.y);
 
   randAufbauen(ort, stellen);
   schilderAufstellen(szene, ort, stellen);

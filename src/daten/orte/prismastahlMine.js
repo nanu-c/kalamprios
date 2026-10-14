@@ -13,6 +13,9 @@ export const PRISMASTAHL_MINE = {
     { nach: 'mondsee', seite: 'rechts', mitte: 420 },
   ],
 
+  // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
+  dunklerKristall: { x: 430, y: 860 },
+
   wildeKalamprios: [
     { art: 'kapapa', x: 900, y: 800 },
     { art: 'kapapa', x: 1600, y: 440 },

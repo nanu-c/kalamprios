@@ -4,6 +4,7 @@
 import { ATTACKEN } from './attacken.js';
 import { CHARAKTERE } from './charaktere.js';
 import { ELEMENTE } from './elemente.js';
+import { GESCHICHTE } from './geschichte.js';
 import { KALAMPRIOS } from './kalamprios.js';
 import { ORTE, START_ORT } from './orte.js';
 import { REGELN } from './regeln.js';
@@ -72,6 +73,19 @@ export function datenPruefen() {
     fehler.push('Irgendein Ort braucht einen rivalin-Punkt, damit die Rivalin wartet.');
   }
   for (const [kurzname, ort] of Object.entries(ORTE)) fehler.push(...ortPruefen(kurzname, ort));
+
+  if (!(GESCHICHTE.anfang?.length > 0)) {
+    fehler.push('geschichte.js: Bei anfang braucht es mindestens einen Satz.');
+  }
+  for (const [kurzname, saetze] of Object.entries(GESCHICHTE.orte ?? {})) {
+    if (!ORTE[kurzname]) {
+      fehler.push(`geschichte.js: Den Ort "${kurzname}" gibt es nicht in orte.js.`);
+    } else if (!ORTE[kurzname].dunklerKristall) {
+      fehler.push(`${ORTE[kurzname].name} braucht einen dunklerKristall, der die Geschichte erzählt.`);
+    } else if (!(saetze.length > 0)) {
+      fehler.push(`geschichte.js: Bei ${kurzname} braucht es mindestens einen Satz.`);
+    }
+  }
   return fehler;
 }
 
@@ -122,6 +136,7 @@ function ortPruefen(kurzname, ort) {
   const punkte = [
     ['start', ort.start],
     ['rivalin', ort.rivalin],
+    ['dunklerKristall', ort.dunklerKristall],
     ...ort.wildeKalamprios.map((wild) => [`das wilde Kalamprio "${wild.art}"`, wild]),
     ...liste('baeume').map((punkt) => ['ein Baum', punkt]),
     ...liste('kristalle').map((punkt) => ['ein Kristall', punkt]),

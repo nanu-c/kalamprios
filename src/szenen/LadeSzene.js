@@ -51,7 +51,12 @@ export class LadeSzene extends Phaser.Scene {
     ];
     if (fehler.length === 0) {
       for (const name of this.bildNamen) kleinesBildErzeugen(this, name);
-      this.scene.start('Charakter');
+      // Erst weiter, wenn die Schrift geladen ist, sonst steht der Text in einer
+      // Ersatzschrift da.
+      const schriften = ['400 32px Fredoka', '600 32px Fredoka'].map((art) => document.fonts.load(art));
+      Promise.all(schriften)
+        .catch(() => {})
+        .then(() => this.scene.start('Geschichte'));
       return;
     }
 
