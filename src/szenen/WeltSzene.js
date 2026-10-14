@@ -1,23 +1,26 @@
-// Der Kristallwald: Hier spaziert man herum und trifft wilde Kalamprios
+// Die Welt: Hier spaziert man durch die Orte und trifft wilde Kalamprios
 // und die Rivalin. Die Regeln fürs Laufen stehen in welt/weltlogik.js.
+// Die Szene zeigt immer einen Ort, nämlich spielstand.ort.
 
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
-import { KRISTALLWALD as WALD } from '../daten/kristallwald.js';
+import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
 import { spielstand } from '../spielstand.js';
 import {
   abstand,
-  hindernisseImWald,
+  ankunft,
+  ausgangAmRand,
+  hindernisseAmOrt,
   istImGras,
   richtungZu,
   schritt,
   weltGrenzen,
 } from '../welt/weltlogik.js';
 import { feld, textKnopf } from './bausteine.js';
-import { BREITE, FARBEN, schrift } from './stil.js';
-import { waldAufbauen } from './waldbilder.js';
+import { ortAufbauen } from './landschaft.js';
+import { BREITE, FARBEN, HOEHE, schrift } from './stil.js';
 
 const SPIELER_RADIUS = 18;
 const WILD_RADIUS = 30;
@@ -28,7 +31,6 @@ const WILD_TEMPO = 55; // Pixel pro Sekunde
 const WILD_REVIER = 140; // so weit entfernen sich wilde Kalamprios von ihrem Platz
 const RUHE_NACH_KAMPF = 2500; // Millisekunden, in denen nach einem Kampf nichts angreift
 const VORNE = 100000; // Tiefe für alles, was fest auf dem Bildschirm klebt
-const GRENZEN = weltGrenzen(WALD);
 
 export class WeltSzene extends Phaser.Scene {
   constructor() {
@@ -36,8 +38,11 @@ export class WeltSzene extends Phaser.Scene {
   }
 
   create() {
-    this.baeume = waldAufbauen(this);
-    this.hindernisse = [...hindernisseImWald(WALD), { ...WALD.rivalin, radius: RIVALIN_RADIUS }];
+    this.ortName = spielstand.ort;
+    this.ort = ORTE[this.ortName];
+    this.grenzen = weltGrenzen(this.ort);
+    this.verdecker = ortAufbauen(this, this.ortName);
+    this.hindernisse = hindernisseAmOrt(this.ort);
 
     this.gespraech = null; // die Teile des Textfelds, solange jemand spricht
     this.wechselt = false; // true, sobald es zum Kampf geht
@@ -46,17 +51,22 @@ export class WeltSzene extends Phaser.Scene {
     this.festgesteckt = 0;
     this.grasStrecke = 0;
 
-    const rivalin = CHARAKTERE[spielstand.rivalin];
-    this.rivalin = this.figurBauen(`charakter-${spielstand.rivalin}`, FIGUR_HOEHE, WALD.rivalin);
-    this.figurZeigen(this.rivalin, 0);
-    this.add
-      .text(WALD.rivalin.x, WALD.rivalin.y - FIGUR_HOEHE - 18, rivalin.name, schrift(20, '#f6f0ff'))
-      .setOrigin(0.5)
-      .setDepth(WALD.rivalin.y);
+    // Die Rivalin wartet nur an einem Ort.
+    if (this.ort.rivalin) {
+      const platz = this.ort.rivalin;
+      this.hindernisse.push({ ...platz, radius: RIVALIN_RADIUS });
+      this.rivalin = this.figurBauen(`charakter-${spielstand.rivalin}`, FIGUR_HOEHE, platz);
+      this.figurZeigen(this.rivalin, 0);
+      this.add
+        .text(platz.x, platz.y - FIGUR_HOEHE - 18, CHARAKTERE[spielstand.rivalin].name, schrift(20, '#f6f0ff'))
+        .setOrigin(0.5)
+        .setDepth(platz.y);
+    }
 
-    this.wilde = WALD.wildeKalamprios.map((eintrag, nummer) => ({
+    this.wilde = this.ort.wildeKalamprios.map((eintrag, nummer) => ({
       ...this.figurBauen(eintrag.art, WILD_HOEHE, eintrag),
       nummer,
+      merkname: `${this.ortName}-${nummer}`, // so merkt sich der Spielstand, wer besiegt ist
       art: eintrag.art,
       heimat: { x: eintrag.x, y: eintrag.y },
       ziel: null,
@@ -67,7 +77,7 @@ export class WeltSzene extends Phaser.Scene {
     this.spieler = this.figurBauen(
       `charakter-${spielstand.charakter}`,
       FIGUR_HOEHE,
-      spielstand.position ?? WALD.start,
+      spielstand.position ?? this.ort.start,
     );
     // Wer nach einem Kampf neben der Rivalin steht, wird nicht sofort wieder angesprochen.
     this.warBeiRivalin = this.istBeiRivalin();
@@ -75,7 +85,7 @@ export class WeltSzene extends Phaser.Scene {
     this.zielMarke = this.add.circle(0, 0, 14).setStrokeStyle(3, 0xf6f0ff, 0.8).setDepth(2);
 
     const kamera = this.cameras.main;
-    kamera.setBounds(0, 0, WALD.breite, WALD.hoehe);
+    kamera.setBounds(0, 0, this.ort.breite, this.ort.hoehe);
     kamera.startFollow(this.spieler.schatten, true, 0.12, 0.12);
     kamera.fadeIn(300, 23, 11, 44);
 
@@ -101,6 +111,7 @@ export class WeltSzene extends Phaser.Scene {
     });
 
     this.anzeigeBauen();
+    if (spielstand.ortsnameZeigen) this.ortsnameZeigen();
   }
 
   update(zeit, delta) {
@@ -116,7 +127,7 @@ export class WeltSzene extends Phaser.Scene {
     }
 
     this.figurZeigen(this.spieler, zeit);
-    this.baeumeLichten();
+    this.verdeckerLichten();
     this.zielMarke.setVisible(this.laufziel !== null);
     if (this.laufziel) this.zielMarke.setPosition(this.laufziel.x, this.laufziel.y);
     this.anzeigeAktualisieren();
@@ -144,13 +155,13 @@ export class WeltSzene extends Phaser.Scene {
     figur.bild.setDepth(figur.ort.y);
   }
 
-  // Steht die Figur hinter einer Baumkrone, wird dieser Baum durchsichtig,
-  // damit man sie nicht aus den Augen verliert.
-  baeumeLichten() {
+  // Steht die Figur hinter einer Baumkrone oder einem Haus, wird es
+  // durchsichtig, damit man sie nicht aus den Augen verliert.
+  verdeckerLichten() {
     const { x, y } = this.spieler.ort;
-    for (const baum of this.baeume) {
-      const verdeckt = y < baum.y && y > baum.y - 255 && Math.abs(x - baum.x) < 120;
-      baum.setAlpha(verdeckt ? 0.4 : 1);
+    for (const ding of this.verdecker) {
+      const verdeckt = y < ding.y && y > ding.y - ding.hoehe && Math.abs(x - ding.x) < ding.halbeBreite;
+      ding.bild.setAlpha(verdeckt ? 0.4 : 1);
     }
   }
 
@@ -197,9 +208,15 @@ export class WeltSzene extends Phaser.Scene {
       { x: richtung.x * weite, y: richtung.y * weite },
       SPIELER_RADIUS,
       this.hindernisse,
-      GRENZEN,
+      this.grenzen,
     );
     const gelaufen = abstand(vorher, this.spieler.ort);
+
+    const ausgang = ausgangAmRand(this.ort, this.spieler.ort, this.grenzen);
+    if (ausgang) {
+      this.ortWechseln(ausgang.nach);
+      return;
+    }
 
     // Kommt die Figur auf dem Weg zum getippten Ziel nicht weiter, gibt sie auf.
     if (this.laufziel) {
@@ -207,7 +224,7 @@ export class WeltSzene extends Phaser.Scene {
       if (this.festgesteckt > 0.4) this.laufziel = null;
     }
 
-    if (istImGras(this.spieler.ort, WALD.hohesGras)) this.imGrasGelaufen(gelaufen);
+    if (istImGras(this.spieler.ort, this.ort.hohesGras)) this.imGrasGelaufen(gelaufen);
   }
 
   // Im hohen Gras wird alle paar Schritte gewürfelt, ob ein Kalamprio auftaucht.
@@ -216,15 +233,41 @@ export class WeltSzene extends Phaser.Scene {
     this.grasStrecke += strecke;
     if (this.grasStrecke < REGELN.grasSchritt) return;
     this.grasStrecke = 0;
-    if (Math.random() < REGELN.grasChance) {
-      this.kampfBeginnen({ gegner: Phaser.Utils.Array.GetRandom(WALD.tiereImGras) });
-    }
+    if (Math.random() >= REGELN.grasChance) return;
+
+    // Ganz selten ist es das geheime Kalamprio.
+    const geheimes = this.ort.geheimesImGras;
+    const gegner =
+      geheimes && Math.random() < geheimes.chance
+        ? geheimes.art
+        : Phaser.Utils.Array.GetRandom(this.ort.tiereImGras);
+    this.kampfBeginnen({ gegner });
+  }
+
+  // Geht durch einen Ausgang zum nächsten Ort.
+  ortWechseln(nach) {
+    if (this.wechselt) return;
+    this.wechselt = true;
+    this.spieler.laeuft = false;
+    this.laufziel = null;
+    const vonOrt = this.ortName;
+
+    const kamera = this.cameras.main;
+    kamera.fadeOut(300, 23, 11, 44);
+    kamera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      spielstand.ort = nach;
+      spielstand.position = ankunft(ORTE[nach], vonOrt);
+      spielstand.ortsnameZeigen = true;
+      // Kurz durchatmen, bevor im neuen Ort etwas angreift.
+      spielstand.ruheBis = Math.max(spielstand.ruheBis, Date.now() + RUHE_NACH_KAMPF);
+      this.scene.restart();
+    });
   }
 
   // Wilde Kalamprios schlendern um ihren Platz herum und machen dazwischen Pause.
   wildeBewegen(dt, zeit) {
     for (const wild of this.wilde) {
-      wild.da = Date.now() >= (spielstand.wildeWiederDa[wild.nummer] ?? 0);
+      wild.da = Date.now() >= (spielstand.wildeWiederDa[wild.merkname] ?? 0);
       wild.bild.setVisible(wild.da);
       wild.schatten.setVisible(wild.da);
       if (!wild.da) {
@@ -252,7 +295,7 @@ export class WeltSzene extends Phaser.Scene {
           { x: richtung.x * weite, y: richtung.y * weite },
           WILD_RADIUS,
           this.hindernisse,
-          GRENZEN,
+          this.grenzen,
         );
 
         // In Laufrichtung schauen
@@ -279,7 +322,8 @@ export class WeltSzene extends Phaser.Scene {
   }
 
   istBeiRivalin() {
-    return abstand(this.spieler.ort, WALD.rivalin) < SPIELER_RADIUS + RIVALIN_RADIUS + 14;
+    if (!this.ort.rivalin) return false;
+    return abstand(this.spieler.ort, this.ort.rivalin) < SPIELER_RADIUS + RIVALIN_RADIUS + 14;
   }
 
   begegnungenPruefen() {
@@ -290,11 +334,11 @@ export class WeltSzene extends Phaser.Scene {
     if (this.gespraech || !this.kampfbereit()) return;
     for (const wild of this.wilde) {
       if (wild.da && abstand(this.spieler.ort, wild.ort) < SPIELER_RADIUS + WILD_RADIUS) {
-        const { nummer } = wild;
+        const { merkname } = wild;
         this.kampfBeginnen({
           gegner: wild.art,
           beiSieg: () => {
-            spielstand.wildeWiederDa[nummer] =
+            spielstand.wildeWiederDa[merkname] =
               Date.now() + REGELN.wildeKommenWiederSekunden * 1000;
           },
         });
@@ -378,7 +422,7 @@ export class WeltSzene extends Phaser.Scene {
         this.zustand,
         this.erholung,
         feld(this, BREITE - 30 - 230, 24, 230, 52),
-        this.add.text(BREITE - 30 - 115, 50, WALD.name, schrift(22, '#d9c9ff')).setOrigin(0.5),
+        this.add.text(BREITE - 30 - 115, 50, this.ort.name, schrift(22, '#d9c9ff')).setOrigin(0.5),
       ],
       VORNE,
     );
@@ -400,6 +444,23 @@ export class WeltSzene extends Phaser.Scene {
         onComplete: () => hinweis.forEach((teil) => teil.destroy()),
       });
     }
+  }
+
+  // Zeigt beim Ankommen groß den Namen des Ortes.
+  ortsnameZeigen() {
+    spielstand.ortsnameZeigen = false;
+    const name = this.add
+      .text(BREITE / 2, HOEHE / 2 - 120, this.ort.name, schrift(64, '#f6f0ff', { fontStyle: 'bold' }))
+      .setOrigin(0.5)
+      .setStroke('#2a1650', 10);
+    this.festkleben([name], VORNE + 50);
+    this.tweens.add({
+      targets: name,
+      alpha: 0,
+      delay: 1400,
+      duration: 700,
+      onComplete: () => name.destroy(),
+    });
   }
 
   anzeigeAktualisieren() {

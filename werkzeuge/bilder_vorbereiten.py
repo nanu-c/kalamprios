@@ -1,7 +1,9 @@
-"""Macht aus den Fotos der Bleistiftzeichnungen fertige Spielbilder.
+"""Macht aus den Fotos der Zeichnungen fertige Spielbilder.
 
-Für jedes Foto: zuschneiden, gerade drehen, das Papier entfernen und die
-Bleistiftlinien hell leuchten lassen. Das Ergebnis landet in public/bilder/.
+Für jedes Foto: zuschneiden, gerade drehen und das Papier entfernen.
+Bleistiftzeichnungen werden zu hell leuchtenden Linien. Bunte Zeichnungen
+behalten ihre Farben und bekommen einen hellen Rand wie ein Sticker.
+Das Ergebnis landet in public/bilder/.
 
 Starten (im Projektordner):  python3 werkzeuge/bilder_vorbereiten.py
 """
@@ -22,6 +24,7 @@ ZIEL = PROJEKT / "public" / "bilder"
 #   drehen:     um wie viel Grad gegen den Uhrzeigersinn gedreht wird
 #   radieren:   (optional) Rechtecke im Foto, die nicht zur Zeichnung gehören,
 #               zum Beispiel ein Buchstabe vom Namen, der ins Bild ragt
+#   bunt:       (optional) True für Zeichnungen mit Buntstift: Die Farben bleiben.
 ZEICHNUNGEN = [
     {
         "foto": "Kalamprios/Kalampria.jpg",
@@ -41,6 +44,36 @@ ZEICHNUNGEN = [
         "ziel": "kalamprios/kapapa.png",
         "ausschnitt": (1300, 900, 3880, 2100),
         "drehen": 90,
+    },
+    {
+        "foto": "Kalamprios/Bolo.jpg",
+        "ziel": "kalamprios/bolo.png",
+        "ausschnitt": (250, 380, 1200, 1010),
+        "drehen": 0,
+        "bunt": True,
+    },
+    {
+        "foto": "Kalamprios/Mola.jpg",
+        "ziel": "kalamprios/mola.png",
+        "ausschnitt": (170, 350, 880, 860),
+        "drehen": 0,
+        "radieren": [(470, 780, 610, 860)],
+        "bunt": True,
+    },
+    {
+        "foto": "Kalamprios/Qalutu.jpg",
+        "ziel": "kalamprios/qalutu.png",
+        "ausschnitt": (100, 150, 690, 850),
+        "drehen": 0,
+        "radieren": [(260, 800, 360, 850), (560, 150, 700, 200)],
+        "bunt": True,
+    },
+    {
+        "foto": "Kalamprios/Geheimnis.jpg",
+        "ziel": "kalamprios/geheimnis.png",
+        "ausschnitt": (28, 630, 1100, 1285),
+        "drehen": 0,
+        "bunt": True,
     },
     {
         "foto": "Charaktere/kala.jpg",
@@ -89,7 +122,66 @@ def koerper_finden(linien):
     return ndimage.gaussian_filter(gefuellt.astype(float), 4)
 
 
+def bunt_vorbereiten(eintrag):
+    """Schneidet eine Buntstiftzeichnung aus und behält ihre Farben."""
+    foto = Image.open(PROJEKT / eintrag["foto"]).convert("RGB")
+    for rechteck in eintrag.get("radieren", []):
+        papier = foto.getpixel((rechteck[0], rechteck[1]))
+        foto.paste(papier, rechteck)
+    bild = foto.crop(eintrag["ausschnitt"])
+    if eintrag["drehen"]:
+        bild = bild.rotate(eintrag["drehen"], expand=True, fillcolor=bild.getpixel((0, 0)))
+    rgb = np.asarray(bild, dtype=float) / 255.0
+
+    # Die Helligkeit des Papiers rund um jeden Pixel schätzen. Dafür zählt nur
+    # der dunkelste Farbkanal: Papier ist in allen Kanälen hell, Buntstift nicht.
+    dunkelster = rgb.min(axis=2)
+    papier = ndimage.gaussian_filter(ndimage.maximum_filter(dunkelster, size=61), 45)
+    weiss = np.clip(rgb / np.maximum(papier, 1e-6)[..., None], 0.0, 1.0)  # Papier wird weiß
+
+    # Farbe ist dort, wo mindestens ein Kanal deutlich dunkler ist als das Papier.
+    farbig = ndimage.gaussian_filter((1.0 - weiss).max(axis=2), 1.2)
+    striche = farbig > 0.12
+    stuecke, anzahl = ndimage.label(striche)
+    if anzahl:
+        groessen = ndimage.sum(np.ones_like(stuecke), stuecke, range(1, anzahl + 1))
+        striche = np.concatenate(([False], groessen >= 300))[stuecke]
+
+    # Die Fläche der Zeichnung: Lücken schließen, innen füllen, ein Rand drumherum.
+    flaeche = ndimage.binary_closing(striche, iterations=8, border_value=0)
+    flaeche = ndimage.binary_fill_holes(flaeche)
+    flaeche = ndimage.binary_dilation(flaeche, iterations=9)
+    deckkraft = np.clip(ndimage.gaussian_filter(flaeche.astype(float), 1.5) * 1.2, 0.0, 1.0)
+
+    # Farben etwas kräftiger machen, damit sie auf dem dunklen Boden leuchten.
+    grau = weiss.mean(axis=2, keepdims=True)
+    farbe = np.clip(grau + (weiss - grau) * 1.35, 0.0, 1.0)
+    # Wo kein Stift ist, wird das Papier ganz weiß, mit einem Hauch Lila.
+    stift = np.clip(farbig / 0.15, 0.0, 1.0)[..., None]
+    farbe = farbe * stift + np.array([0.97, 0.95, 1.0]) * (1 - stift)
+
+    rgba = np.dstack([farbe * 255, deckkraft * 255]).round().astype(np.uint8)
+    speichern(eintrag, Image.fromarray(rgba, "RGBA"))
+
+
+def speichern(eintrag, ergebnis):
+    """Schneidet den leeren Rand ab, verkleinert auf Spielgröße und speichert."""
+    ergebnis = ergebnis.crop(ergebnis.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox())
+    faktor = HOEHE_IM_SPIEL / max(ergebnis.size)
+    if faktor < 1:
+        ergebnis = ergebnis.resize(
+            (round(ergebnis.width * faktor), round(ergebnis.height * faktor)), Image.LANCZOS
+        )
+    ziel = ZIEL / eintrag["ziel"]
+    ziel.parent.mkdir(parents=True, exist_ok=True)
+    ergebnis.save(ziel)
+    print(f"{eintrag['foto']}  ->  {ziel.relative_to(PROJEKT)}  {ergebnis.size}")
+
+
 def vorbereiten(eintrag):
+    if eintrag.get("bunt"):
+        bunt_vorbereiten(eintrag)
+        return
     foto = Image.open(PROJEKT / eintrag["foto"]).convert("L")
     for rechteck in eintrag.get("radieren", []):
         # Mit der Papierfarbe vom linken Rand des Rechtecks übermalen.
@@ -119,21 +211,15 @@ def vorbereiten(eintrag):
         deckkraft = neu
 
     rgba = np.dstack([farbe, deckkraft * 255]).round().astype(np.uint8)
-    ergebnis = Image.fromarray(rgba, "RGBA")
-
-    # Leeren Rand abschneiden und auf Spielgröße verkleinern.
-    ergebnis = ergebnis.crop(ergebnis.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox())
-    faktor = HOEHE_IM_SPIEL / max(ergebnis.size)
-    ergebnis = ergebnis.resize(
-        (round(ergebnis.width * faktor), round(ergebnis.height * faktor)), Image.LANCZOS
-    )
-
-    ziel = ZIEL / eintrag["ziel"]
-    ziel.parent.mkdir(parents=True, exist_ok=True)
-    ergebnis.save(ziel)
-    print(f"{eintrag['foto']}  ->  {ziel.relative_to(PROJEKT)}  {ergebnis.size}")
+    speichern(eintrag, Image.fromarray(rgba, "RGBA"))
 
 
 if __name__ == "__main__":
+    import sys
+
+    # Mit Namen dahinter werden nur diese Bilder gemacht, zum Beispiel:
+    #   python3 werkzeuge/bilder_vorbereiten.py bolo mola
+    nur = {name.lower() for name in sys.argv[1:]}
     for eintrag in ZEICHNUNGEN:
-        vorbereiten(eintrag)
+        if not nur or Path(eintrag["ziel"]).stem in nur:
+            vorbereiten(eintrag)

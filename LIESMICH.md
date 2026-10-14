@@ -24,7 +24,8 @@ Der Code liegt auf <https://github.com/nanu-c/kalamprios>. Sobald dort eine neue
 | `src/daten/attacken.js` | alle Attacken mit Stärke und Pause |
 | `src/daten/elemente.js` | alle Elemente mit ihren Farben |
 | `src/daten/charaktere.js` | die Figuren und was sie als Rivalin sagen |
-| `src/daten/kristallwald.js` | der Wald: wo Bäume, Kristalle, hohes Gras und wilde Kalamprios sind |
+| `src/daten/orte.js` | alle Orte und wo das Spiel beginnt |
+| `src/daten/orte/…` | ein Ort pro Datei (Lila Dorf, Kristallwald, Prismastahl-Mine, Mondsee): wo Häuser, Bäume, Felsen, hohes Gras, Wege und wilde Kalamprios sind |
 | `src/daten/regeln.js` | Lauftempo, Erholungszeit und wie oft im Gras etwas auftaucht |
 
 In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich vertippst, zeigt das Spiel einen Hinweis auf dem Bildschirm.
@@ -32,16 +33,18 @@ In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich verti
 ## So spielt man
 
 1. Figur wählen, dann ein Kalamprio wählen.
-2. Durch den Kristallwald laufen: mit den Pfeiltasten, mit W A S D oder indem man dorthin tippt.
-3. Wilde Kalamprios laufen herum oder verstecken sich im hohen Gras. Wer eines berührt, kämpft.
-4. Die andere Figur wartet als Rivalin im Wald, oben rechts.
-5. Nach einer Niederlage muss sich das Kalamprio kurz erholen.
+2. Das Spiel beginnt im Lila Dorf. Laufen: mit den Pfeiltasten, mit W A S D oder indem man dorthin tippt.
+3. Am Rand führen Wege mit Schildern zum nächsten Ort: Lila Dorf → Kristallwald → Prismastahl-Mine → Mondsee.
+4. Wilde Kalamprios laufen herum oder verstecken sich im hohen Gras (in der Mine im Geröll, am See im Schilf). Wer eines berührt, kämpft.
+5. Die andere Figur wartet als Rivalin im Kristallwald, oben rechts.
+6. Nach einer Niederlage muss sich das Kalamprio kurz erholen.
+7. Am Mondsee versteckt sich ganz selten ein geheimes Kalamprio …
 
 ## Eine neue Zeichnung ins Spiel bringen
 
 1. Das Foto in den Ordner `Kalamprios` oder `Charaktere` legen.
-2. Das Foto in `werkzeuge/bilder_vorbereiten.py` eintragen. Dafür braucht es den Ausschnitt in Pixeln, am besten Claude darum bitten.
-3. Im Terminal `python3 werkzeuge/bilder_vorbereiten.py` starten. Das fertige Spielbild liegt dann in `public/bilder`.
+2. Das Foto in `werkzeuge/bilder_vorbereiten.py` eintragen. Dafür braucht es den Ausschnitt in Pixeln, am besten Claude darum bitten. Bei Buntstift-Zeichnungen kommt `"bunt": True` dazu, dann bleiben die Farben.
+3. Im Terminal `python3 werkzeuge/bilder_vorbereiten.py` starten. Das fertige Spielbild liegt dann in `public/bilder`. Mit Namen dahinter (zum Beispiel `python3 werkzeuge/bilder_vorbereiten.py bolo`) wird nur dieses Bild neu gemacht.
 4. Das Tier in `src/daten/kalamprios.js` eintragen.
 
 ## Die Kampfregeln prüfen

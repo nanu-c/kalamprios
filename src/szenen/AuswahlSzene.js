@@ -22,7 +22,7 @@ export class AuswahlSzene extends Phaser.Scene {
     this.add.text(BREITE / 2, 80, `Hallo ${charakter.name}!`, schrift(64, '#f6f0ff')).setOrigin(0.5);
     this.add.text(BREITE / 2, 152, 'Wähle dein Kalamprio', schrift(30, '#d9c9ff')).setOrigin(0.5);
 
-    kartenreihe(BREITE, Object.keys(KALAMPRIOS), (kurzname, x, breite) => {
+    kartenreihe(BREITE, waehlbare(), (kurzname, x, breite) => {
       const tier = KALAMPRIOS[kurzname];
       const element = ELEMENTE[tier.element];
       karte(this, {
@@ -42,7 +42,12 @@ export class AuswahlSzene extends Phaser.Scene {
   waehlen(kurzname) {
     spielstand.kalamprio = kurzname;
     // Die Rivalin bekommt das erste Kalamprio, das man nicht gewählt hat.
-    spielstand.rivalinKalamprio = Object.keys(KALAMPRIOS).find((anderes) => anderes !== kurzname);
+    spielstand.rivalinKalamprio = waehlbare().find((anderes) => anderes !== kurzname);
     this.scene.start('Welt');
   }
+}
+
+// Alle Kalamprios außer dem geheimen
+function waehlbare() {
+  return Object.keys(KALAMPRIOS).filter((kurzname) => !KALAMPRIOS[kurzname].geheim);
 }

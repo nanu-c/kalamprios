@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { KRISTALLWALD } from '../src/daten/kristallwald.js';
+import { datenPruefen } from '../src/daten/pruefen.js';
+import { ORTE } from '../src/daten/orte.js';
 import {
   abstand,
-  hindernisseImWald,
+  ankunft,
+  ausgangAmRand,
+  hindernisseAmOrt,
   istImGras,
   richtungZu,
   schritt,
@@ -61,36 +64,79 @@ test('istImGras erkennt, ob man in einer Grasfläche steht', () => {
   assert.equal(istImGras({ x: 120, y: 281 }, gras), false);
 });
 
-// Der Kristallwald selbst: Niemand soll in einem Baum starten.
-test('Start, Rivalin und wilde Kalamprios stehen frei und in der Welt', () => {
-  const hindernisse = hindernisseImWald(KRISTALLWALD);
-  const grenzen = weltGrenzen(KRISTALLWALD);
-  const punkte = [KRISTALLWALD.start, KRISTALLWALD.rivalin, ...KRISTALLWALD.wildeKalamprios];
+test('aus einem See wird man hinausgeschoben', () => {
+  const see = { x: 500, y: 500, radiusX: 200, radiusY: 100 };
+  const ort = schritt({ x: 500, y: 395 }, { x: 0, y: 30 }, 18, [see], GRENZEN);
+  const drin = Math.hypot((ort.x - 500) / 218, (ort.y - 500) / 118);
+  assert.ok(drin >= 1 - 1e-9, `noch ${drin} im See`);
+  assert.ok(ort.y < 400);
+});
 
-  for (const punkt of punkte) {
-    assert.ok(punkt.x >= grenzen.links && punkt.x <= grenzen.rechts, `x ${punkt.x} liegt außerhalb`);
-    assert.ok(punkt.y >= grenzen.oben && punkt.y <= grenzen.unten, `y ${punkt.y} liegt außerhalb`);
-    for (const hindernis of hindernisse) {
-      assert.ok(
-        abstand(punkt, hindernis) > hindernis.radius + 60,
-        `(${punkt.x}, ${punkt.y}) steht zu nah an einem Hindernis`,
-      );
+test('ein Ausgang wirkt nur am Rand und nur auf dem Weg', () => {
+  const ort = { breite: 1000, hoehe: 800, ausgaenge: [{ nach: 'x', seite: 'rechts', mitte: 400 }] };
+  const grenzen = weltGrenzen(ort);
+  assert.equal(ausgangAmRand(ort, { x: grenzen.rechts, y: 420 }, grenzen)?.nach, 'x');
+  assert.equal(ausgangAmRand(ort, { x: grenzen.rechts - 30, y: 420 }, grenzen), null);
+  assert.equal(ausgangAmRand(ort, { x: grenzen.rechts, y: 650 }, grenzen), null);
+});
+
+test('in den Daten findet die Prüfung keinen Fehler', () => {
+  assert.deepEqual(datenPruefen(), []);
+});
+
+// Die Orte selbst: Niemand soll in einem Baum oder im See starten.
+for (const [kurzname, ort] of Object.entries(ORTE)) {
+  test(`${ort.name}: alle wichtigen Plätze stehen frei und im Ort`, () => {
+    const hindernisse = hindernisseAmOrt(ort);
+    const grenzen = weltGrenzen(ort);
+    const punkte = [
+      ort.start,
+      ort.rivalin,
+      ...ort.wildeKalamprios,
+      ...ort.ausgaenge.map((ausgang) => ankunft(ort, ausgang.nach)),
+    ].filter(Boolean);
+
+    for (const punkt of punkte) {
+      const wo = `(${punkt.x}, ${punkt.y})`;
+      assert.ok(punkt.x >= grenzen.links && punkt.x <= grenzen.rechts, `${wo} liegt außerhalb`);
+      assert.ok(punkt.y >= grenzen.oben && punkt.y <= grenzen.unten, `${wo} liegt außerhalb`);
+      for (const hindernis of hindernisse) {
+        const frei = hindernis.radiusX
+          ? Math.hypot((punkt.x - hindernis.x) / (hindernis.radiusX + 60), (punkt.y - hindernis.y) / (hindernis.radiusY + 60)) > 1
+          : abstand(punkt, hindernis) > hindernis.radius + 60;
+        assert.ok(frei, `${wo} steht zu nah an einem Hindernis bei (${hindernis.x}, ${hindernis.y})`);
+      }
     }
-  }
-});
+  });
 
-test('zwischen allen Bäumen und Kristallen passt die Figur hindurch', () => {
-  const hindernisse = hindernisseImWald(KRISTALLWALD);
-  for (const a of hindernisse) {
-    for (const b of hindernisse) {
-      if (a !== b) assert.ok(abstand(a, b) - a.radius - b.radius > 2 * 18 + 10);
+  test(`${ort.name}: zwischen allem passt die Figur hindurch`, () => {
+    const kreise = hindernisseAmOrt(ort).filter((hindernis) => !hindernis.radiusX);
+    for (const a of kreise) {
+      for (const b of kreise) {
+        // Die drei Kreise eines Hauses dürfen sich berühren.
+        if (a === b || (a.y === b.y && abstand(a, b) <= 80)) continue;
+        assert.ok(
+          abstand(a, b) - a.radius - b.radius > 2 * 18 + 10,
+          `zu eng zwischen (${a.x}, ${a.y}) und (${b.x}, ${b.y})`,
+        );
+      }
     }
-  }
-});
+  });
 
-test('alle Grasflächen liegen in der Welt', () => {
-  for (const gras of KRISTALLWALD.hohesGras) {
-    assert.ok(gras.links >= 0 && gras.links + gras.breite <= KRISTALLWALD.breite);
-    assert.ok(gras.oben >= 0 && gras.oben + gras.hoehe <= KRISTALLWALD.hoehe);
-  }
-});
+  test(`${ort.name}: alle Grasflächen liegen im Ort`, () => {
+    for (const gras of ort.hohesGras) {
+      assert.ok(gras.links >= 0 && gras.links + gras.breite <= ort.breite);
+      assert.ok(gras.oben >= 0 && gras.oben + gras.hoehe <= ort.hoehe);
+    }
+  });
+
+  test(`${ort.name}: jeder Ausgang führt hin und wieder zurück`, () => {
+    for (const ausgang of ort.ausgaenge) {
+      const dort = ankunft(ORTE[ausgang.nach], kurzname);
+      const zurueck = ORTE[ausgang.nach].ausgaenge.find((a) => a.nach === kurzname);
+      assert.ok(zurueck, `${ausgang.nach} hat keinen Weg zurück`);
+      // Wer ankommt, steht nicht gleich wieder im Ausgang.
+      assert.equal(ausgangAmRand(ORTE[ausgang.nach], dort, weltGrenzen(ORTE[ausgang.nach])), null);
+    }
+  });
+}

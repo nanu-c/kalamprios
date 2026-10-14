@@ -39,7 +39,7 @@ export function karte(szene, { x, y, breite, bild, name, zusatz = '', zusatzFarb
   const figur = szene.add.image(x, y - 50, bild);
   figur.setScale(Math.min(250 / figur.height, (breite - 40) / figur.width));
 
-  szene.add.text(x, y + 118, name, schrift(34)).setOrigin(0.5);
+  szene.add.text(x, y + 118, name, schrift(Math.min(34, breite / 5))).setOrigin(0.5);
   szene.add.text(x, y + 160, zusatz, schrift(22, zusatzFarbe)).setOrigin(0.5);
 
   flaeche.on('pointerover', () => flaeche.setStrokeStyle(6, randFarbe ?? 0xffffff));

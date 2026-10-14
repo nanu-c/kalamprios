@@ -3,6 +3,7 @@
 
 import Phaser from 'phaser';
 import { ELEMENTE } from '../daten/elemente.js';
+import { ORTE } from '../daten/orte.js';
 import {
   attackeAusfuehren,
   gegnerWaehlt,
@@ -11,6 +12,7 @@ import {
   rundeBeenden,
   werZuerst,
 } from '../kampf/kampflogik.js';
+import { spielstand } from '../spielstand.js';
 import { feld, textKnopf } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
 import { BREITE, FARBEN, farbeAlsText, schrift } from './stil.js';
@@ -37,7 +39,8 @@ export class KampfSzene extends Phaser.Scene {
   }
 
   create() {
-    hintergrundMalen(this);
+    // Der Hintergrund passt zum Ort, an dem gekämpft wird.
+    hintergrundMalen(this, ORTE[spielstand.ort].stil);
     this.cameras.main.fadeIn(300, 23, 11, 44);
 
     this.spieler = kaempferErstellen(this.auswahl.spieler);

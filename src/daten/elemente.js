@@ -15,4 +15,8 @@ export const ELEMENTE = {
   schatten: { name: 'Schatten', farbe: 0x8d7bc4 },
   stein: { name: 'Stein', farbe: 0xc2a888 },
   luft: { name: 'Luft', farbe: 0xdff6ff },
+  wasser: { name: 'Wasser', farbe: 0x5ec8ff },
+
+  // Das Element des geheimen Kalamprios. Niemand weiß, was es ist.
+  geheim: { name: '???', farbe: 0xff6fcf },
 };
