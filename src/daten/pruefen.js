@@ -59,6 +59,24 @@ export function datenPruefen() {
     fehler.push('Es braucht mindestens zwei Figuren in charaktere.js: eine zum Spielen und eine Rivalin.');
   }
 
+  for (const name of ['fangChanceGesund', 'fangChanceSchwach']) {
+    if (!(REGELN[name] >= 0 && REGELN[name] <= 1)) {
+      fehler.push(`regeln.js: ${name} muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.5.`);
+    }
+  }
+  if (!(Number.isInteger(REGELN.fangkristalleAmAnfang) && REGELN.fangkristalleAmAnfang >= 0)) {
+    fehler.push('regeln.js: fangkristalleAmAnfang muss 0 oder eine ganze Zahl sein.');
+  }
+
+  const stufen = REGELN.siegeFuerLevel;
+  const aufsteigend = Array.isArray(stufen) && stufen.every((siege, nummer) => Number.isInteger(siege) && (nummer === 0 ? siege === 0 : siege > stufen[nummer - 1]));
+  if (!aufsteigend || stufen.length === 0) {
+    fehler.push('regeln.js: siegeFuerLevel muss mit 0 anfangen und dann immer größer werden, zum Beispiel [0, 4, 10].');
+  }
+  if (!(REGELN.staerkerProLevel >= 0 && REGELN.staerkerProLevel <= 1)) {
+    fehler.push('regeln.js: staerkerProLevel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.1.');
+  }
+
   for (const name of ['schadenZufall', 'tempoZufall']) {
     if (!(REGELN[name] >= 0 && REGELN[name] < 1)) {
       fehler.push(`regeln.js: ${name} muss eine Zahl von 0 bis knapp unter 1 sein, zum Beispiel 0.3.`);
@@ -80,6 +98,12 @@ export function datenPruefen() {
   if (!(GESCHICHTE.anfang?.length > 0)) {
     fehler.push('geschichte.js: Bei anfang braucht es mindestens einen Satz.');
   }
+  if (!(GESCHICHTE.ende?.length > 0)) {
+    fehler.push('geschichte.js: Bei ende braucht es mindestens einen Satz.');
+  }
+  if (!(Number.isInteger(REGELN.teamFuerGeheimes) && REGELN.teamFuerGeheimes >= 1)) {
+    fehler.push('regeln.js: teamFuerGeheimes muss eine ganze Zahl ab 1 sein, zum Beispiel 3.');
+  }
   for (const [kurzname, saetze] of Object.entries(GESCHICHTE.orte ?? {})) {
     if (!ORTE[kurzname]) {
       fehler.push(`geschichte.js: Den Ort "${kurzname}" gibt es nicht in orte.js.`);
@@ -94,6 +118,7 @@ export function datenPruefen() {
 
 function ortPruefen(kurzname, ort) {
   const fehler = [];
+  const liste = (feld) => ort[feld] ?? [];
   const name = ort.name ?? kurzname;
   if (!STILE.includes(ort.stil)) {
     fehler.push(`${name}: stil muss 'dorf', 'wald', 'mine' oder 'see' sein.`);
@@ -112,6 +137,21 @@ function ortPruefen(kurzname, ort) {
   }
   if (ort.hohesGras.length > 0 && ort.tiereImGras.length === 0) {
     fehler.push(`${name}: Im hohen Gras wohnt niemand. Trag Tiere bei tiereImGras ein.`);
+  }
+  const hoechstes = REGELN.siegeFuerLevel?.length ?? 1;
+  if (ort.wildesLevel !== undefined && !(Number.isInteger(ort.wildesLevel) && ort.wildesLevel >= 1 && ort.wildesLevel <= hoechstes)) {
+    fehler.push(`${name}: wildesLevel muss eine ganze Zahl von 1 bis ${hoechstes} sein.`);
+  }
+  if (geheimes?.spaetestensNach !== undefined && !(Number.isInteger(geheimes.spaetestensNach) && geheimes.spaetestensNach >= 0)) {
+    fehler.push(`${name}: spaetestensNach beim geheimen Kalamprio muss 0 oder eine ganze Zahl sein, zum Beispiel 3.`);
+  }
+  if (ort.dunkel !== undefined && !(ort.dunkel >= 0 && ort.dunkel <= 1)) {
+    fehler.push(`${name}: dunkel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.8.`);
+  }
+  for (const see of liste('seen')) {
+    if (see.bild !== undefined && see.bild !== 'mondsee') {
+      fehler.push(`${name}: Ein See-Bild "${see.bild}" gibt es nicht. Nimm 'mondsee' oder lass bild weg.`);
+    }
   }
   if (geheimes && !(geheimes.chance >= 0 && geheimes.chance <= 1)) {
     fehler.push(`${name}: Die chance beim geheimen Kalamprio muss von 0 bis 1 gehen, zum Beispiel 0.04.`);
@@ -135,7 +175,6 @@ function ortPruefen(kurzname, ort) {
     }
   }
 
-  const liste = (feld) => ort[feld] ?? [];
   const punkte = [
     ['start', ort.start],
     ['rivalin', ort.rivalin],
@@ -146,6 +185,8 @@ function ortPruefen(kurzname, ort) {
     ...liste('felsen').map((punkt) => ['ein Felsen', punkt]),
     ...liste('prismastahl').map((punkt) => ['ein Prismastahl', punkt]),
     ...liste('haeuser').map((punkt) => ['ein Haus', punkt]),
+    ...liste('gold').map((punkt) => ['ein Gold', punkt]),
+    ...liste('fangkristalle').map((punkt) => ['ein Fangkristall', punkt]),
     ...liste('seen').map((punkt) => ['ein See', punkt]),
   ].filter(([, punkt]) => punkt);
   for (const [was, punkt] of punkte) {

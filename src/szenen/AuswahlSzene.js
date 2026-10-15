@@ -41,6 +41,7 @@ export class AuswahlSzene extends Phaser.Scene {
 
   waehlen(kurzname) {
     spielstand.kalamprio = kurzname;
+    spielstand.team = [kurzname];
     // Die Rivalin bekommt das erste Kalamprio, das man nicht gewählt hat.
     spielstand.rivalinKalamprio = waehlbare().find((anderes) => anderes !== kurzname);
     this.scene.start('Welt');

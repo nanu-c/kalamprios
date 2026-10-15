@@ -1,4 +1,4 @@
-// Die Prismastahl-Mine: eine dunkle Höhle voller glänzendem Prismastahl.
+// Die Prismastahl-Mine: eine dunkle Höhle voller glänzendem Prismastahl und Gold.
 // Diese Datei gehört dir! Was die Angaben bedeuten, steht oben in kristallwald.js.
 // In der Mine ist das hohe Gras Geröll.
 
@@ -52,4 +52,20 @@ export const PRISMASTAHL_MINE = {
     { x: 1650, y: 980 },
     { x: 1950, y: 1350 },
   ],
+
+  gold: [
+    { x: 620, y: 1100 },
+    { x: 1480, y: 860 },
+    { x: 1820, y: 330 },
+    { x: 260, y: 470 },
+    { x: 1700, y: 1430 },
+  ],
+
+  fangkristalle: [
+    { x: 1050, y: 560 },
+    { x: 1900, y: 1150 },
+  ],
+
+  // In der Höhle ist es dunkel, nur rund um die Figur ist es hell.
+  dunkel: 0.82,
 };

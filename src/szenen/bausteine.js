@@ -3,6 +3,23 @@
 
 import { FARBEN, schrift } from './stil.js';
 
+// Der gemalte Schriftzug "Kalamprios", der sanft leuchtet und schwebt.
+// x, y ist die Mitte, breite die Breite auf dem Bildschirm.
+export function titel(szene, x, y, breite) {
+  const bild = szene.add.image(x, y, 'titel');
+  bild.setScale(breite / bild.width);
+  szene.tweens.add({
+    targets: bild,
+    y: y - 6,
+    scale: bild.scale * 1.02,
+    duration: 1800,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.easeInOut',
+  });
+  return bild;
+}
+
 // Ein dunkles Feld mit Rahmen. x und y sind die linke obere Ecke.
 export function feld(szene, x, y, breite, hoehe) {
   return szene.add

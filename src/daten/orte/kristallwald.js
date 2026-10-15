@@ -17,12 +17,22 @@
 // dunklerKristall: hier steht der dunkle Kristall, der die Geschichte flüstert
 // wildeKalamprios: diese Tiere laufen sichtbar herum. art ist ein Kurzname
 //                  aus kalamprios.js.
+// wildesLevel:     (optional) welches Level die wilden Kalamprios hier haben,
+//                  1, 2 oder 3. Ohne Angabe ist es 1.
 // hohesGras:       Rechtecke mit hohem Gras (in der Mine ist es Geröll, am See
 //                  Schilf). Darin verstecken sich die Tiere aus tiereImGras.
 // baeume, kristalle, felsen, prismastahl, haeuser: stehen im Weg.
 //                  Man kann um sie herumlaufen.
 // seen:            Wasser, durch das man nicht laufen kann: x und y sind die
-//                  Mitte, breite und hoehe die Größe.
+//                  Mitte, breite und hoehe die Größe. Mit bild: 'mondsee'
+//                  wird das gemalte Bild des Sees genommen.
+// gold:            (nur in der Mine) glitzerndes Gold, steht im Weg
+// fangkristalle:   hier liegen Fangkristalle zum Aufsammeln. Nach einer Weile
+//                  liegt wieder einer da (siehe regeln.js).
+// dunkel:          (optional) wie dunkel es ist, von 0 (hell) bis 1 (ganz
+//                  schwarz). Nur rund um die Figur ist es hell.
+//
+// Führt ein Ausgang in die Mine oder aus ihr hinaus, ist dort ein Höhleneingang.
 
 export const KRISTALLWALD = {
   name: 'Kristallwald',
@@ -91,5 +101,10 @@ export const KRISTALLWALD = {
     { x: 1150, y: 1400 },
     { x: 890, y: 1420 },
     { x: 690, y: 1440 },
+  ],
+
+  fangkristalle: [
+    { x: 1560, y: 400 },
+    { x: 330, y: 900 },
   ],
 };

@@ -7,6 +7,8 @@
 // orte:   flüstert der dunkle Kristall an diesem Ort. Der Name links ist
 //         der Kurzname aus orte.js. Wo der Kristall steht, steht in der
 //         Datei des Ortes bei dunklerKristall.
+// ende:   wird bei der Party erzählt, wenn man das geheime Kalamprio
+//         besiegt oder gefangen hat
 
 export const GESCHICHTE = {
   anfang: [
@@ -37,7 +39,14 @@ export const GESCHICHTE = {
       'Am Ufer steht der letzte dunkle Kristall. Er zittert ein wenig.',
       '„Hier am Mondsee ist der Schatten verschwunden. Niemand weiß, wohin.“',
       '„Manche sagen, im Schilf versteckt sich etwas Geheimnisvolles … Ob es mit dem Schatten zu tun hat?“',
-      'Die Geschichte geht weiter … bald!',
+      '„Aber pass auf: Es ist sehr stark. Nur mit drei Kalamprios im Team kannst du es besiegen.“',
     ],
   },
+
+  ende: [
+    'Geschafft! Das geheime Kalamprio gibt auf. Und plötzlich strömt das gestohlene Licht aus ihm heraus.',
+    'Überall im Land fangen die Kristalle wieder an zu leuchten, einer nach dem anderen.',
+    'Der Schatten ist verschwunden. Die Kalamprios sind wieder froh, und alle feiern ein großes Fest.',
+    'Danke, dass du das Licht zurückgebracht hast!',
+  ],
 };

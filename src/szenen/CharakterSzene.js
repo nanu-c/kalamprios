@@ -3,7 +3,7 @@
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
 import { spielstand } from '../spielstand.js';
-import { karte, kartenreihe } from './bausteine.js';
+import { karte, kartenreihe, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
 import { BREITE, HOEHE, schrift } from './stil.js';
 
@@ -16,8 +16,8 @@ export class CharakterSzene extends Phaser.Scene {
     hintergrundMalen(this);
     this.add.rectangle(0, 0, BREITE, HOEHE, 0x170b2c, 0.45).setOrigin(0);
 
-    this.add.text(BREITE / 2, 80, 'Kalamprios', schrift(76, '#f6f0ff')).setOrigin(0.5);
-    this.add.text(BREITE / 2, 152, 'Wer möchtest du sein?', schrift(30, '#d9c9ff')).setOrigin(0.5);
+    titel(this, BREITE / 2, 82, 560);
+    this.add.text(BREITE / 2, 172, 'Wer möchtest du sein?', schrift(30, '#d9c9ff')).setOrigin(0.5);
 
     kartenreihe(BREITE, Object.keys(CHARAKTERE), (kurzname, x, breite) => {
       karte(this, {

@@ -42,4 +42,6 @@ export const LILA_DORF = {
     { x: 640, y: 810 },
     { x: 1150, y: 810 },
   ],
+
+  fangkristalle: [{ x: 1500, y: 720 }],
 };

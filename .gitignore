@@ -6,7 +6,11 @@ dist/
 Kalamprios/
 Charaktere/
 Landschaft/
+Gegenstände/
+Sonstiges/
+Sonstiges/
 
 # Geheime Schlüssel (zum Beispiel für die Vorlese-Stimme) bleiben auf diesem Computer.
 .env
 *.swp
+__pycache__/

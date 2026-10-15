@@ -16,6 +16,9 @@
 //               Alle anderen muss man später fangen.
 // geheim:       (nur beim geheimen Kalamprio) true bedeutet: Man kann es am
 //               Anfang nicht auswählen, man kann es nur ganz selten treffen.
+//               Mit dem Fangkristall ist es doppelt so schwer zu fangen.
+// fliegt:       (optional) true bedeutet: Es schwebt über dem Boden, sein
+//               Schatten bleibt unten.
 //
 // Die Werte von Kapapa, Qalutu, Bolo, Mola und dem geheimen Kalamprio sind
 // Platzhalter. Ändere sie gern!
@@ -93,6 +96,7 @@ export const KALAMPRIOS = {
     verteidigung: 9,
     tempo: 16,
     attacken: ['fluegelwind', 'fadentanz'],
+    fliegt: true,
   },
 
   // Das geheime Kalamprio. Von ihm weiß man nicht viel ...

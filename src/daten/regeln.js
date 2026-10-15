@@ -12,6 +12,18 @@ export const REGELN = {
   // Tier zuerst dran. 0 bedeutet: Das schnellere ist immer zuerst dran.
   tempoZufall: 0.3,
 
+  // --- Level ---
+
+  // Wie viele gewonnene Kämpfe ein Kalamprio für jedes Level braucht.
+  // Level 1 hat es am Anfang (0 Siege), Level 2 ab 4 Siegen, Level 3 ab 10
+  // Siegen. Mehr Level gibt es nicht. Den Sieg bekommt das Kalamprio, das am
+  // Ende des Kampfes noch steht.
+  siegeFuerLevel: [0, 4, 10],
+
+  // Wie viel stärker ein Kalamprio mit jedem Level wird. 0.1 bedeutet: Lebenspunkte,
+  // Angriff, Verteidigung und Tempo werden um 10 von 100 größer.
+  staerkerProLevel: 0.1,
+
   // --- Wald ---
 
   // Wie schnell die Figur läuft (Pixel pro Sekunde).
@@ -28,4 +40,27 @@ export const REGELN = {
   grasSchritt: 70,
   // ... und so groß ist die Chance dabei. 0.12 bedeutet 12 von 100.
   grasChance: 0.12,
+
+  // --- Fangkristalle ---
+
+  // So viele Fangkristalle hat man am Anfang.
+  fangkristalleAmAnfang: 3,
+
+  // Die Chance, ein wildes Kalamprio zu fangen, das noch alle Lebenspunkte
+  // hat. 0.2 bedeutet 20 von 100 ...
+  fangChanceGesund: 0.2,
+  // ... und die Chance, wenn es fast keine Lebenspunkte mehr hat.
+  // Dazwischen wird die Chance immer größer, je schwächer es ist.
+  fangChanceSchwach: 0.9,
+
+  // Wie lange es dauert, bis an derselben Stelle wieder ein Fangkristall
+  // liegt, nachdem man ihn aufgesammelt hat (Sekunden).
+  fangkristallWaechstNachSekunden: 90,
+
+  // --- Das geheime Kalamprio ---
+
+  // So viele Kalamprios braucht man mindestens im Team, um das geheime
+  // Kalamprio zu besiegen. Mit weniger schützt es ein Schild aus Licht, und
+  // es verschwindet wieder. Wer es besiegt oder fängt, hat das Spiel geschafft.
+  teamFuerGeheimes: 3,
 };

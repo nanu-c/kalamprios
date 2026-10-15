@@ -6,11 +6,15 @@ import { datenPruefen } from '../src/daten/pruefen.js';
 import { REGELN } from '../src/daten/regeln.js';
 import {
   attackeAusfuehren,
+  fangChance,
+  fangen,
   gegnerWaehlt,
   istBereit,
   kaempferErstellen,
+  levelAusSiegen,
   rundeBeenden,
   schadenBerechnen,
+  siegeBisNaechstesLevel,
   werZuerst,
 } from '../src/kampf/kampflogik.js';
 
@@ -134,4 +138,42 @@ test('der Computer wählt nur Attacken, die bereit sind', () => {
   for (const wurf of [0, 0.5, 0.69, 0.7, 0.99]) {
     assert.equal(gegnerWaehlt(gegner, immer(wurf)), schwach);
   }
+});
+
+test('ein gesundes Kalamprio ist schwer zu fangen, ein schwaches leicht', () => {
+  const tier = kaempferErstellen('bolo');
+  assert.equal(fangChance(tier), REGELN.fangChanceGesund);
+  tier.kp = 0;
+  assert.ok(Math.abs(fangChance(tier) - REGELN.fangChanceSchwach) < 1e-9);
+  tier.kp = tier.maxKp / 2;
+  assert.ok(fangChance(tier) > REGELN.fangChanceGesund && fangChance(tier) < REGELN.fangChanceSchwach);
+});
+
+test('das geheime Kalamprio ist doppelt so schwer zu fangen', () => {
+  const geheim = kaempferErstellen('geheimnis');
+  assert.equal(fangChance(geheim), REGELN.fangChanceGesund / 2);
+});
+
+test('fangen klappt, wenn der Würfel unter der Chance liegt', () => {
+  const tier = kaempferErstellen('mola');
+  assert.equal(fangen(tier, () => 0), true);
+  assert.equal(fangen(tier, () => 0.99), false);
+});
+
+test('mit mehr Siegen steigt das Level, aber nie über das höchste', () => {
+  assert.equal(levelAusSiegen(0), 1);
+  assert.equal(levelAusSiegen(REGELN.siegeFuerLevel[1] - 1), 1);
+  assert.equal(levelAusSiegen(REGELN.siegeFuerLevel[1]), 2);
+  assert.equal(levelAusSiegen(1000), REGELN.siegeFuerLevel.length);
+  assert.equal(siegeBisNaechstesLevel(0), REGELN.siegeFuerLevel[1]);
+  assert.equal(siegeBisNaechstesLevel(1000), null);
+});
+
+test('mit jedem Level wird ein Kalamprio nur ein bisschen stärker', () => {
+  const eins = kaempferErstellen('kalampria', 1);
+  const drei = kaempferErstellen('kalampria', 3);
+  assert.equal(eins.maxKp, KALAMPRIOS.kalampria.kp);
+  assert.ok(drei.maxKp > eins.maxKp && drei.angriff > eins.angriff);
+  assert.ok(drei.maxKp <= eins.maxKp * (1 + 2 * REGELN.staerkerProLevel) + 1);
+  assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.siegeFuerLevel.length);
 });

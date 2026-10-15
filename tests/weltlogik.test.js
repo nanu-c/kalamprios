@@ -7,6 +7,7 @@ import {
   abstand,
   ankunft,
   ausgangAmRand,
+  grasBegegnung,
   hindernisseAmOrt,
   istImGras,
   richtungZu,
@@ -140,3 +141,18 @@ for (const [kurzname, ort] of Object.entries(ORTE)) {
     }
   });
 }
+
+test('im Schilf kommt das geheime Kalamprio spätestens nach ein paar anderen', () => {
+  const see = ORTE.mondsee;
+  const nie = () => 0.99; // ein Würfel, der nie das geheime würfelt
+  const grenze = see.geheimesImGras.spaetestensNach;
+  for (let bisher = 0; bisher < grenze; bisher += 1) {
+    assert.equal(grasBegegnung(see, bisher, nie).geheim, false);
+  }
+  assert.deepEqual(grasBegegnung(see, grenze, nie), { art: see.geheimesImGras.art, geheim: true });
+  assert.equal(grasBegegnung(see, 0, () => 0).geheim, true);
+});
+
+test('im Wald gibt es kein geheimes Kalamprio im Gras', () => {
+  assert.equal(grasBegegnung(ORTE.kristallwald, 100, () => 0).geheim, false);
+});

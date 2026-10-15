@@ -52,6 +52,7 @@ async function sprechen(schluessel, text, anweisung) {
 
 const saetze = [
   ...GESCHICHTE.anfang.map((text) => [text, ERZAEHLERIN]),
+  ...GESCHICHTE.ende.map((text) => [text, ERZAEHLERIN]),
   ...Object.values(GESCHICHTE.orte).flat().map((text) => [text, KRISTALL]),
 ];
 

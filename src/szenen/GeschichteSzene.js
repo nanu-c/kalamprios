@@ -8,7 +8,7 @@
 import Phaser from 'phaser';
 import { GESCHICHTE } from '../daten/geschichte.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
-import { feld, textKnopf } from './bausteine.js';
+import { feld, textKnopf, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
 import { bilderErzeugen } from './landschaft.js';
 import { BREITE, HOEHE, schrift } from './stil.js';
@@ -47,17 +47,13 @@ export class GeschichteSzene extends Phaser.Scene {
     this.lauf = 0;
     this.time.addEvent({ delay: 160, loop: true, callback: () => this.funkeln() });
 
-    this.add
-      .text(BREITE / 2, 90, 'Kalamprios', schrift(80, '#f6f0ff', { fontStyle: '600' }))
-      .setOrigin(0.5)
-      .setStroke('#2a1650', 10);
+    titel(this, BREITE / 2, 120, 820);
 
     feld(this, 90, 440, BREITE - 180, 240);
     this.text = this.add.text(130, 470, '', schrift(32, '#ffffff', { wordWrap: { width: BREITE - 260 }, lineSpacing: 8 }));
 
     textKnopf(this, BREITE - 90 - 30 - 240, 600, 240, 60, 'Weiter', () => this.weiter());
     textKnopf(this, 120, 600, 240, 60, 'Überspringen', () => this.fertig());
-    textKnopf(this, BREITE / 2 - 120, 600, 240, 60, 'Nochmal hören', () => vorlesen(this.text.text));
 
     this.nummer = -1;
     this.weiter();

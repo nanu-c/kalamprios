@@ -64,6 +64,17 @@ function ausEllipseSchieben(ort, radius, ellipse) {
   return { x: ellipse.x + dx / wieWeitDrin, y: ellipse.y + dy / wieWeitDrin };
 }
 
+// Wer taucht im hohen Gras auf? Ganz selten das geheime Kalamprio, und ganz
+// sicher, wenn schon so viele andere da waren, wie bei spaetestensNach steht.
+// bisher: wie viele andere seit dem letzten geheimen schon aufgetaucht sind.
+export function grasBegegnung(ort, bisher, zufall = Math.random) {
+  const geheimes = ort.geheimesImGras;
+  if (geheimes && (bisher >= (geheimes.spaetestensNach ?? Infinity) || zufall() < geheimes.chance)) {
+    return { art: geheimes.art, geheim: true };
+  }
+  return { art: ort.tiereImGras[Math.floor(zufall() * ort.tiereImGras.length)], geheim: false };
+}
+
 export function istImGras(ort, grasflaechen) {
   return grasflaechen.some(
     (gras) =>
@@ -88,6 +99,7 @@ export function hindernisseAmOrt(ort) {
     ...liste('kristalle').map((kristall) => ({ x: kristall.x, y: kristall.y - 8, radius: 30 })),
     ...(ort.dunklerKristall ? [{ x: ort.dunklerKristall.x, y: ort.dunklerKristall.y - 8, radius: 30 }] : []),
     ...liste('prismastahl').map((stahl) => ({ x: stahl.x, y: stahl.y - 8, radius: 30 })),
+    ...liste('gold').map((gold) => ({ x: gold.x, y: gold.y - 10, radius: 34 })),
     ...liste('felsen').map((fels) => ({ x: fels.x, y: fels.y - 14, radius: 44 })),
     // Ein Haus ist breit: drei Kreise nebeneinander.
     ...liste('haeuser').flatMap((haus) =>

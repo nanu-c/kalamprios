@@ -3,6 +3,8 @@
 Für jedes Foto: zuschneiden, gerade drehen und das Papier entfernen.
 Bleistiftzeichnungen werden zu hell leuchtenden Linien. Bunte Zeichnungen
 behalten ihre Farben und bekommen einen hellen Rand wie ein Sticker.
+Landschaft und Gegenstände werden wie ein Ausmalbild ausgemalt: Jede Fläche
+zwischen den Strichen bekommt eine passende Farbe.
 Das Ergebnis landet in public/bilder/.
 
 Starten (im Projektordner):  python3 werkzeuge/bilder_vorbereiten.py
@@ -25,6 +27,9 @@ ZIEL = PROJEKT / "public" / "bilder"
 #   radieren:   (optional) Rechtecke im Foto, die nicht zur Zeichnung gehören,
 #               zum Beispiel ein Buchstabe vom Namen, der ins Bild ragt
 #   bunt:       (optional) True für Zeichnungen mit Buntstift: Die Farben bleiben.
+#   ausmalen:   (optional) 'see', 'baum' oder 'kristall': Die Zeichnung wird
+#               ausgemalt, so wie es zu diesem Ding passt.
+#   hoehe:      (optional) so hoch wird das Spielbild höchstens, sonst 640
 ZEICHNUNGEN = [
     {
         "foto": "Kalamprios/Kalampria.jpg",
@@ -86,6 +91,38 @@ ZEICHNUNGEN = [
         "ziel": "charaktere/pflanstaria.png",
         "ausschnitt": (1792, 740, 2880, 1760),
         "drehen": 90,
+    },
+    {
+        "foto": "Landschaft/Mondsee.jpg",
+        "ziel": "landschaft/mondsee.png",
+        "ausschnitt": (150, 400, 2980, 3780),
+        "drehen": 90,
+        "ausmalen": "see",
+        "hoehe": 1300,
+    },
+    {
+        "foto": "Landschaft/Bäume.jpg",
+        "ziel": "landschaft/baum-rund.png",
+        "ausschnitt": (380, 320, 2900, 1600),
+        "drehen": 90,
+        "ausmalen": "baum",
+        "hoehe": 480,
+    },
+    {
+        "foto": "Landschaft/Bäume.jpg",
+        "ziel": "landschaft/baum-schief.png",
+        "ausschnitt": (300, 2280, 2880, 3560),
+        "drehen": 90,
+        "ausmalen": "baum",
+        "hoehe": 480,
+    },
+    {
+        "foto": "Gegenstände/Fangkristall.jpg",
+        "ziel": "gegenstaende/fangkristall.png",
+        "ausschnitt": (1450, 1150, 2650, 2830),
+        "drehen": 90,
+        "ausmalen": "kristall",
+        "hoehe": 300,
     },
 ]
 
@@ -164,10 +201,175 @@ def bunt_vorbereiten(eintrag):
     speichern(eintrag, Image.fromarray(rgba, "RGBA"))
 
 
+# ---------------------------------------------------------------- Ausmalbilder
+
+
+def farbe(zahl):
+    """Macht aus einer Farbzahl wie 0x8a5be0 drei Werte von 0 bis 1."""
+    return np.array([(zahl >> 16) & 0xFF, (zahl >> 8) & 0xFF, zahl & 0xFF]) / 255.0
+
+
+def uebereinander(schichten):
+    """Legt Schichten übereinander, die unterste zuerst.
+
+    Jede Schicht ist (Farbe, Deckkraft). Die Farbe ist eine Farbe für alles
+    oder ein Bild mit einer Farbe pro Pixel, die Deckkraft geht von 0 bis 1.
+    """
+    hoehe, breite = schichten[0][1].shape
+    bild = np.zeros((hoehe, breite, 3))
+    deckkraft = np.zeros((hoehe, breite))
+    for schicht_farbe, schicht_deckkraft in schichten:
+        neu = schicht_deckkraft + deckkraft * (1 - schicht_deckkraft)
+        anteil = np.divide(schicht_deckkraft, neu, out=np.zeros_like(neu), where=neu > 0)[..., None]
+        bild = bild * (1 - anteil) + np.asarray(schicht_farbe, dtype=float) * anteil
+        deckkraft = neu
+    return Image.fromarray(np.dstack([bild * 255, deckkraft * 255]).round().astype(np.uint8), "RGBA")
+
+
+def flaechen_finden(eintrag, verkleinern=2):
+    """Findet die Striche und nummeriert die Flächen dazwischen wie in einem Ausmalbild.
+
+    Gibt zurück: wie viel Bleistift wo ist, die Nummer der Fläche an jedem Pixel
+    (0 = Strich) und die Nummern der Flächen außen herum, die das Papier sind.
+    """
+    foto = Image.open(PROJEKT / eintrag["foto"]).convert("L")
+    bild = foto.crop(eintrag["ausschnitt"])
+    if eintrag["drehen"]:
+        bild = bild.rotate(eintrag["drehen"], expand=True, fillcolor=bild.getpixel((0, 0)))
+    # Die Fotos sind sehr groß. Halb so groß reicht und geht viel schneller.
+    bild = bild.resize((bild.width // verkleinern, bild.height // verkleinern), Image.LANCZOS)
+    linien = linien_finden(np.asarray(bild, dtype=float) / 255.0)
+
+    # Kleine Lücken in den Strichen schließen, damit keine Farbe ausläuft.
+    striche = ndimage.binary_closing(linien > 0.25, iterations=2)
+    flaechen, anzahl = ndimage.label(~striche)
+    rand = np.concatenate([flaechen[0], flaechen[-1], flaechen[:, 0], flaechen[:, -1]])
+    papier = set(np.unique(rand)) - {0}
+    groessen = ndimage.sum(np.ones_like(flaechen), flaechen, range(anzahl + 1))
+    return linien, flaechen, papier, groessen
+
+
+def unter_die_striche(farben, gemalt):
+    """Malt die Farbe auch unter die Striche, jeweils von der nächsten Fläche."""
+    _, (zeile, spalte) = ndimage.distance_transform_edt(~gemalt, return_indices=True)
+    return farben[zeile, spalte]
+
+
+def ausmalen(eintrag, farben, gemalt, linien, linienfarbe, mit_schein=False):
+    """Legt die Striche über die ausgemalten Flächen und speichert das Bild."""
+    farben = unter_die_striche(farben, gemalt)
+    innen = ndimage.binary_fill_holes(gemalt | (linien > 0.25)).astype(float)
+    schichten = [(farben, ndimage.gaussian_filter(innen, 1))]
+    if mit_schein:
+        schein = np.clip(ndimage.gaussian_filter(linien, 6) * 1.6, 0.0, 1.0)
+        schichten.append((farbe(LEUCHTFARBE[0] << 16 | LEUCHTFARBE[1] << 8 | LEUCHTFARBE[2]), schein * 0.55))
+    schichten.append((farbe(linienfarbe), linien))
+    speichern(eintrag, uebereinander(schichten))
+
+
+def see_ausmalen(eintrag):
+    """Der Mondsee: Wasser, Steine am Ufer, Seerosen, Blüten und in der Mitte der Mond."""
+    linien, flaechen, papier, groessen = flaechen_finden(eintrag)
+    innen = [nummer for nummer in range(1, len(groessen)) if nummer not in papier]
+    wasser_nummer = max(innen, key=lambda nummer: groessen[nummer])
+    wasser = flaechen == wasser_nummer
+    # Alles, was ganz vom Wasser umschlossen ist, schwimmt darauf.
+    see = ndimage.binary_fill_holes(wasser)
+    schwimmt = [n for n in innen if n != wasser_nummer and see[flaechen == n].mean() > 0.9]
+    mond = max(schwimmt, key=lambda nummer: groessen[nummer])
+
+    zufall = np.random.default_rng(7)
+    farben = np.zeros(flaechen.shape + (3,))
+
+    # Wasser: am Ufer dunkel, zur Mitte heller, rund um den Mond leuchtet es.
+    tiefe = ndimage.distance_transform_edt(see)
+    tiefe = np.clip(tiefe / tiefe.max() * 1.6, 0.0, 1.0)[..., None]
+    wasserfarbe = farbe(0x1D2F6E) * (1 - tiefe) + farbe(0x3058B0) * tiefe
+    vom_mond = ndimage.distance_transform_edt(flaechen != mond)
+    glanz = np.exp(-vom_mond / (0.12 * see.shape[1]))[..., None] * 0.55
+    wasserfarbe = wasserfarbe * (1 - glanz) + farbe(0xD8D0FF) * glanz
+    farben[wasser] = wasserfarbe[wasser]
+
+    for nummer in innen:
+        if nummer == wasser_nummer:
+            continue
+        flaeche = flaechen == nummer
+        if nummer == mond:
+            farben[flaeche] = farbe(0xFFF6D6)
+        elif nummer in schwimmt and groessen[nummer] < groessen[mond] * 0.1:
+            farben[flaeche] = farbe(zufall.choice([0xFF9AD5, 0xFFC2E6]))  # Blüte
+        elif nummer in schwimmt:
+            farben[flaeche] = farbe(zufall.choice([0x3FA59A, 0x4FB88E]))  # Seerose
+        else:
+            farben[flaeche] = farbe(zufall.choice([0x8A76B8, 0x9C8ACB, 0x7A67A8]))  # Stein
+
+    gemalt = (flaechen > 0) & ~np.isin(flaechen, list(papier))
+    ausmalen(eintrag, farben, gemalt, linien, 0x1A1035)
+
+
+def baum_ausmalen(eintrag):
+    """Ein Baum: oben eine lila Krone, unten ein dunkler Stamm."""
+    linien, flaechen, papier, _ = flaechen_finden(eintrag)
+    # Der Umriss ist ein einziger langer Strich. Alles andere sind Falten im Papier.
+    striche, anzahl = ndimage.label(linien > 0.25)
+    if anzahl > 1:
+        groessen = ndimage.sum(np.ones_like(striche), striche, range(1, anzahl + 1))
+        umriss = ndimage.binary_dilation(striche == np.argmax(groessen) + 1, iterations=4)
+        linien = linien * umriss
+    baum = ndimage.binary_fill_holes((flaechen > 0) & ~np.isin(flaechen, list(papier)) | (linien > 0.25))
+    stuecke, anzahl = ndimage.label(baum)
+    groessen = ndimage.sum(np.ones_like(stuecke), stuecke, range(1, anzahl + 1))
+    baum = stuecke == np.argmax(groessen) + 1  # nur der Baum, keine Krümel daneben
+    linien = linien * ndimage.binary_dilation(baum, iterations=3)
+
+    # Die Krone ist breit, der Stamm schmal. Ein Kreis, etwas breiter als der
+    # Stamm, passt nur in die Krone: Was er erreicht, ist Krone.
+    zeilen = np.nonzero(baum.any(axis=1))[0]
+    oben, unten = zeilen[0], zeilen[-1]
+    stammbreite = min(baum[int(oben + anteil * (unten - oben))].sum() for anteil in (0.5, 0.6, 0.7, 0.8))
+    radius = int(stammbreite * 0.62)
+    # (So rechnet man schnell aus, wohin der Kreis überall kommt: Seine Mitte
+    # passt dorthin, wo es bis zum Rand weit genug ist, und von da aus
+    # reicht er noch einen Radius weit.)
+    mitten = ndimage.distance_transform_edt(baum) >= radius
+    krone = baum & (ndimage.distance_transform_edt(~mitten) <= radius)
+    # Der Stamm ist das Stück, das bis ganz nach unten reicht.
+    rest, _ = ndimage.label(baum & ~krone)
+    unterste = rest[unten - 2][rest[unten - 2] > 0]
+    stamm = rest == np.bincount(unterste).argmax() if unterste.size else np.zeros_like(baum)
+
+    # Licht kommt von oben links.
+    kronen_spalten = np.nonzero(krone.any(axis=0))[0]
+    hell_y, hell_x = oben + radius, kronen_spalten[0] + radius
+    yy, xx = np.indices(baum.shape)
+    licht = np.clip(1 - np.hypot(yy - hell_y, xx - hell_x) / (radius * 3.5), 0.0, 1.0)[..., None]
+    farben = farbe(0x6F36B3) * (1 - licht) + farbe(0xA36AE6) * licht
+    farben[stamm] = farbe(0x3A1D5E)
+    ausmalen(eintrag, farben, baum, linien, 0x1A0B30)
+
+
+def kristall_ausmalen(eintrag):
+    """Ein Kristall: jede Fläche in einer anderen Kristallfarbe, mit leuchtendem Rand."""
+    linien, flaechen, papier, groessen = flaechen_finden(eintrag)
+    tone = [0xB99CF0, 0x8A5BE0, 0x9CC0F2, 0x5B8FE0, 0xD9C9FF]
+    farben = np.zeros(flaechen.shape + (3,))
+    nummern = [n for n in range(1, len(groessen)) if n not in papier]
+    for zaehler, nummer in enumerate(sorted(nummern, key=lambda n: -groessen[n])):
+        farben[flaechen == nummer] = farbe(tone[zaehler % len(tone)])
+    # Oben ein bisschen heller, wie Licht, das durch den Kristall scheint.
+    hoehe = np.linspace(0.35, 0.0, flaechen.shape[0])[:, None, None]
+    farben = farben * (1 - hoehe) + hoehe
+    gemalt = np.isin(flaechen, nummern)
+    ausmalen(eintrag, farben, gemalt, linien, 0xF6F0FF, mit_schein=True)
+
+
+AUSMALEN = {"see": see_ausmalen, "baum": baum_ausmalen, "kristall": kristall_ausmalen}
+
+
 def speichern(eintrag, ergebnis):
     """Schneidet den leeren Rand ab, verkleinert auf Spielgröße und speichert."""
     ergebnis = ergebnis.crop(ergebnis.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox())
-    faktor = HOEHE_IM_SPIEL / max(ergebnis.size)
+    faktor = eintrag.get("hoehe", HOEHE_IM_SPIEL) / max(ergebnis.size)
     if faktor < 1:
         ergebnis = ergebnis.resize(
             (round(ergebnis.width * faktor), round(ergebnis.height * faktor)), Image.LANCZOS
@@ -179,6 +381,9 @@ def speichern(eintrag, ergebnis):
 
 
 def vorbereiten(eintrag):
+    if eintrag.get("ausmalen"):
+        AUSMALEN[eintrag["ausmalen"]](eintrag)
+        return
     if eintrag.get("bunt"):
         bunt_vorbereiten(eintrag)
         return

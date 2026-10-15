@@ -2,7 +2,10 @@
 // 'wald', 'dorf', 'mine' oder 'see'. 'geschichte' ist der Wald ohne Kristalle,
 // die stellt die Geschichte selbst hin, damit sie dunkel werden können.
 // Das ist nur ein Platzhalter, bis es gemalte Landschaftsbilder gibt.
+// Kristalle und Gold glitzern, am See bewegt sich das Wasser.
 
+import Phaser from 'phaser';
+import { bilderErzeugen } from './landschaft.js';
 import { BREITE, HOEHE } from './stil.js';
 
 const HORIZONT = 470;
@@ -59,6 +62,48 @@ function mond(stift, x, y) {
   stift.fillCircle(x, y, 62);
 }
 
+// Goldklumpen am Boden der Höhle
+function gold(stift, x, y) {
+  for (const [dx, dy, r] of [[0, 0, 12], [18, 6, 9], [-14, 8, 8]]) {
+    stift.fillStyle(0xb07a12);
+    stift.fillCircle(x + dx, y + dy, r);
+    stift.fillStyle(0xffd166);
+    stift.fillCircle(x + dx - r * 0.15, y + dy - r * 0.2, r * 0.75);
+    stift.fillStyle(0xfff3c4);
+    stift.fillCircle(x + dx - r * 0.35, y + dy - r * 0.4, r * 0.28);
+  }
+}
+
+// Immer wieder blitzt an einer der Stellen ein kleiner Stern auf.
+// Jede Stelle ist ein Rechteck { x, y, breite, hoehe } mit farben.
+function funkeln(szene, stellen) {
+  szene.time.addEvent({
+    delay: 110,
+    loop: true,
+    callback: () => {
+      const stelle = Phaser.Utils.Array.GetRandom(stellen);
+      const stern = szene.add
+        .image(stelle.x + Math.random() * stelle.breite, stelle.y + Math.random() * stelle.hoehe, 'funkel')
+        .setTint(Phaser.Utils.Array.GetRandom(stelle.farben))
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setScale(0);
+      szene.tweens.add({
+        targets: stern,
+        scale: 0.4 + Math.random() * 0.5,
+        angle: 90,
+        duration: 300,
+        yoyo: true,
+        onComplete: () => stern.destroy(),
+      });
+    },
+  });
+}
+
+// Für einen Kristall, der bei x steht: wo er glitzern kann.
+function kristallStelle(x, breite, hoehe) {
+  return { x: x - breite / 2, y: HORIZONT - hoehe, breite, hoehe, farben: [0xffffff, 0xd9c9ff, 0x9cc0f2] };
+}
+
 function boden(stift, farbe, kante) {
   stift.fillStyle(farbe);
   stift.fillRect(0, HORIZONT, BREITE, HOEHE - HORIZONT);
@@ -67,6 +112,7 @@ function boden(stift, farbe, kante) {
 }
 
 export function hintergrundMalen(szene, stil = 'wald') {
+  bilderErzeugen(szene); // für den Glitzerstern
   const stift = szene.add.graphics();
 
   if (stil === 'mine') {
@@ -74,9 +120,9 @@ export function hintergrundMalen(szene, stil = 'wald') {
     himmel(stift, 0x0f0a1a, 0x3a2f55);
     stift.fillStyle(0x1a1328);
     for (let x = 0; x < BREITE; x += 80) stift.fillTriangle(x, 0, x + 40, 70 + (x % 160) * 0.5, x + 80, 0);
-    const adern = [0xb8c4d9, 0x8ef0ff, 0xff9ad5];
+    const adern = [0xb8c4d9, 0x8ef0ff, 0xff9ad5, 0xffd166];
     for (let i = 0; i < 12; i += 1) {
-      stift.lineStyle(3, adern[i % 3], 0.6);
+      stift.lineStyle(3, adern[i % 4], 0.6);
       stift.lineBetween(i * 110 + 20, 40 + (i % 4) * 60, i * 110 + 80, 70 + (i % 4) * 60);
     }
     kristall(stift, 90, 80, 200, 0x8f9bb8);
@@ -84,6 +130,20 @@ export function hintergrundMalen(szene, stil = 'wald') {
     kristall(stift, 700, 90, 230, 0x8f9bb8);
     kristall(stift, 1190, 80, 180, 0x5b8fe0);
     boden(stift, 0x2b2340, 0x4a4063);
+    for (const x of [200, 470, 1010, 1130]) gold(stift, x, HORIZONT + 30 + (x % 3) * 12);
+    funkeln(szene, [
+      kristallStelle(90, 80, 200),
+      kristallStelle(700, 90, 230),
+      kristallStelle(1190, 80, 180),
+      ...[200, 470, 1010, 1130].map((x) => ({
+        x: x - 25,
+        y: HORIZONT + 15,
+        breite: 50,
+        hoehe: 40,
+        farben: [0xffe9a8, 0xffd166, 0xffffff],
+      })),
+      { x: 0, y: 20, breite: BREITE, hoehe: 260, farben: [0xffd166, 0x8ef0ff, 0xff9ad5] },
+    ]);
     return;
   }
 
@@ -99,6 +159,26 @@ export function hintergrundMalen(szene, stil = 'wald') {
     stift.fillRect(0, HORIZONT + 10, BREITE, 70);
     stift.fillStyle(0xf3e9ff, 0.7);
     for (let i = 0; i < 4; i += 1) stift.fillEllipse(640, HORIZONT + 22 + i * 15, 130 - i * 25, 6);
+    // Das Wasser glitzert und bewegt sich.
+    szene.time.addEvent({
+      delay: 120,
+      loop: true,
+      callback: () => {
+        const glanz = szene.add
+          .ellipse(Math.random() * BREITE, HORIZONT + 16 + Math.random() * 58, 20 + Math.random() * 40, 4, 0xe8f2ff)
+          .setAlpha(0)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        szene.tweens.add({
+          targets: glanz,
+          alpha: 0.6,
+          x: glanz.x + 24,
+          duration: 700 + Math.random() * 500,
+          yoyo: true,
+          onComplete: () => glanz.destroy(),
+        });
+      },
+    });
+    funkeln(szene, [kristallStelle(1240, 60, 160)]);
     return;
   }
 
@@ -113,6 +193,7 @@ export function hintergrundMalen(szene, stil = 'wald') {
     baum(stift, 400, 200);
     baum(stift, 880, 220);
     boden(stift, 0x4a2a80, 0x9a84c8);
+    funkeln(szene, [kristallStelle(560, 60, 150), kristallStelle(725, 80, 210)]);
     return;
   }
 
@@ -121,6 +202,12 @@ export function hintergrundMalen(szene, stil = 'wald') {
     kristall(stift, 560, 60, 150, 0x5b8fe0);
     kristall(stift, 725, 80, 210, 0x8a5be0);
     kristall(stift, 1215, 70, 170, 0x5b8fe0);
+    funkeln(szene, [
+      kristallStelle(70, 70, 190),
+      kristallStelle(560, 60, 150),
+      kristallStelle(725, 80, 210),
+      kristallStelle(1215, 70, 170),
+    ]);
   }
   baum(stift, 150, 250);
   baum(stift, 480, 200);

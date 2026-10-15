@@ -8,6 +8,14 @@ import { BREITE, schrift } from './stil.js';
 
 const KLEIN_HOEHE = 320;
 
+const WEITERE_BILDER = {
+  titel: 'bilder/titel.png',
+  mondsee: 'bilder/landschaft/mondsee.png',
+  'baum-rund': 'bilder/landschaft/baum-rund.png',
+  'baum-schief': 'bilder/landschaft/baum-schief.png',
+  fangkristall: 'bilder/gegenstaende/fangkristall.png',
+};
+
 // Macht von einem Bild eine kleine Fassung für den Wald, mit etwas kräftigeren
 // Linien. Stark verkleinert wären die feinen Bleistiftstriche sonst kaum zu sehen.
 function kleinesBildErzeugen(szene, name) {
@@ -42,6 +50,9 @@ export class LadeSzene extends Phaser.Scene {
     for (const [kurzname, charakter] of Object.entries(CHARAKTERE)) {
       laden(`charakter-${kurzname}`, charakter.bild);
     }
+
+    // Gemalte Landschaft, der Fangkristall und der Titel
+    for (const [name, bild] of Object.entries(WEITERE_BILDER)) this.load.image(name, bild);
   }
 
   create() {
@@ -56,7 +67,7 @@ export class LadeSzene extends Phaser.Scene {
       const schriften = ['400 32px Fredoka', '600 32px Fredoka'].map((art) => document.fonts.load(art));
       Promise.all(schriften)
         .catch(() => {})
-        .then(() => this.scene.start('Geschichte'));
+        .then(() => this.scene.start('Start'));
       return;
     }
 
