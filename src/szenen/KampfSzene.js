@@ -7,11 +7,15 @@ import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
 import {
   attackeAusfuehren,
+  erfahrungBisNaechstesLevel,
+  erfahrungFuerSieg,
   fangChance,
   fangen,
   gegnerWaehlt,
   istBereit,
   kaempferErstellen,
+  levelAusErfahrung,
+  levelFortschritt,
   rundeBeenden,
   werZuerst,
 } from '../kampf/kampflogik.js';
@@ -110,12 +114,13 @@ export class KampfSzene extends Phaser.Scene {
     // Alles, was zu diesem Kämpfer gehört. Beim Tauschen verschwindet es.
     const rahmen = feld(this, feldX, 30, FELDBREITE, 106);
     const name = this.add.text(feldX + 24, 42, kaempfer.name, schrift(30));
+    const levelText = this.add.text(name.x + name.width + 12, 52, `Level ${kaempfer.level}`, schrift(18, '#ffd166'));
     const teile = [
       schatten,
       bild,
       rahmen,
       name,
-      this.add.text(name.x + name.width + 12, 52, `Level ${kaempfer.level}`, schrift(18, '#ffd166')),
+      levelText,
       this.add.text(feldX + FELDBREITE - 24, 50, element.name, schrift(20, farbeAlsText(element.farbe))).setOrigin(1, 0),
       this.add.rectangle(feldX + 24, 104, 250, 18, 0x170b2c).setOrigin(0, 0.5),
     ];
@@ -123,8 +128,21 @@ export class KampfSzene extends Phaser.Scene {
     kpText.setDepth(1);
     teile.push(balken, kpText);
 
+    // Beim eigenen Kalamprio: ein goldener Balken für die Erfahrung. Ist er
+    // voll, kommt das nächste Level.
+    let erfahrungBalken = null;
+    if (links) {
+      const erfahrung = spielstand.erfahrung[kaempfer.kurzname] ?? 0;
+      teile.push(this.add.rectangle(feldX + 24, 124, 250, 6, 0x170b2c).setOrigin(0, 0.5));
+      erfahrungBalken = this.add.rectangle(feldX + 24, 124, 250, 6, 0xffd166).setOrigin(0, 0.5).setDepth(1);
+      erfahrungBalken.scaleX = levelFortschritt(erfahrung);
+      teile.push(erfahrungBalken, this.add.text(feldX + 284, 124, 'Erfahrung', schrift(13, '#ffd166')).setOrigin(0, 0.5));
+    }
+
     this.anzeige.set(kaempfer, {
       teile,
+      erfahrungBalken,
+      levelText,
       bild,
       schatten,
       balken,
@@ -578,8 +596,8 @@ export class KampfSzene extends Phaser.Scene {
     this.tweens.add({ targets: kristall, y: kristall.y - 30, duration: 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 
     spielstand.team.push(this.gegner.kurzname);
-    // Es behält sein Level: Es bekommt so viele Siege, wie man dafür braucht.
-    spielstand.siege[this.gegner.kurzname] = REGELN.siegeFuerLevel[this.gegner.level - 1];
+    // Es behält sein Level: Es bekommt so viel Erfahrung, wie man dafür braucht.
+    spielstand.erfahrung[this.gegner.kurzname] = REGELN.erfahrungFuerLevel[this.gegner.level - 1];
     this.sagen(`Juhu! Du hast ${this.gegner.name} gefangen!\n${this.gegner.name} ist jetzt in deinem Team.`);
     this.weiterZeigen(true);
   }
@@ -600,23 +618,55 @@ export class KampfSzene extends Phaser.Scene {
     const gewonnen = sieger === this.spieler;
     if (gewonnen) {
       this.sagen(`Du hast gewonnen!\n${sieger.name} freut sich.`);
-      await this.siegZaehlen(sieger);
+      await this.warten(1000);
+      await this.erfahrungBekommen(sieger);
     } else if (this.team.length > 1) this.sagen('Dein ganzes Team ist erschöpft.\nEs muss sich kurz erholen.');
     else this.sagen(`${verlierer.name} ist erschöpft.\nEs muss sich kurz erholen.`);
 
     this.weiterZeigen(gewonnen);
   }
 
-  // Das Kalamprio, das am Ende noch steht, bekommt den Sieg. Mit genug Siegen
-  // steigt es ein Level auf (siegeFuerLevel in regeln.js).
-  async siegZaehlen(sieger) {
-    const vorher = levelVon(sieger.kurzname);
-    spielstand.siege[sieger.kurzname] = (spielstand.siege[sieger.kurzname] ?? 0) + 1;
-    const nachher = levelVon(sieger.kurzname);
-    if (nachher === vorher) return;
+  // Das Kalamprio, das am Ende noch steht, bekommt Erfahrung: so viel, wie
+  // das Level des Gegners. Der goldene Balken füllt sich, und man sieht, wie
+  // viel noch bis zum nächsten Level fehlt (erfahrungFuerLevel in regeln.js).
+  async erfahrungBekommen(sieger) {
+    const vorher = spielstand.erfahrung[sieger.kurzname] ?? 0;
+    const dazu = erfahrungFuerSieg(this.gegner);
+    const nachher = vorher + dazu;
+    spielstand.erfahrung[sieger.kurzname] = nachher;
+    const levelVorher = levelAusErfahrung(vorher);
+    const levelNachher = levelAusErfahrung(nachher);
+    const { bild, erfahrungBalken } = this.anzeige.get(sieger);
 
-    await this.warten(1200);
-    const { bild } = this.anzeige.get(sieger);
+    // "+3 Erfahrung" steigt über dem Kalamprio auf.
+    const plus = this.add
+      .text(bild.x, bild.y - bild.displayHeight - 10, `+${dazu} Erfahrung`, schrift(36, '#ffd166', { fontStyle: '600' }))
+      .setOrigin(0.5)
+      .setStroke('#2a1650', 8)
+      .setDepth(1001);
+    this.tweens.add({ targets: plus, y: plus.y - 70, alpha: 0, delay: 900, duration: 900, onComplete: () => plus.destroy() });
+    this.sagen(`${sieger.name} bekommt ${dazu} Erfahrung.`);
+
+    if (levelNachher > levelVorher) {
+      await this.bewegen({ targets: erfahrungBalken, scaleX: 1, duration: 600 });
+      await this.levelAufstieg(sieger, levelNachher);
+      erfahrungBalken.scaleX = 0;
+    }
+    await this.bewegen({ targets: erfahrungBalken, scaleX: levelFortschritt(nachher), duration: 600 });
+
+    const fehlen = erfahrungBisNaechstesLevel(nachher);
+    const wieWeiter =
+      fehlen === null
+        ? `${sieger.name} hat das höchste Level.`
+        : `Noch ${fehlen} Erfahrung bis Level ${levelNachher + 1}.`;
+    this.sagen(`${sieger.name} bekommt ${dazu} Erfahrung.\n${wieWeiter}`);
+  }
+
+  // Funkeln, ein goldener Blitz und eine Nachricht: ein Level höher!
+  async levelAufstieg(sieger, level) {
+    const { bild, levelText } = this.anzeige.get(sieger);
+    levelText.setText(`Level ${level}`);
+    this.tweens.add({ targets: levelText, scale: 1.4, duration: 250, yoyo: true, repeat: 1 });
     this.blitz(bild.x, bild.y - bild.displayHeight / 2, 0xffd166);
     for (let i = 0; i < 14; i += 1) {
       const winkel = (i / 14) * Math.PI * 2;
@@ -636,7 +686,8 @@ export class KampfSzene extends Phaser.Scene {
         onComplete: () => stern.destroy(),
       });
     }
-    this.sagen(`${sieger.name} ist jetzt Level ${nachher}!\nEs ist ein bisschen stärker geworden.`);
+    this.sagen(`${sieger.name} ist jetzt Level ${level}!\nEs ist ein bisschen stärker geworden.`);
+    await this.warten(2200);
   }
 
   // Versteckt die Knöpfe und zeigt nur noch "Weiter". gewonnen ist auch true,

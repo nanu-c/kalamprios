@@ -68,10 +68,10 @@ export function datenPruefen() {
     fehler.push('regeln.js: fangkristalleAmAnfang muss 0 oder eine ganze Zahl sein.');
   }
 
-  const stufen = REGELN.siegeFuerLevel;
-  const aufsteigend = Array.isArray(stufen) && stufen.every((siege, nummer) => Number.isInteger(siege) && (nummer === 0 ? siege === 0 : siege > stufen[nummer - 1]));
+  const stufen = REGELN.erfahrungFuerLevel;
+  const aufsteigend = Array.isArray(stufen) && stufen.every((noetig, nummer) => Number.isInteger(noetig) && (nummer === 0 ? noetig === 0 : noetig > stufen[nummer - 1]));
   if (!aufsteigend || stufen.length === 0) {
-    fehler.push('regeln.js: siegeFuerLevel muss mit 0 anfangen und dann immer größer werden, zum Beispiel [0, 4, 10].');
+    fehler.push('regeln.js: erfahrungFuerLevel muss mit 0 anfangen und dann immer größer werden, zum Beispiel [0, 5, 15].');
   }
   if (!(REGELN.staerkerProLevel >= 0 && REGELN.staerkerProLevel <= 1)) {
     fehler.push('regeln.js: staerkerProLevel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.1.');
@@ -138,7 +138,7 @@ function ortPruefen(kurzname, ort) {
   if (ort.hohesGras.length > 0 && ort.tiereImGras.length === 0) {
     fehler.push(`${name}: Im hohen Gras wohnt niemand. Trag Tiere bei tiereImGras ein.`);
   }
-  const hoechstes = REGELN.siegeFuerLevel?.length ?? 1;
+  const hoechstes = REGELN.erfahrungFuerLevel?.length ?? 1;
   if (ort.wildesLevel !== undefined && !(Number.isInteger(ort.wildesLevel) && ort.wildesLevel >= 1 && ort.wildesLevel <= hoechstes)) {
     fehler.push(`${name}: wildesLevel muss eine ganze Zahl von 1 bis ${hoechstes} sein.`);
   }

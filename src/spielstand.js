@@ -4,14 +4,14 @@
 
 import { START_ORT } from './daten/orte.js';
 import { REGELN } from './daten/regeln.js';
-import { levelAusSiegen } from './kampf/kampflogik.js';
+import { levelAusErfahrung } from './kampf/kampflogik.js';
 
 export const spielstand = {
   charakter: null, // Kurzname aus charaktere.js
   rivalin: null, // die andere Figur
   kalamprio: null, // Kurzname aus kalamprios.js: das Kalamprio, das gerade kämpft
   team: [], // alle Kalamprios, die man hat (Kurznamen), das erste hat man gewählt
-  siege: {}, // Kurzname -> wie viele Kämpfe dieses Kalamprio gewonnen hat (daraus kommt sein Level)
+  erfahrung: {}, // Kurzname -> wie viel Erfahrung dieses Kalamprio hat (daraus kommt sein Level)
   fangkristalle: REGELN.fangkristalleAmAnfang, // so viele hat man dabei
   rivalinKalamprio: null,
   rivalinBesiegt: false,
@@ -33,7 +33,7 @@ export const spielstand = {
 
 // Welches Level ein Kalamprio aus dem Team hat.
 export function levelVon(kurzname) {
-  return levelAusSiegen(spielstand.siege[kurzname] ?? 0);
+  return levelAusErfahrung(spielstand.erfahrung[kurzname] ?? 0);
 }
 
 // Wie lange sich ein Kalamprio noch erholen muss (Millisekunden, 0 heißt: bereit).

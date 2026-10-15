@@ -8,7 +8,7 @@ import { GESCHICHTE } from '../daten/geschichte.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
-import { siegeBisNaechstesLevel } from '../kampf/kampflogik.js';
+import { erfahrungBisNaechstesLevel } from '../kampf/kampflogik.js';
 import { erholtSichNoch, levelVon, spielstand } from '../spielstand.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
 import {
@@ -651,8 +651,8 @@ export class WeltSzene extends Phaser.Scene {
       const bild = this.add.image(x, 420, kurzname).setOrigin(0.5, 1);
       bild.setScale(Math.min(170 / bild.height, (abstandX - 50) / bild.width));
       const zustand = aktiv ? 'kämpft' : rest > 0 ? `erholt sich (${Math.ceil(rest / 1000)} s)` : 'bereit';
-      const fehlen = siegeBisNaechstesLevel(spielstand.siege[kurzname] ?? 0);
-      const naechstes = fehlen === null ? 'höchstes Level' : `noch ${fehlen} ${fehlen === 1 ? 'Sieg' : 'Siege'} bis Level ${levelVon(kurzname) + 1}`;
+      const fehlen = erfahrungBisNaechstesLevel(spielstand.erfahrung[kurzname] ?? 0);
+      const naechstes = fehlen === null ? 'höchstes Level' : `noch ${fehlen} Erfahrung bis Level ${levelVon(kurzname) + 1}`;
       teile.push(
         karte,
         bild,

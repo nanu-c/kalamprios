@@ -13,22 +13,37 @@ function schwankung(staerke, zufall) {
 }
 
 // Das höchste Level, das es gibt.
-export const MAX_LEVEL = REGELN.siegeFuerLevel.length;
+export const MAX_LEVEL = REGELN.erfahrungFuerLevel.length;
 
-// Welches Level ein Kalamprio mit so vielen Siegen hat (siehe regeln.js).
-export function levelAusSiegen(siege) {
+// Welches Level ein Kalamprio mit so viel Erfahrung hat (siehe regeln.js).
+export function levelAusErfahrung(erfahrung) {
   let level = 1;
-  REGELN.siegeFuerLevel.forEach((noetig, nummer) => {
-    if (siege >= noetig) level = nummer + 1;
+  REGELN.erfahrungFuerLevel.forEach((noetig, nummer) => {
+    if (erfahrung >= noetig) level = nummer + 1;
   });
   return level;
 }
 
-// Wie viele Siege es noch braucht bis zum nächsten Level (null: schon ganz oben).
-export function siegeBisNaechstesLevel(siege) {
-  const level = levelAusSiegen(siege);
+// Wie viel Erfahrung es noch braucht bis zum nächsten Level (null: schon ganz oben).
+export function erfahrungBisNaechstesLevel(erfahrung) {
+  const level = levelAusErfahrung(erfahrung);
   if (level >= MAX_LEVEL) return null;
-  return REGELN.siegeFuerLevel[level] - siege;
+  return REGELN.erfahrungFuerLevel[level] - erfahrung;
+}
+
+// Wie weit ein Kalamprio im Moment auf dem Weg zum nächsten Level ist:
+// 0 heißt gerade aufgestiegen, 1 heißt fast da (oder schon ganz oben).
+export function levelFortschritt(erfahrung) {
+  const level = levelAusErfahrung(erfahrung);
+  if (level >= MAX_LEVEL) return 1;
+  const von = REGELN.erfahrungFuerLevel[level - 1];
+  const bis = REGELN.erfahrungFuerLevel[level];
+  return (erfahrung - von) / (bis - von);
+}
+
+// So viel Erfahrung bringt es, diesen Gegner zu besiegen: sein Level.
+export function erfahrungFuerSieg(gegner) {
+  return gegner.level;
 }
 
 // Macht aus einem Eintrag in kalamprios.js einen Kämpfer für einen Kampf:

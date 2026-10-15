@@ -14,11 +14,13 @@ export const REGELN = {
 
   // --- Level ---
 
-  // Wie viele gewonnene Kämpfe ein Kalamprio für jedes Level braucht.
-  // Level 1 hat es am Anfang (0 Siege), Level 2 ab 4 Siegen, Level 3 ab 10
-  // Siegen. Mehr Level gibt es nicht. Den Sieg bekommt das Kalamprio, das am
-  // Ende des Kampfes noch steht.
-  siegeFuerLevel: [0, 4, 10],
+  // Für jeden Sieg bekommt ein Kalamprio Erfahrung: so viel, wie das Level
+  // des besiegten Gegners (Level 1 bringt 1, Level 3 bringt 3). Die Erfahrung
+  // bekommt das Kalamprio, das am Ende des Kampfes noch steht.
+  //
+  // So viel Erfahrung braucht es für jedes Level: Level 1 hat es am Anfang
+  // (0), Level 2 ab 5, Level 3 ab 15. Mehr Level gibt es nicht.
+  erfahrungFuerLevel: [0, 5, 15],
 
   // Wie viel stärker ein Kalamprio mit jedem Level wird. 0.1 bedeutet: Lebenspunkte,
   // Angriff, Verteidigung und Tempo werden um 10 von 100 größer.

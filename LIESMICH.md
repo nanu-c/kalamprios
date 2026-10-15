@@ -27,7 +27,7 @@ Der Code liegt auf <https://github.com/nanu-c/kalamprios>. Sobald dort eine neue
 | `src/daten/geschichte.js` | die Geschichte: was am Anfang erzählt wird, was die dunklen Kristalle flüstern und was am Ende bei der Party erzählt wird |
 | `src/daten/orte.js` | alle Orte und wo das Spiel beginnt |
 | `src/daten/orte/…` | ein Ort pro Datei (Lila Dorf, Kristallwald, Prismastahl-Mine, Mondsee): wo Häuser, Bäume, Felsen, Gold, hohes Gras, Wege, Fangkristalle und wilde Kalamprios sind |
-| `src/daten/regeln.js` | Lauftempo, Erholungszeit, wie oft im Gras etwas auftaucht, wie leicht man Kalamprios fängt und wie viele Siege es für ein Level braucht |
+| `src/daten/regeln.js` | Lauftempo, Erholungszeit, wie oft im Gras etwas auftaucht, wie leicht man Kalamprios fängt und wie viel Erfahrung es für ein Level braucht |
 
 In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich vertippst, zeigt das Spiel einen Hinweis auf dem Bildschirm.
 
@@ -43,7 +43,7 @@ In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich verti
 8. An jedem Ort steht ein dunkler Kristall. Wer zu ihm geht, hört mehr über den Schatten, der das Licht stiehlt.
 9. Man hat drei Fangkristalle dabei, weitere liegen in der Welt zum Aufsammeln. Im Kampf gegen ein wildes Kalamprio kann man einen werfen. Je schwächer das Kalamprio schon ist, desto eher klappt es. Gefangene Kalamprios kommen ins Team.
 10. Mit dem Knopf „Team“ wählt man, wer kämpft. Auch im Kampf kann man mit „Tauschen“ wechseln, das kostet einen Zug. Kann ein Kalamprio nicht mehr, kommt automatisch das nächste aus dem Team.
-11. Kalamprios haben ein Level von 1 bis 3. Mit 4 Siegen kommt Level 2, mit 10 Siegen Level 3. Mit jedem Level wird ein Kalamprio ein bisschen stärker. Die wilden Kalamprios am Mondsee haben Level 3, die Rivalin ist so stark wie dein stärkstes Kalamprio.
+11. Kalamprios haben ein Level von 1 bis 3. Für jeden Sieg bekommen sie Erfahrung, so viel wie das Level des Gegners. Mit 5 Erfahrung kommt Level 2, mit 15 Level 3. Mit jedem Level wird ein Kalamprio ein bisschen stärker. Nach einem Sieg sieht man, wie viel Erfahrung es bekommen hat und wie viel bis zum nächsten Level fehlt. Die wilden Kalamprios am Mondsee haben Level 3, die Rivalin ist so stark wie dein stärkstes Kalamprio.
 12. In der Prismastahl-Mine ist es dunkel, nur rund um die Figur ist es hell. Dort glitzert auch Gold.
 13. Der Knopf unten links schaltet das Vollbild ein. Am Handy spielt man quer.
 

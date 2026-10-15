@@ -11,10 +11,12 @@ import {
   gegnerWaehlt,
   istBereit,
   kaempferErstellen,
-  levelAusSiegen,
+  erfahrungBisNaechstesLevel,
+  erfahrungFuerSieg,
+  levelAusErfahrung,
+  levelFortschritt,
   rundeBeenden,
   schadenBerechnen,
-  siegeBisNaechstesLevel,
   werZuerst,
 } from '../src/kampf/kampflogik.js';
 
@@ -160,13 +162,22 @@ test('fangen klappt, wenn der Würfel unter der Chance liegt', () => {
   assert.equal(fangen(tier, () => 0.99), false);
 });
 
-test('mit mehr Siegen steigt das Level, aber nie über das höchste', () => {
-  assert.equal(levelAusSiegen(0), 1);
-  assert.equal(levelAusSiegen(REGELN.siegeFuerLevel[1] - 1), 1);
-  assert.equal(levelAusSiegen(REGELN.siegeFuerLevel[1]), 2);
-  assert.equal(levelAusSiegen(1000), REGELN.siegeFuerLevel.length);
-  assert.equal(siegeBisNaechstesLevel(0), REGELN.siegeFuerLevel[1]);
-  assert.equal(siegeBisNaechstesLevel(1000), null);
+test('mit mehr Erfahrung steigt das Level, aber nie über das höchste', () => {
+  const stufen = REGELN.erfahrungFuerLevel;
+  assert.equal(levelAusErfahrung(0), 1);
+  assert.equal(levelAusErfahrung(stufen[1] - 1), 1);
+  assert.equal(levelAusErfahrung(stufen[1]), 2);
+  assert.equal(levelAusErfahrung(1000), stufen.length);
+  assert.equal(erfahrungBisNaechstesLevel(0), stufen[1]);
+  assert.equal(erfahrungBisNaechstesLevel(1000), null);
+  assert.equal(levelFortschritt(0), 0);
+  assert.equal(levelFortschritt(stufen[1]), 0);
+  assert.equal(levelFortschritt(1000), 1);
+});
+
+test('ein stärkerer Gegner bringt mehr Erfahrung', () => {
+  assert.equal(erfahrungFuerSieg(kaempferErstellen('bolo', 1)), 1);
+  assert.equal(erfahrungFuerSieg(kaempferErstellen('bolo', 3)), 3);
 });
 
 test('mit jedem Level wird ein Kalamprio nur ein bisschen stärker', () => {
@@ -175,5 +186,5 @@ test('mit jedem Level wird ein Kalamprio nur ein bisschen stärker', () => {
   assert.equal(eins.maxKp, KALAMPRIOS.kalampria.kp);
   assert.ok(drei.maxKp > eins.maxKp && drei.angriff > eins.angriff);
   assert.ok(drei.maxKp <= eins.maxKp * (1 + 2 * REGELN.staerkerProLevel) + 1);
-  assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.siegeFuerLevel.length);
+  assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.erfahrungFuerLevel.length);
 });
