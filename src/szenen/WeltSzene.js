@@ -8,7 +8,7 @@ import { GESCHICHTE } from '../daten/geschichte.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
-import { erfahrungBisNaechstesLevel } from '../kampf/kampflogik.js';
+import { erfahrungBisNaechstesLevel, levelFortschritt } from '../kampf/kampflogik.js';
 import { erholtSichNoch, levelVon, spielstand } from '../spielstand.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
 import {
@@ -651,15 +651,22 @@ export class WeltSzene extends Phaser.Scene {
       const bild = this.add.image(x, 420, kurzname).setOrigin(0.5, 1);
       bild.setScale(Math.min(170 / bild.height, (abstandX - 50) / bild.width));
       const zustand = aktiv ? 'kämpft' : rest > 0 ? `erholt sich (${Math.ceil(rest / 1000)} s)` : 'bereit';
-      const fehlen = erfahrungBisNaechstesLevel(spielstand.erfahrung[kurzname] ?? 0);
-      const naechstes = fehlen === null ? 'höchstes Level' : `noch ${fehlen} Erfahrung bis Level ${levelVon(kurzname) + 1}`;
+      const erfahrung = spielstand.erfahrung[kurzname] ?? 0;
+      const fehlen = erfahrungBisNaechstesLevel(erfahrung);
+      const naechstes = fehlen === null ? 'höchstes Level' : `noch ${fehlen} bis Level ${levelVon(kurzname) + 1}`;
+      // Der goldene Erfahrungsbalken: Ist er voll, kommt das nächste Level.
+      const balkenBreite = Math.min(160, abstandX - 60);
+      const balken = this.add.rectangle(x - balkenBreite / 2, 494, balkenBreite, 10, 0xffd166).setOrigin(0, 0.5);
+      balken.scaleX = levelFortschritt(erfahrung);
       teile.push(
         karte,
         bild,
-        this.add.text(x, 448, tier.name, schrift(26)).setOrigin(0.5),
-        this.add.text(x, 478, `Level ${levelVon(kurzname)}`, schrift(20, '#ffd166')).setOrigin(0.5),
-        this.add.text(x, 502, naechstes, schrift(14, '#d9c9ff')).setOrigin(0.5),
-        this.add.text(x, 524, zustand, schrift(16, rest > 0 ? '#ffd166' : '#d9c9ff')).setOrigin(0.5),
+        this.add.text(x, 444, tier.name, schrift(26)).setOrigin(0.5),
+        this.add.text(x, 472, `Level ${levelVon(kurzname)}`, schrift(20, '#ffd166')).setOrigin(0.5),
+        this.add.rectangle(x - balkenBreite / 2, 494, balkenBreite, 10, 0x170b2c).setOrigin(0, 0.5).setStrokeStyle(1, 0xffd166, 0.6),
+        balken,
+        this.add.text(x, 512, naechstes, schrift(14, '#d9c9ff')).setOrigin(0.5),
+        this.add.text(x, 530, zustand, schrift(16, rest > 0 ? '#ffd166' : '#d9c9ff')).setOrigin(0.5),
       );
     });
 
