@@ -59,10 +59,16 @@ export const REGELN = {
   // liegt, nachdem man ihn aufgesammelt hat (Sekunden).
   fangkristallWaechstNachSekunden: 90,
 
+  // --- Das Team ---
+
+  // So viele Kalamprios dürfen höchstens mit in einen Kampf. Welche das sind,
+  // wählt man mit dem Knopf „Team“.
+  imKampfHoechstens: 3,
+
   // --- Das geheime Kalamprio ---
 
-  // So viele Kalamprios braucht man mindestens im Team, um das geheime
-  // Kalamprio zu besiegen. Mit weniger schützt es ein Schild aus Licht, und
+  // So viele Kalamprios müssen mindestens mit in den Kampf kommen, um das
+  // geheime Kalamprio zu besiegen. Mit weniger schützt es ein Schild aus Licht, und
   // es verschwindet wieder. Wer es besiegt oder fängt, hat das Spiel geschafft.
   teamFuerGeheimes: 3,
 };

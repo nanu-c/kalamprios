@@ -31,6 +31,24 @@
 //                  liegt wieder einer da (siehe regeln.js).
 // dunkel:          (optional) wie dunkel es ist, von 0 (hell) bis 1 (ganz
 //                  schwarz). Nur rund um die Figur ist es hell.
+// raetsel:         (optional) ein Rätsel. Bei x und y steht der Rätselstein
+//                  mit dem goldenen Fragezeichen, er erklärt die Aufgabe.
+//                  art sagt, was für ein Rätsel es ist:
+//                  'suchen':      Bei dinge stehen die Plätze, an denen
+//                                 etwas versteckt liegt. farbe ist die Farbe
+//                                 der Dinge.
+//                  'reihenfolge': Bei steine stehen bunte Klangsteine. Sie
+//                                 leuchten nacheinander auf, dann muss man in
+//                                 derselben Reihenfolge darüberlaufen. Die
+//                                 richtige Reihenfolge ist die in der Liste.
+//                  'frage':       Bei fragen stehen Rätselfragen mit bis zu
+//                                 vier antworten. richtig ist die richtige
+//                                 Antwort, genau so geschrieben.
+//                  Farben gibt es: 'rot', 'gelb', 'blau', 'gruen', 'lila', 'weiss'.
+//                  aufgabe:   was der Stein am Anfang sagt (Sätze wie in geschichte.js)
+//                  geschafft: was er sagt, wenn das Rätsel gelöst ist
+//                  belohnung: so viele fangkristalle gibt es. Mit
+//                             mehrLicht: true wird es im Dunkeln heller.
 //
 // Führt ein Ausgang in die Mine oder aus ihr hinaus, ist dort ein Höhleneingang.
 
@@ -55,9 +73,10 @@ export const KRISTALLWALD = {
     { art: 'kalampria', x: 1500, y: 900 },
     { art: 'bisakatze', x: 420, y: 1340 },
     { art: 'qalutu', x: 1320, y: 1480 },
+    { art: 'kabon', x: 1950, y: 1460 },
   ],
 
-  tiereImGras: ['kalampria', 'bisakatze', 'qalutu'],
+  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon'],
   hohesGras: [
     { links: 560, oben: 960, breite: 520, hoehe: 340 },
     { links: 1280, oben: 220, breite: 460, hoehe: 300 },
@@ -107,4 +126,25 @@ export const KRISTALLWALD = {
     { x: 1560, y: 400 },
     { x: 330, y: 900 },
   ],
+
+  // Das Rätsel: Vier Klangsteine liegen um den Rätselstein herum.
+  raetsel: {
+    art: 'reihenfolge',
+    x: 580,
+    y: 360,
+    aufgabe: [
+      'Ein Rätselstein mit einem goldenen Fragezeichen. Um ihn herum liegen vier bunte Klangsteine.',
+      '„Gleich leuchten die Klangsteine nacheinander auf. Schau ganz genau hin!“',
+      '„Dann lauf in genau dieser Reihenfolge über die Steine.“',
+    ],
+    // In dieser Reihenfolge muss man darüberlaufen.
+    steine: [
+      { x: 720, y: 360, farbe: 'gelb' },
+      { x: 580, y: 270, farbe: 'blau' },
+      { x: 440, y: 360, farbe: 'rot' },
+      { x: 580, y: 450, farbe: 'gruen' },
+    ],
+    geschafft: '„Wunderbar! Die Klangsteine singen wieder. Hier, nimm diese Fangkristalle mit.“',
+    belohnung: { fangkristalle: 2 },
+  },
 };

@@ -20,8 +20,8 @@
 // fliegt:       (optional) true bedeutet: Es schwebt über dem Boden, sein
 //               Schatten bleibt unten.
 //
-// Die Werte von Kapapa, Qalutu, Bolo, Mola und dem geheimen Kalamprio sind
-// Platzhalter. Ändere sie gern!
+// Die Werte von Kapapa, Qalutu, Bolo, Mola, Kabon, Simfita, Tak-Tik und dem
+// geheimen Kalamprio sind Platzhalter. Ändere sie gern!
 
 export const KALAMPRIOS = {
   kalampria: {
@@ -97,6 +97,42 @@ export const KALAMPRIOS = {
     tempo: 16,
     attacken: ['fluegelwind', 'fadentanz'],
     fliegt: true,
+  },
+
+  kabon: {
+    name: 'Kabon',
+    element: 'pflanze',
+    bild: 'bilder/kalamprios/kabon.png',
+    blick: 'rechts',
+    kp: 74,
+    angriff: 9,
+    verteidigung: 12,
+    tempo: 8,
+    attacken: ['blattschlag', 'nussbombe'],
+  },
+
+  simfita: {
+    name: 'Simfita',
+    element: 'kristall',
+    bild: 'bilder/kalamprios/simfita.png',
+    blick: 'vorne',
+    kp: 66,
+    angriff: 12,
+    verteidigung: 8,
+    tempo: 15,
+    attacken: ['schweifhieb', 'kristallsplitter'],
+  },
+
+  taktik: {
+    name: 'Tak-Tik',
+    element: 'zeit',
+    bild: 'bilder/kalamprios/taktik.png',
+    blick: 'vorne',
+    kp: 68,
+    angriff: 10,
+    verteidigung: 10,
+    tempo: 13,
+    attacken: ['ticktack', 'weckerklingeln'],
   },
 
   // Das geheime Kalamprio. Von ihm weiß man nicht viel ...

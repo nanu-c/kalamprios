@@ -6,6 +6,7 @@ import { CHARAKTERE } from './charaktere.js';
 import { ELEMENTE } from './elemente.js';
 import { GESCHICHTE } from './geschichte.js';
 import { KALAMPRIOS } from './kalamprios.js';
+import { HOEHEN, KLAENGE, STIMMEN } from './klaenge.js';
 import { ORTE, START_ORT } from './orte.js';
 import { REGELN } from './regeln.js';
 
@@ -13,6 +14,11 @@ const ZAHLEN = ['kp', 'angriff', 'verteidigung', 'tempo'];
 const BLICKE = ['vorne', 'links', 'rechts'];
 const STILE = ['dorf', 'wald', 'mine', 'see'];
 const SEITEN = ['links', 'rechts', 'oben', 'unten'];
+// Wie Attacken außer den Elementen noch aussehen können (siehe attacken.js).
+const AUSSEHEN = ['herz', 'strahl', 'traum', 'krallen', 'blitzschlag', 'biss', 'wirbel', 'faden', 'bombe', 'hieb', 'krone'];
+const RAETSEL_ARTEN = ['suchen', 'reihenfolge', 'frage'];
+// Die Farben aus szenen/raetsel.js
+const RAETSEL_FARBEN = ['rot', 'gelb', 'blau', 'gruen', 'lila', 'weiss'];
 
 export function datenPruefen() {
   const fehler = [];
@@ -24,8 +30,8 @@ export function datenPruefen() {
     if (!Number.isInteger(attacke.pause) || attacke.pause < 0) {
       fehler.push(`Attacke "${kurzname}": pause muss 0 oder eine ganze Zahl sein.`);
     }
-    if (attacke.effekt !== undefined && !ELEMENTE[attacke.effekt] && attacke.effekt !== 'herz') {
-      fehler.push(`Attacke "${kurzname}": Den effekt "${attacke.effekt}" gibt es nicht. Nimm einen Kurznamen aus elemente.js oder 'herz'.`);
+    if (attacke.effekt !== undefined && !ELEMENTE[attacke.effekt] && !AUSSEHEN.includes(attacke.effekt)) {
+      fehler.push(`Attacke "${kurzname}": Den effekt "${attacke.effekt}" gibt es nicht. Nimm einen Kurznamen aus elemente.js oder einen von oben aus attacken.js.`);
     }
   }
 
@@ -101,6 +107,11 @@ export function datenPruefen() {
   if (!(GESCHICHTE.ende?.length > 0)) {
     fehler.push('geschichte.js: Bei ende braucht es mindestens einen Satz.');
   }
+  if (!(Number.isInteger(REGELN.imKampfHoechstens) && REGELN.imKampfHoechstens >= 1)) {
+    fehler.push('regeln.js: imKampfHoechstens muss eine ganze Zahl ab 1 sein, zum Beispiel 3.');
+  } else if (REGELN.teamFuerGeheimes > REGELN.imKampfHoechstens) {
+    fehler.push('regeln.js: teamFuerGeheimes darf nicht größer sein als imKampfHoechstens, sonst kann man das geheime Kalamprio nie besiegen.');
+  }
   if (!(Number.isInteger(REGELN.teamFuerGeheimes) && REGELN.teamFuerGeheimes >= 1)) {
     fehler.push('regeln.js: teamFuerGeheimes muss eine ganze Zahl ab 1 sein, zum Beispiel 3.');
   }
@@ -111,6 +122,36 @@ export function datenPruefen() {
       fehler.push(`${ORTE[kurzname].name} braucht einen dunklerKristall, der die Geschichte erzählt.`);
     } else if (!(saetze.length > 0)) {
       fehler.push(`geschichte.js: Bei ${kurzname} braucht es mindestens einen Satz.`);
+    }
+  }
+  fehler.push(...klaengePruefen());
+  return fehler;
+}
+
+function klaengePruefen() {
+  const fehler = [];
+  for (const name of ['musik', 'geraeusche']) {
+    if (!(KLAENGE[name] >= 0 && KLAENGE[name] <= 1)) {
+      fehler.push(`klaenge.js: ${name} muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.5.`);
+    }
+  }
+  if (!(KLAENGE.hoerweite > 0)) {
+    fehler.push('klaenge.js: hoerweite muss eine Zahl größer als 0 sein, zum Beispiel 650.');
+  }
+  for (const [kurzname, ruf] of Object.entries(KLAENGE.rufe ?? {})) {
+    if (!KALAMPRIOS[kurzname]) {
+      fehler.push(`klaenge.js: Das Kalamprio "${kurzname}" steht nicht in kalamprios.js.`);
+      continue;
+    }
+    const name = KALAMPRIOS[kurzname].name;
+    if (!STIMMEN.includes(ruf.stimme)) {
+      fehler.push(`klaenge.js: Die stimme "${ruf.stimme}" bei ${name} gibt es nicht. Oben in klaenge.js steht, welche es gibt.`);
+    }
+    if (!(ruf.hoehe in HOEHEN)) {
+      fehler.push(`klaenge.js: hoehe bei ${name} muss 'tief', 'mittel', 'hoch' oder 'ganz hoch' sein.`);
+    }
+    if (!(Number.isInteger(ruf.silben) && ruf.silben >= 1 && ruf.silben <= 6)) {
+      fehler.push(`klaenge.js: silben bei ${name} muss eine ganze Zahl von 1 bis 6 sein.`);
     }
   }
   return fehler;
@@ -188,11 +229,62 @@ function ortPruefen(kurzname, ort) {
     ...liste('gold').map((punkt) => ['ein Gold', punkt]),
     ...liste('fangkristalle').map((punkt) => ['ein Fangkristall', punkt]),
     ...liste('seen').map((punkt) => ['ein See', punkt]),
+    ...(ort.raetsel ? [['der Rätselstein', ort.raetsel]] : []),
+    ...(ort.raetsel?.dinge ?? []).map((punkt) => ['ein Ding beim Rätsel', punkt]),
+    ...(ort.raetsel?.steine ?? []).map((punkt) => ['ein Klangstein beim Rätsel', punkt]),
   ].filter(([, punkt]) => punkt);
+  if (ort.raetsel) fehler.push(...raetselPruefen(name, ort.raetsel));
+
   for (const [was, punkt] of punkte) {
     const drin = punkt.x >= 0 && punkt.x <= ort.breite && punkt.y >= 0 && punkt.y <= ort.hoehe;
     if (!drin) {
       fehler.push(`${name}: ${was} liegt bei x ${punkt.x}, y ${punkt.y} und damit außerhalb des Ortes.`);
+    }
+  }
+  return fehler;
+}
+
+function raetselPruefen(name, raetsel) {
+  const fehler = [];
+  const satzListe = (saetze) => Array.isArray(saetze) && saetze.length > 0 && saetze.every((satz) => typeof satz === 'string');
+  if (!RAETSEL_ARTEN.includes(raetsel.art)) {
+    fehler.push(`${name}: Beim Rätsel muss art 'suchen', 'reihenfolge' oder 'frage' sein.`);
+  }
+  if (!satzListe(raetsel.aufgabe)) {
+    fehler.push(`${name}: Beim Rätsel braucht aufgabe mindestens einen Satz in Anführungszeichen.`);
+  }
+  if (typeof raetsel.geschafft !== 'string') {
+    fehler.push(`${name}: Beim Rätsel braucht geschafft einen Satz in Anführungszeichen.`);
+  }
+  const kristalle = raetsel.belohnung?.fangkristalle;
+  if (kristalle !== undefined && !(Number.isInteger(kristalle) && kristalle >= 0)) {
+    fehler.push(`${name}: Bei der Belohnung vom Rätsel muss fangkristalle 0 oder eine ganze Zahl sein.`);
+  }
+
+  if (raetsel.art === 'suchen') {
+    if (!(raetsel.dinge?.length > 0)) fehler.push(`${name}: Beim Such-Rätsel braucht es mindestens ein Ding bei dinge.`);
+    if (raetsel.farbe !== undefined && !RAETSEL_FARBEN.includes(raetsel.farbe)) {
+      fehler.push(`${name}: Die Farbe "${raetsel.farbe}" beim Rätsel gibt es nicht. Nimm ${RAETSEL_FARBEN.join(', ')}.`);
+    }
+  }
+  if (raetsel.art === 'reihenfolge') {
+    if (!(raetsel.steine?.length >= 2)) fehler.push(`${name}: Beim Reihenfolge-Rätsel braucht es mindestens zwei Klangsteine bei steine.`);
+    for (const stein of raetsel.steine ?? []) {
+      if (!RAETSEL_FARBEN.includes(stein.farbe)) {
+        fehler.push(`${name}: Die Farbe "${stein.farbe}" bei einem Klangstein gibt es nicht. Nimm ${RAETSEL_FARBEN.join(', ')}.`);
+      }
+    }
+  }
+  if (raetsel.art === 'frage') {
+    if (!(raetsel.fragen?.length > 0)) fehler.push(`${name}: Beim Frage-Rätsel braucht es mindestens eine Frage bei fragen.`);
+    for (const frage of raetsel.fragen ?? []) {
+      const antworten = frage.antworten ?? [];
+      if (typeof frage.frage !== 'string') fehler.push(`${name}: Bei einer Rätselfrage fehlt der Satz bei frage.`);
+      if (!(antworten.length >= 2 && antworten.length <= 4)) {
+        fehler.push(`${name}: Die Rätselfrage „${frage.frage}“ braucht zwei bis vier antworten.`);
+      } else if (!antworten.includes(frage.richtig)) {
+        fehler.push(`${name}: Bei der Rätselfrage „${frage.frage}“ steht bei richtig etwas, das nicht bei antworten steht.`);
+      }
     }
   }
   return fehler;

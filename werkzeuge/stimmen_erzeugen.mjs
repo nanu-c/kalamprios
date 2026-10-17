@@ -10,6 +10,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { GESCHICHTE } from '../src/daten/geschichte.js';
+import { ORTE } from '../src/daten/orte.js';
 
 const MODELL = 'gpt-4o-mini-tts';
 const STIMME = 'coral';
@@ -20,6 +21,11 @@ const KRISTALL =
   ERZAEHLERIN +
   ' Was in Anführungszeichen steht, sagt ein kleiner verzauberter Kristall, der sein Licht verloren hat: ' +
   'leise, flüsternd und ein wenig ängstlich.';
+
+const RAETSELSTEIN =
+  ERZAEHLERIN +
+  ' Was in Anführungszeichen steht, sagt ein alter, freundlicher Rätselstein: ' +
+  'tief, gemütlich und ein bisschen verschmitzt, wie ein lieber Großvater.';
 
 const ORDNER = new URL('../public/stimme/', import.meta.url);
 const LISTE = new URL('stimmen.json', ORDNER);
@@ -54,6 +60,19 @@ const saetze = [
   ...GESCHICHTE.anfang.map((text) => [text, ERZAEHLERIN]),
   ...GESCHICHTE.ende.map((text) => [text, ERZAEHLERIN]),
   ...Object.values(GESCHICHTE.orte).flat().map((text) => [text, KRISTALL]),
+  // Was die Rätselsteine sagen
+  ...Object.values(ORTE)
+    .map((ort) => ort.raetsel)
+    .filter(Boolean)
+    .flatMap((raetsel) => [...raetsel.aufgabe, raetsel.geschafft, ...(raetsel.fragen ?? []).map((frage) => frage.frage)])
+    .map((text) => [text, RAETSELSTEIN]),
+  // Was die Rätselsteine zwischendurch sagen. {fehlen} kann jede Zahl sein,
+  // die beim Suchen noch fehlen kann.
+  ...Object.entries(GESCHICHTE.raetsel ?? {}).flatMap(([name, text]) => {
+    if (name !== 'suchWeiter') return [[text, RAETSELSTEIN]];
+    const meiste = Math.max(0, ...Object.values(ORTE).map((ort) => ort.raetsel?.dinge?.length ?? 0));
+    return Array.from({ length: Math.max(0, meiste - 1) }, (_, i) => [text.replace('{fehlen}', i + 2), RAETSELSTEIN]);
+  }),
 ];
 
 const schluessel = schluesselLesen();

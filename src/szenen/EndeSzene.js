@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
 import { GESCHICHTE } from '../daten/geschichte.js';
 import { spielstand } from '../spielstand.js';
+import { musikSpielen } from '../klang/musik.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
 import { feld, textKnopf, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
@@ -25,6 +26,7 @@ export class EndeSzene extends Phaser.Scene {
     bilderErzeugen(this);
     hintergrundMalen(this, 'geschichte');
     this.cameras.main.fadeIn(800, 23, 11, 44);
+    musikSpielen('ende');
 
     this.kristalleLeuchten();
     this.tanzen();

@@ -12,6 +12,8 @@ import { LadeSzene } from './szenen/LadeSzene.js';
 import { StartSzene } from './szenen/StartSzene.js';
 import { WeltSzene } from './szenen/WeltSzene.js';
 import { BREITE, HOEHE } from './szenen/stil.js';
+import { speichern } from './spielstand.js';
+import { tonKnopfEinrichten } from './klang/tonKnopf.js';
 import { vollbildKnopfEinrichten } from './vollbild.js';
 
 export const spiel = new Phaser.Game({
@@ -24,8 +26,19 @@ export const spiel = new Phaser.Game({
     width: BREITE,
     height: HOEHE,
   },
+  // Die Töne macht das Spiel selbst (Ordner klang), Phaser braucht dafür nichts.
+  audio: { noAudio: true },
   // Die Bildschirme des Spiels. Der erste in der Liste wird zuerst gezeigt.
   scene: [LadeSzene, StartSzene, GeschichteSzene, CharakterSzene, AuswahlSzene, WeltSzene, KampfSzene, EndeSzene],
 });
 
 vollbildKnopfEinrichten();
+tonKnopfEinrichten();
+
+// Alle paar Sekunden den Spielstand im Browser speichern, und auch dann,
+// wenn das Fenster geschlossen oder versteckt wird.
+setInterval(() => speichern(), 3000);
+window.addEventListener('pagehide', () => speichern());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') speichern();
+});

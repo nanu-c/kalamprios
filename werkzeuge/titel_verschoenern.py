@@ -7,9 +7,9 @@
 
 Das Ergebnis landet in public/bilder/titel.png.
 
-Starten (im Projektordner):  python3 werkzeuge/titel_verschoenern.py
+Starten (im Projektordner):  .venv/bin/python werkzeuge/titel_verschoenern.py
 Nur Schritt 3 noch einmal, mit dem schon ausgemalten Bild:
-                             python3 werkzeuge/titel_verschoenern.py --ohne-ki
+                             .venv/bin/python werkzeuge/titel_verschoenern.py --ohne-ki
 
 Der Schlüssel steht in der Datei .env (sie wird nicht hochgeladen).
 Das ausgemalte Bild von OpenAI wird in Sonstiges/Titel-ausgemalt.png

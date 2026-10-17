@@ -44,4 +44,24 @@ export const LILA_DORF = {
   ],
 
   fangkristalle: [{ x: 1500, y: 720 }],
+
+  // Das Rätsel: Drei Glöckchen liegen versteckt hinter Häusern und Bäumen.
+  raetsel: {
+    art: 'suchen',
+    x: 780,
+    y: 700,
+    aufgabe: [
+      'Ein alter Rätselstein mit einem goldenen Fragezeichen. Er brummt freundlich.',
+      '„Der Schatten hat drei goldene Glöckchen aus dem Dorf mitgenommen und auf der Flucht verloren.“',
+      '„Sie liegen gut versteckt, hinter Häusern und Bäumen. Findest du alle drei?“',
+    ],
+    farbe: 'gelb',
+    dinge: [
+      { x: 380, y: 300 },
+      { x: 1290, y: 880 },
+      { x: 1620, y: 250 },
+    ],
+    geschafft: '„Alle drei Glöckchen! Hör nur, wie schön sie klingen. Das hier ist für dich.“',
+    belohnung: { fangkristalle: 2 },
+  },
 };

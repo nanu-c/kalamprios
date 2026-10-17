@@ -14,3 +14,4 @@ Sonstiges/
 .env
 *.swp
 __pycache__/
+.venv/

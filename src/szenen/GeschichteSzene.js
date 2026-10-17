@@ -7,6 +7,7 @@
 
 import Phaser from 'phaser';
 import { GESCHICHTE } from '../daten/geschichte.js';
+import { musikSpielen } from '../klang/musik.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
 import { feld, textKnopf, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
@@ -41,6 +42,7 @@ export class GeschichteSzene extends Phaser.Scene {
     // Mit jedem Satz wird es ein bisschen dunkler, wie die Kristalle.
     this.dunkel = this.add.rectangle(0, 0, BREITE, HOEHE, 0x0b0518).setOrigin(0).setAlpha(0);
     this.cameras.main.fadeIn(600, 23, 11, 44);
+    musikSpielen('geschichte');
 
     this.kristalle = KRISTALLE.map((stelle) => this.kristallAufstellen(stelle));
     this.schatten = this.schattenMalen();

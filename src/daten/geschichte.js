@@ -9,6 +9,9 @@
 //         Datei des Ortes bei dunklerKristall.
 // ende:   wird bei der Party erzählt, wenn man das geheime Kalamprio
 //         besiegt oder gefangen hat
+// raetsel: was die Rätselsteine zwischendurch sagen, an jedem Ort gleich.
+//         Was sie am Anfang und am Ende sagen, steht in der Datei des Ortes
+//         bei raetsel. {fehlen} wird durch die Zahl ersetzt, die noch fehlt.
 
 export const GESCHICHTE = {
   anfang: [
@@ -49,4 +52,15 @@ export const GESCHICHTE = {
     'Der Schatten ist verschwunden. Die Kalamprios sind wieder froh, und alle feiern ein großes Fest.',
     'Danke, dass du das Licht zurückgebracht hast!',
   ],
+
+  raetsel: {
+    suchWeiter: '„Such weiter! Es fehlen noch {fehlen}.“',
+    nurNochEins: '„Such weiter! Nur noch eins fehlt.“',
+    nochmalZeigen: '„Schau noch einmal gut hin!“',
+    falscheAntwort: '„Hmm, das stimmt nicht. Denk noch einmal nach!“',
+    naechsteFrage: '„Richtig! Und jetzt das nächste Rätsel …“',
+    gefunden: 'Gefunden!',
+    jetztDu: 'Jetzt du!',
+    falscherStein: 'Huch! Nochmal von vorn.',
+  },
 };

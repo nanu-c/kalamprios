@@ -4,12 +4,17 @@
 
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
+import { ELEMENTE } from '../daten/elemente.js';
 import { GESCHICHTE } from '../daten/geschichte.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
+import { KLAENGE } from '../daten/klaenge.js';
 import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
 import { erfahrungBisNaechstesLevel, levelFortschritt } from '../kampf/kampflogik.js';
-import { erholtSichNoch, levelVon, spielstand } from '../spielstand.js';
+import { aufsammeln, funkeln, klick, kristallSummen, ortWechsel, ruf, schritt as schrittGeraeusch, umgebung, wusch } from '../klang/geraeusche.js';
+import { hallStaerke } from '../klang/klang.js';
+import { musikSpielen } from '../klang/musik.js';
+import { erholtSichNoch, levelVon, mitnehmen, spielstand, weglassen, zuerstKaempfen } from '../spielstand.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
 import {
   abstand,
@@ -24,7 +29,8 @@ import {
 } from '../welt/weltlogik.js';
 import { feld, textKnopf } from './bausteine.js';
 import { DUNKEL_TIEFE, LICHT_TIEFE, lichtschein, ortAufbauen } from './landschaft.js';
-import { BREITE, FARBEN, HOEHE, schrift } from './stil.js';
+import { Raetsel } from './raetsel.js';
+import { BREITE, FARBEN, HOEHE, farbeAlsText, schrift } from './stil.js';
 
 const SPIELER_RADIUS = 18;
 const WILD_RADIUS = 30;
@@ -40,6 +46,8 @@ const SCHWEBEN = 38; // so hoch über dem Boden fliegen Kalamprios mit fliegt: t
 const FANGKRISTALL_HOEHE = 46;
 const AUFSAMMELN_ABSTAND = 46;
 const LICHT_RADIUS = 170; // so weit ist es um die Figur herum hell, wenn es dunkel ist
+const SCHRITT_WEITE = 70; // nach so vielen Pixeln hört man einen Schritt
+const MEHR_LICHT = 1.6; // so viel weiter scheint das Licht, wenn ein Rätsel mehrLicht gebracht hat
 
 export class WeltSzene extends Phaser.Scene {
   constructor() {
@@ -59,6 +67,11 @@ export class WeltSzene extends Phaser.Scene {
     this.zeigerFuehrt = false; // true, solange Finger oder Maus die Figur führen
     this.festgesteckt = 0;
     this.grasStrecke = 0;
+    this.schrittStrecke = 0;
+
+    // Jeder Ort hat seine eigene Musik. In der Mine hallt es wie in einer Höhle.
+    musikSpielen(this.ort.stil);
+    hallStaerke(this.ort.stil === 'mine' ? 'hoehle' : 'normal');
 
     // Die Rivalin wartet nur an einem Ort.
     if (this.ort.rivalin) {
@@ -78,17 +91,27 @@ export class WeltSzene extends Phaser.Scene {
       this.schimmer = this.add.circle(dunkel.x, dunkel.y - 70, 60, 0xc9b8ff, 0.25).setDepth(dunkel.y + 1);
       this.tweens.add({ targets: this.schimmer, alpha: 0.05, scale: 1.4, duration: 1100, yoyo: true, repeat: -1 });
     }
+    // Der dunkle Kristall summt. Je näher man kommt, desto lauter.
+    if (dunkel) {
+      this.summen = kristallSummen();
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.summen?.beenden());
+    }
 
     this.fangkristalleAufstellen();
 
+    // Das Rätsel an diesem Ort (steht in der Datei des Ortes bei raetsel).
+    this.raetsel = this.ort.raetsel ? new Raetsel(this) : null;
+
     this.wilde = this.ort.wildeKalamprios.map((eintrag, nummer) => ({
       ...this.figurBauen(eintrag.art, WILD_HOEHE, eintrag, KALAMPRIOS[eintrag.art].fliegt),
+      ring: this.ringBauen(eintrag, ELEMENTE[KALAMPRIOS[eintrag.art].element].farbe),
       nummer,
       merkname: `${this.ortName}-${nummer}`, // so merkt sich der Spielstand, wer besiegt ist
       art: eintrag.art,
       heimat: { x: eintrag.x, y: eintrag.y },
       ziel: null,
       pauseBis: 0,
+      naechsterRuf: this.time.now + 600 + Math.random() * 2500,
       da: true,
     }));
 
@@ -101,6 +124,7 @@ export class WeltSzene extends Phaser.Scene {
     // nicht sofort wieder angesprochen.
     this.warBeiRivalin = this.istBeiRivalin();
     this.warBeimKristall = this.istBeimKristall();
+    this.raetsel?.merken();
 
     this.zielMarke = this.add.circle(0, 0, 14).setStrokeStyle(3, 0xf6f0ff, 0.8).setDepth(2);
 
@@ -131,6 +155,7 @@ export class WeltSzene extends Phaser.Scene {
     });
 
     if (this.ort.dunkel) this.dunkelheitBauen();
+    this.umgebungPlanen();
     this.anzeigeBauen();
     if (spielstand.ortsnameZeigen) this.ortsnameZeigen();
   }
@@ -145,12 +170,16 @@ export class WeltSzene extends Phaser.Scene {
       else this.spielerBewegen(dt);
       this.wildeBewegen(dt, zeit);
       this.fangkristalleAufsammeln();
+      this.raetsel?.pruefen();
       this.begegnungenPruefen();
     }
 
+    // Wo die Figur steht, kommt mit in den gespeicherten Spielstand.
+    if (!this.wechselt) spielstand.position = { x: this.spieler.ort.x, y: this.spieler.ort.y };
     this.figurZeigen(this.spieler, zeit);
     this.dunkelheit?.setPosition(this.spieler.ort.x, this.spieler.ort.y - FIGUR_HOEHE / 2);
     this.verdeckerLichten();
+    this.kristallSummenAnpassen();
     this.zielMarke.setVisible(this.laufziel !== null);
     if (this.laufziel) this.zielMarke.setPosition(this.laufziel.x, this.laufziel.y);
     this.anzeigeAktualisieren();
@@ -169,11 +198,25 @@ export class WeltSzene extends Phaser.Scene {
     return { ort: { x: ort.x, y: ort.y }, bild, schatten, laeuft: false, fliegt };
   }
 
+  // Ein leuchtender Ring am Boden in der Farbe des Elements. Daran erkennt
+  // man wilde Kalamprios schon von weitem.
+  ringBauen(ort, farbe) {
+    const breite = WILD_HOEHE * 0.85;
+    const ring = this.add.container(ort.x, ort.y, [
+      this.add.ellipse(0, 0, breite, breite * 0.3, farbe, 0.22),
+      this.add.ellipse(0, 0, breite, breite * 0.3).setStrokeStyle(4, farbe, 0.95),
+    ]);
+    ring.setDepth(1);
+    this.tweens.add({ targets: ring, alpha: 0.45, scale: 1.12, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    return ring;
+  }
+
   // Setzt Bild und Schatten an den Ort der Figur. Wer läuft, hüpft und wippt.
   // Wer fliegt, schwebt auf und ab, und sein Schatten wird dabei kleiner und größer.
   figurZeigen(figur, zeit) {
     const schwung = figur.laeuft ? Math.sin(zeit / 95) : 0;
     figur.schatten.setPosition(figur.ort.x, figur.ort.y);
+    figur.ring?.setPosition(figur.ort.x, figur.ort.y);
     if (figur.fliegt) {
       const auf = Math.sin(zeit / 280);
       figur.bild.setPosition(figur.ort.x, figur.ort.y - SCHWEBEN - auf * 8);
@@ -205,8 +248,27 @@ export class WeltSzene extends Phaser.Scene {
       tuch.refresh();
     }
     this.dunkelheit = this.add.image(0, 0, name).setAlpha(this.ort.dunkel).setDepth(DUNKEL_TIEFE);
-    // Das Licht flackert ein kleines bisschen, wie von einer Laterne.
-    this.tweens.add({ targets: this.dunkelheit, scale: 1.05, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.lichtFlackern(this.raetsel?.mehrLicht() ? MEHR_LICHT : 1);
+  }
+
+  // Das Licht flackert ein kleines bisschen, wie von einer Laterne.
+  lichtFlackern(groesse) {
+    this.tweens.killTweensOf(this.dunkelheit);
+    this.dunkelheit.setScale(groesse);
+    this.tweens.add({ targets: this.dunkelheit, scale: groesse * 1.05, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+
+  // Ein gelöstes Rätsel bringt mehr Licht: Das helle Loch wird langsam größer.
+  lichtVergroessern() {
+    if (!this.dunkelheit) return;
+    this.tweens.killTweensOf(this.dunkelheit);
+    this.tweens.add({
+      targets: this.dunkelheit,
+      scale: MEHR_LICHT,
+      duration: 1500,
+      ease: 'Sine.easeOut',
+      onComplete: () => this.lichtFlackern(MEHR_LICHT),
+    });
   }
 
   // --------------------------------------------------------- Fangkristalle
@@ -235,6 +297,7 @@ export class WeltSzene extends Phaser.Scene {
       if (!da || abstand(this.spieler.ort, kristall.punkt) > AUFSAMMELN_ABSTAND) continue;
 
       spielstand.fangkristalle += 1;
+      aufsammeln();
       spielstand.fangkristallWiederDa[kristall.merkname] = jetzt + REGELN.fangkristallWaechstNachSekunden * 1000;
       const plus = this.add
         .text(kristall.punkt.x, kristall.punkt.y - 70, '+1 Fangkristall', schrift(24, '#f6f0ff', { fontStyle: '600' }))
@@ -314,7 +377,13 @@ export class WeltSzene extends Phaser.Scene {
       if (this.festgesteckt > 0.4) this.laufziel = null;
     }
 
-    if (istImGras(this.spieler.ort, this.ort.hohesGras)) this.imGrasGelaufen(gelaufen);
+    const imGras = istImGras(this.spieler.ort, this.ort.hohesGras);
+    this.schrittStrecke += gelaufen;
+    if (this.schrittStrecke >= SCHRITT_WEITE) {
+      this.schrittStrecke = 0;
+      schrittGeraeusch(imGras ? 'gras' : this.ort.stil === 'mine' ? 'stein' : 'erde');
+    }
+    if (imGras) this.imGrasGelaufen(gelaufen);
   }
 
   // Im hohen Gras wird alle paar Schritte gewürfelt, ob ein Kalamprio auftaucht.
@@ -340,6 +409,7 @@ export class WeltSzene extends Phaser.Scene {
     this.spieler.laeuft = false;
     this.laufziel = null;
     const vonOrt = this.ortName;
+    ortWechsel();
 
     const kamera = this.cameras.main;
     kamera.fadeOut(300, 23, 11, 44);
@@ -359,11 +429,13 @@ export class WeltSzene extends Phaser.Scene {
       wild.da = Date.now() >= (spielstand.wildeWiederDa[wild.merkname] ?? 0);
       wild.bild.setVisible(wild.da);
       wild.schatten.setVisible(wild.da);
+      wild.ring.setVisible(wild.da);
       if (!wild.da) {
         wild.ort = { ...wild.heimat };
         wild.ziel = null;
         continue;
       }
+      this.wildRuft(wild, zeit);
 
       if (!wild.ziel && zeit >= wild.pauseBis) {
         const winkel = Math.random() * Math.PI * 2;
@@ -400,6 +472,78 @@ export class WeltSzene extends Phaser.Scene {
       }
       this.figurZeigen(wild, zeit + wild.nummer * 400);
     }
+  }
+
+  // ------------------------------------------------------------- Hören
+
+  // Wie man etwas an diesem Punkt hört: aus der Nähe laut und klar, von
+  // weiter weg leiser und dumpfer, und von links oder rechts, je nachdem, wo
+  // es ist. Weiter weg als KLAENGE.hoerweite hört man nichts (dann null).
+  hoerOrt(punkt) {
+    const entfernung = abstand(this.spieler.ort, punkt);
+    if (entfernung >= KLAENGE.hoerweite) return null;
+    const naehe = 1 - entfernung / KLAENGE.hoerweite;
+    return {
+      lautstaerke: naehe ** 2,
+      pan: Phaser.Math.Clamp((punkt.x - this.spieler.ort.x) / 600, -1, 1) * 0.9,
+      dumpf: (1 - naehe) * 0.8,
+    };
+  }
+
+  // Wilde Kalamprios rufen ab und zu. Wer nah dran ist, hört sie öfter.
+  wildRuft(wild, zeit) {
+    if (zeit < wild.naechsterRuf) return;
+    const ort = this.hoerOrt(wild.ort);
+    wild.naechsterRuf = zeit + 2000 + Math.random() * 3000 + (1 - (ort?.lautstaerke ?? 0)) * 3000;
+    if (!ort || this.wechselt) return;
+    ruf(wild.art, { ort });
+    this.notenZeigen(wild);
+  }
+
+  // Kleine Noten steigen auf, wenn ein Kalamprio ruft.
+  notenZeigen(wild) {
+    const farbe = farbeAlsText(ELEMENTE[KALAMPRIOS[wild.art].element].farbe);
+    for (let i = 0; i < 2; i += 1) {
+      const note = this.add
+        .text(wild.ort.x + (i ? 22 : -14), wild.bild.y - wild.bild.displayHeight - 4, i ? '♫' : '♪', schrift(30, farbe, { fontStyle: '600' }))
+        .setOrigin(0.5)
+        .setStroke('#2a1650', 5)
+        .setDepth(wild.ort.y + 1)
+        .setAlpha(0);
+      this.tweens.add({
+        targets: note,
+        y: note.y - 60,
+        x: note.x + (i ? 14 : -10),
+        alpha: { from: 1, to: 0 },
+        delay: i * 180,
+        duration: 1300,
+        onComplete: () => note.destroy(),
+      });
+    }
+  }
+
+  // Der dunkle Kristall wird lauter, je näher man kommt. Hat man ihn schon
+  // gehört, summt er nur noch ganz leise.
+  kristallSummenAnpassen() {
+    if (!this.summen) return;
+    const ort = this.hoerOrt(this.ort.dunklerKristall);
+    const leise = spielstand.geschichteGehoert[this.ortName] ? 0.25 : 1;
+    this.summen.setzen(ort ? ort.lautstaerke * 0.7 * leise : 0, ort?.pan ?? 0);
+  }
+
+  // Ab und zu hört man den Ort: Vögel im Dorf, ein Windspiel aus Kristallen
+  // im Wald, Tropfen in der Mine, Wellen am See. Fangkristalle in der Nähe funkeln.
+  umgebungPlanen() {
+    this.time.delayedCall(1500 + Math.random() * 3500, () => {
+      if (!this.wechselt) {
+        umgebung(this.ort.stil, { pan: Math.random() * 1.6 - 0.8, lautstaerke: 0.6 + Math.random() * 0.4 });
+        for (const kristall of this.fangkristalle) {
+          const ort = kristall.bild.visible ? this.hoerOrt(kristall.punkt) : null;
+          if (ort) funkeln(ort);
+        }
+      }
+      this.umgebungPlanen();
+    });
   }
 
   // ----------------------------------------------------------- Begegnungen
@@ -512,6 +656,7 @@ export class WeltSzene extends Phaser.Scene {
     this.spieler.laeuft = false;
     this.laufziel = null;
     spielstand.position = { ...this.spieler.ort };
+    wusch(0.35);
 
     const kamera = this.cameras.main;
     kamera.fadeOut(350, 23, 11, 44);
@@ -616,61 +761,111 @@ export class WeltSzene extends Phaser.Scene {
     }
   }
 
-  // Zeigt alle Kalamprios im Team. Wer angetippt wird, kämpft ab jetzt.
-  teamZeigen() {
+  // Zeigt alle Kalamprios im Team. Wer angetippt wird, kommt mit in den
+  // Kampf (höchstens REGELN.imKampfHoechstens). Wer schon mitkommt und
+  // angetippt wird, kämpft zuerst. Mit dem × bleibt eines da.
+  teamZeigen(meldung = '') {
     if (this.gespraech || this.wechselt) return;
     this.laufziel = null;
     this.zeigerFuehrt = false;
+    const neuZeigen = (neueMeldung) => {
+      this.gespraechSchliessen();
+      this.teamZeigen(neueMeldung);
+    };
 
     const team = spielstand.team;
+    const hoechstens = REGELN.imKampfHoechstens;
     const teile = [
       this.add.rectangle(0, 0, BREITE, HOEHE, 0x0b0518, 0.6).setOrigin(0).setInteractive(),
-      feld(this, 100, 90, BREITE - 200, 540),
-      this.add.text(BREITE / 2, 130, 'Dein Team', schrift(40, '#f6f0ff', { fontStyle: '600' })).setOrigin(0.5),
+      feld(this, 60, 36, BREITE - 120, 652),
+      this.add.text(BREITE / 2, 78, 'Dein Team', schrift(38, '#f6f0ff', { fontStyle: '600' })).setOrigin(0.5),
       this.add
-        .text(BREITE / 2, 178, 'Tippe auf ein Kalamprio, dann kämpft es für dich.', schrift(22, '#d9c9ff'))
+        .text(BREITE / 2, 122, `Tippe an, wer mit in den Kampf kommt (höchstens ${hoechstens}). Die 1 kämpft zuerst.`, schrift(20, '#d9c9ff'))
         .setOrigin(0.5),
+      this.add.text(BREITE / 2, 154, meldung, schrift(20, '#ffd166')).setOrigin(0.5),
     ];
 
-    const abstandX = Math.min(220, (BREITE - 260) / team.length);
+    // Ab 6 Kalamprios kommen sie in zwei Reihen, mit kleineren Karten.
+    const reihen = team.length > 5 ? 2 : 1;
+    const proReihe = Math.ceil(team.length / reihen);
+    const abstandX = Math.min(220, (BREITE - 180) / proReihe);
+    const breite = abstandX - 20;
+    const gross = reihen === 1;
+    const hoehe = gross ? 330 : 205;
+    // So weit unter der Mitte der Karte steht jede Zeile (bild: Unterkante des Bildes).
+    const zeile = gross
+      ? { bild: 34, bildHoehe: 170, name: 60, level: 88, balken: 110, naechstes: 128, zustand: 148 }
+      : { bild: -2, bildHoehe: 82, name: 18, level: 40, balken: 56, naechstes: 70, zustand: 87 };
+    const schriften = gross ? [26, 20, 14, 16] : [22, 17, 13, 15];
+
     team.forEach((kurzname, nummer) => {
-      const x = BREITE / 2 + (nummer - (team.length - 1) / 2) * abstandX;
+      const reihe = Math.floor(nummer / proReihe);
+      const inDerReihe = reihe === reihen - 1 ? team.length - reihe * proReihe : proReihe;
+      const x = BREITE / 2 + ((nummer % proReihe) - (inDerReihe - 1) / 2) * abstandX;
+      const y = gross ? 400 : 282 + reihe * 214;
+      const oben = y - hoehe / 2;
+
       const tier = KALAMPRIOS[kurzname];
-      const aktiv = kurzname === spielstand.kalamprio;
+      const platz = spielstand.kampfteam.indexOf(kurzname); // -1: bleibt da
+      const dabei = platz >= 0;
       const rest = erholtSichNoch(kurzname);
       const karte = this.add
-        .rectangle(x, 386, abstandX - 20, 316, FARBEN.knopf, aktiv ? 1 : 0.6)
+        .rectangle(x, y, breite, hoehe, FARBEN.knopf, dabei ? 1 : 0.45)
         .setRounded(18)
-        .setStrokeStyle(aktiv ? 6 : 3, aktiv ? 0xffffff : FARBEN.rand)
+        .setStrokeStyle(platz === 0 ? 6 : dabei ? 4 : 2, platz === 0 ? 0xffffff : dabei ? 0xffd166 : FARBEN.rand)
         .setInteractive({ useHandCursor: true });
       karte.on('pointerdown', () => {
-        spielstand.kalamprio = kurzname;
-        this.gespraechSchliessen();
-        this.teamZeigen();
+        ruf(kurzname);
+        if (dabei) zuerstKaempfen(kurzname);
+        else if (!mitnehmen(kurzname)) {
+          neuZeigen(`Es sind schon ${hoechstens} dabei. Tippe erst bei einem auf das ×.`);
+          return;
+        }
+        neuZeigen();
       });
-      const bild = this.add.image(x, 420, kurzname).setOrigin(0.5, 1);
-      bild.setScale(Math.min(170 / bild.height, (abstandX - 50) / bild.width));
-      const zustand = aktiv ? 'kämpft' : rest > 0 ? `erholt sich (${Math.ceil(rest / 1000)} s)` : 'bereit';
+      const bild = this.add.image(x, y + zeile.bild, kurzname).setOrigin(0.5, 1).setAlpha(dabei ? 1 : 0.7);
+      bild.setScale(Math.min(zeile.bildHoehe / bild.height, (breite - 30) / bild.width));
+
+      let zustand = platz === 0 ? 'kämpft zuerst' : dabei ? 'kommt mit' : 'bleibt da';
+      if (rest > 0) zustand = `erholt sich (${Math.ceil(rest / 1000)} s)`;
       const erfahrung = spielstand.erfahrung[kurzname] ?? 0;
       const fehlen = erfahrungBisNaechstesLevel(erfahrung);
       const naechstes = fehlen === null ? 'höchstes Level' : `noch ${fehlen} bis Level ${levelVon(kurzname) + 1}`;
       // Der goldene Erfahrungsbalken: Ist er voll, kommt das nächste Level.
-      const balkenBreite = Math.min(160, abstandX - 60);
-      const balken = this.add.rectangle(x - balkenBreite / 2, 494, balkenBreite, 10, 0xffd166).setOrigin(0, 0.5);
+      const balkenBreite = Math.min(160, breite - 40);
+      const balken = this.add.rectangle(x - balkenBreite / 2, y + zeile.balken, balkenBreite, 10, 0xffd166).setOrigin(0, 0.5);
       balken.scaleX = levelFortschritt(erfahrung);
+      const [nameGroesse, levelGroesse, naechstesGroesse, zustandGroesse] = schriften;
       teile.push(
         karte,
         bild,
-        this.add.text(x, 444, tier.name, schrift(26)).setOrigin(0.5),
-        this.add.text(x, 472, `Level ${levelVon(kurzname)}`, schrift(20, '#ffd166')).setOrigin(0.5),
-        this.add.rectangle(x - balkenBreite / 2, 494, balkenBreite, 10, 0x170b2c).setOrigin(0, 0.5).setStrokeStyle(1, 0xffd166, 0.6),
+        this.add.text(x, y + zeile.name, tier.name, schrift(nameGroesse)).setOrigin(0.5),
+        this.add.text(x, y + zeile.level, `Level ${levelVon(kurzname)}`, schrift(levelGroesse, '#ffd166')).setOrigin(0.5),
+        this.add.rectangle(x - balkenBreite / 2, y + zeile.balken, balkenBreite, 10, 0x170b2c).setOrigin(0, 0.5).setStrokeStyle(1, 0xffd166, 0.6),
         balken,
-        this.add.text(x, 512, naechstes, schrift(14, '#d9c9ff')).setOrigin(0.5),
-        this.add.text(x, 530, zustand, schrift(16, rest > 0 ? '#ffd166' : '#d9c9ff')).setOrigin(0.5),
+        this.add.text(x, y + zeile.naechstes, naechstes, schrift(naechstesGroesse, '#d9c9ff')).setOrigin(0.5),
+        this.add.text(x, y + zeile.zustand, zustand, schrift(zustandGroesse, rest > 0 ? '#ffd166' : '#d9c9ff')).setOrigin(0.5),
       );
+
+      if (!dabei) return;
+      // Oben links die Nummer: In dieser Reihenfolge kommen sie in den Kampf.
+      teile.push(
+        this.add.circle(x - breite / 2 + 24, oben + 24, 17, 0xffd166),
+        this.add.text(x - breite / 2 + 24, oben + 24, `${platz + 1}`, schrift(22, '#2a1650', { fontStyle: '600' })).setOrigin(0.5),
+      );
+      // Oben rechts das ×: Dann bleibt es beim nächsten Kampf da.
+      const weg = this.add
+        .circle(x + breite / 2 - 24, oben + 24, 17, 0x6b2a5a)
+        .setStrokeStyle(2, FARBEN.rand)
+        .setInteractive({ useHandCursor: true });
+      weg.on('pointerdown', () => {
+        klick();
+        neuZeigen(weglassen(kurzname) ? '' : 'Eines muss mitkommen.');
+      });
+      teile.push(weg, this.add.text(x + breite / 2 - 24, oben + 22, '×', schrift(26)).setOrigin(0.5));
     });
 
-    teile.push(...textKnopf(this, BREITE / 2 - 120, 552, 240, 56, 'Fertig', () => this.gespraechSchliessen()));
+    teile.push(...textKnopf(this, BREITE / 2 - 120, 620, 240, 54, 'Fertig', () => this.gespraechSchliessen()));
     this.festkleben(teile, VORNE + 100);
     this.gespraech = teile;
   }

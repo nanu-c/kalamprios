@@ -155,3 +155,17 @@ export function ankunft(ort, vonOrt) {
   if (!zurueck) return ort.start ?? { x: ort.breite / 2, y: ort.hoehe / 2 };
   return hinterDemAusgang(zurueck, weltGrenzen(ort));
 }
+
+// ----------------------------------------------------------------- Rätsel
+
+// Beim Rätsel mit der Reihenfolge: Man ist auf den Stein mit der Nummer
+// nummer getreten. geschafft sagt, wie viele Steine schon richtig waren.
+// Zurück kommt, wie viele es jetzt sind, und was passiert ist:
+// 'schon' (der Stein leuchtet schon), 'richtig', 'falsch' (dann geht es von
+// vorn los) oder 'fertig' (alle Steine in der richtigen Reihenfolge).
+export function reihenfolgeTreten(geschafft, nummer, anzahl) {
+  if (nummer < geschafft) return { geschafft, ergebnis: 'schon' };
+  if (nummer !== geschafft) return { geschafft: 0, ergebnis: 'falsch' };
+  const jetzt = geschafft + 1;
+  return { geschafft: jetzt, ergebnis: jetzt === anzahl ? 'fertig' : 'richtig' };
+}

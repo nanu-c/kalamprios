@@ -20,12 +20,13 @@ export const MONDSEE = {
     { art: 'mola', x: 1400, y: 300 },
     { art: 'bolo', x: 2080, y: 1000 },
     { art: 'mola', x: 1250, y: 1480 },
+    { art: 'taktik', x: 2250, y: 1050 },
   ],
 
   // Am Mondsee sind die wilden Kalamprios stärker.
   wildesLevel: 3,
 
-  tiereImGras: ['bolo', 'mola'],
+  tiereImGras: ['bolo', 'mola', 'taktik'],
   hohesGras: [
     { links: 180, oben: 1120, breite: 440, hoehe: 300 },
     { links: 1880, oben: 240, breite: 400, hoehe: 280 },
@@ -62,4 +63,31 @@ export const MONDSEE = {
     { x: 2050, y: 620 },
     { x: 1600, y: 1460 },
   ],
+
+  // Das Rätsel: Zwei Rätselfragen. Die Antworten sollten kurz sein, sonst
+  // passen sie nicht auf die Knöpfe. Die Antworten stehen auch in der Frage,
+  // damit sie mit vorgelesen werden.
+  raetsel: {
+    art: 'frage',
+    x: 320,
+    y: 580,
+    aufgabe: [
+      'Ein alter Rätselstein mit einem goldenen Fragezeichen. Er glitzert im Mondlicht.',
+      '„Ich habe zwei Rätsel für dich. Wenn du beide löst, bekommst du etwas Schönes.“',
+    ],
+    fragen: [
+      {
+        frage: '„Ich bin rund und leuchte in der Nacht. Im See siehst du mich gleich zweimal. Bin ich ein Stern, der Mond oder eine Laterne?“',
+        antworten: ['Ein Stern', 'Der Mond', 'Eine Laterne'],
+        richtig: 'Der Mond',
+      },
+      {
+        frage: '„Was wird immer nasser, je mehr es trocknet: ein Fisch, der Regen oder ein Handtuch?“',
+        antworten: ['Ein Fisch', 'Der Regen', 'Ein Handtuch'],
+        richtig: 'Ein Handtuch',
+      },
+    ],
+    geschafft: '„Richtig! Du bist wirklich klug. Hier, nimm diese Fangkristalle mit.“',
+    belohnung: { fangkristalle: 3 },
+  },
 };

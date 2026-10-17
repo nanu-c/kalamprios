@@ -9,10 +9,22 @@
 // staerke:  wie viel Schaden die Attacke macht. 10 ist normal, 20 ist stark.
 // pause:    wie viele Runden die Attacke danach aussetzen muss.
 //           0 bedeutet: Sie geht jede Runde.
-// effekt:   (freiwillig) wie die Attacke aussieht, als Kurzname eines Elements
-//           aus elemente.js, zum Beispiel effekt: 'wasser', oder 'herz' für
-//           fliegende Herzen. Ohne effekt sieht sie so aus wie das Element
-//           des Kalamprios.
+// effekt:   (freiwillig) wie die Attacke aussieht. Ohne effekt sieht sie so
+//           aus wie das Element des Kalamprios. Man kann auch den Kurznamen
+//           eines anderen Elements aus elemente.js nehmen, zum Beispiel
+//           effekt: 'wasser', oder eins von diesen:
+//             'herz'        fliegende Herzen (stark: auch ein Herzregen)
+//             'strahl'      ein langer, leuchtender Strahl
+//             'traum'       bunte Traumwellen und Schlafsterne
+//             'krallen'     hinlaufen und dreimal kratzen
+//             'blitzschlag' eine Blüte am Himmel, aus der Blitze schlagen
+//             'biss'        riesige Zähne schnappen zu
+//             'wirbel'      ein Wasserwirbel um den Gegner
+//             'faden'       Fäden wickeln sich um den Gegner
+//             'bombe'       eine Nuss fliegt hin und explodiert
+//             'hieb'        hinlaufen und mit dem Schweif ausholen
+//             'krone'       eine Krone, aus der Blitze regnen
+//           Die Farbe kommt vom Element des Kalamprios.
 //           Starke Attacken (mit Pause) sehen größer aus.
 //
 // Wichtig: Jedes Kalamprio braucht mindestens eine Attacke mit pause: 0,
@@ -20,16 +32,16 @@
 
 export const ATTACKEN = {
   // Kalampria
-  mondstrahl: { name: 'Mondstrahl', staerke: 10, pause: 0 },
-  traumwelle: { name: 'Traumwelle', staerke: 18, pause: 2 },
+  mondstrahl: { name: 'Mondstrahl', staerke: 10, pause: 0, effekt: 'strahl' },
+  traumwelle: { name: 'Traumwelle', staerke: 18, pause: 2, effekt: 'traum' },
 
   // Bisakatze (Platzhalter: Denk dir gern eigene Namen und Werte aus!)
-  funkenpfote: { name: 'Funkenpfote', staerke: 9, pause: 0 },
-  blitzknospe: { name: 'Blitzknospe', staerke: 20, pause: 2 },
+  funkenpfote: { name: 'Funkenpfote', staerke: 9, pause: 0, effekt: 'krallen' },
+  blitzknospe: { name: 'Blitzknospe', staerke: 20, pause: 2, effekt: 'blitzschlag' },
 
   // Die Attacken der neuen Kalamprios sind auch Platzhalter.
   // Kapapa
-  steinbiss: { name: 'Steinbiss', staerke: 10, pause: 0 },
+  steinbiss: { name: 'Steinbiss', staerke: 10, pause: 0, effekt: 'biss' },
   felsenfall: { name: 'Felsenfall', staerke: 19, pause: 2 },
 
   // Qalutu
@@ -38,13 +50,25 @@ export const ATTACKEN = {
 
   // Bolo
   blubberstrahl: { name: 'Blubberstrahl', staerke: 10, pause: 0 },
-  wirbelschweif: { name: 'Wirbelschweif', staerke: 19, pause: 2 },
+  wirbelschweif: { name: 'Wirbelschweif', staerke: 19, pause: 2, effekt: 'wirbel' },
 
   // Mola
   fluegelwind: { name: 'Flügelwind', staerke: 9, pause: 0 },
-  fadentanz: { name: 'Fadentanz', staerke: 20, pause: 2 },
+  fadentanz: { name: 'Fadentanz', staerke: 20, pause: 2, effekt: 'faden' },
+
+  // Kabon
+  blattschlag: { name: 'Blattschlag', staerke: 10, pause: 0 },
+  nussbombe: { name: 'Nussbombe', staerke: 19, pause: 2, effekt: 'bombe' },
+
+  // Simfita
+  schweifhieb: { name: 'Schweifhieb', staerke: 10, pause: 0, effekt: 'hieb' },
+  kristallsplitter: { name: 'Kristallsplitter', staerke: 19, pause: 2 },
+
+  // Tak-Tik
+  ticktack: { name: 'Tick-Tack', staerke: 10, pause: 0 },
+  weckerklingeln: { name: 'Weckerklingeln', staerke: 19, pause: 2 },
 
   // Das geheime Kalamprio
-  kronenblitz: { name: 'Kronenblitz', staerke: 11, pause: 0 },
+  kronenblitz: { name: 'Kronenblitz', staerke: 11, pause: 0, effekt: 'krone' },
   geheimsturm: { name: '???', staerke: 20, pause: 2 },
 };

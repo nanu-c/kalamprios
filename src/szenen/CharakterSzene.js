@@ -2,6 +2,7 @@
 
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
+import { musikSpielen } from '../klang/musik.js';
 import { spielstand } from '../spielstand.js';
 import { karte, kartenreihe, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
@@ -15,6 +16,7 @@ export class CharakterSzene extends Phaser.Scene {
   create() {
     hintergrundMalen(this);
     this.add.rectangle(0, 0, BREITE, HOEHE, 0x170b2c, 0.45).setOrigin(0);
+    musikSpielen('dorf');
 
     titel(this, BREITE / 2, 82, 560);
     this.add.text(BREITE / 2, 172, 'Wer möchtest du sein?', schrift(30, '#d9c9ff')).setOrigin(0.5);

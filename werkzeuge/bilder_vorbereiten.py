@@ -7,7 +7,7 @@ Landschaft und Gegenstände werden wie ein Ausmalbild ausgemalt: Jede Fläche
 zwischen den Strichen bekommt eine passende Farbe.
 Das Ergebnis landet in public/bilder/.
 
-Starten (im Projektordner):  python3 werkzeuge/bilder_vorbereiten.py
+Starten (im Projektordner):  .venv/bin/python werkzeuge/bilder_vorbereiten.py
 """
 
 from pathlib import Path
@@ -30,6 +30,10 @@ ZIEL = PROJEKT / "public" / "bilder"
 #   ausmalen:   (optional) 'see', 'baum' oder 'kristall': Die Zeichnung wird
 #               ausgemalt, so wie es zu diesem Ding passt.
 #   hoehe:      (optional) so hoch wird das Spielbild höchstens, sonst 640
+#   ein_stueck: (optional, nur bunt) True: Nur das größte Stück bleibt, Flecken
+#               auf dem Papier daneben fallen weg
+#   schwelle:   (optional, nur Bleistift) höher als 0.045, wenn graue Flecken
+#               vom Papier mit ins Bild kommen
 ZEICHNUNGEN = [
     {
         "foto": "Kalamprios/Kalampria.jpg",
@@ -81,6 +85,29 @@ ZEICHNUNGEN = [
         "bunt": True,
     },
     {
+        "foto": "Kalamprios/neu.jpg",
+        "ziel": "kalamprios/kabon.png",
+        "ausschnitt": (1330, 1450, 2350, 1925),
+        "drehen": 0,
+        "ein_stueck": True,
+        "bunt": True,
+    },
+    {
+        "foto": "Kalamprios/neu.jpg",
+        "ziel": "kalamprios/simfita.png",
+        "ausschnitt": (200, 1990, 1220, 2880),
+        "drehen": 0,
+        "radieren": [(370, 2600, 645, 2710)],
+        "bunt": True,
+    },
+    {
+        "foto": "Kalamprios/neu.jpg",
+        "ziel": "kalamprios/taktik.png",
+        "ausschnitt": (1440, 2370, 2200, 3160),
+        "drehen": 0,
+        "schwelle": 0.08,
+    },
+    {
         "foto": "Charaktere/kala.jpg",
         "ziel": "charaktere/kala.png",
         "ausschnitt": (900, 1080, 1740, 2700),
@@ -129,17 +156,28 @@ ZEICHNUNGEN = [
 LINIENFARBE = (246, 240, 255)  # fast weiß, leicht lila
 LEUCHTFARBE = (190, 150, 255)  # lila Schein um die Linien
 KOERPERFARBE = (38, 20, 66)  # dunkle Füllung, damit der Hintergrund nicht durchscheint
+
+# Die Figuren (Kala, Pflanstaria) leuchten golden, damit man sie nicht mit
+# den Kalamprios verwechselt.
+FIGUR_FARBEN = {
+    "linien": (255, 247, 226),  # fast weiß, leicht golden
+    "leuchten": (255, 184, 72),  # goldener Schein
+    "koerper": (54, 30, 46),  # dunkle, warme Füllung
+}
 HOEHE_IM_SPIEL = 640  # so hoch (in Pixeln) wird jedes Spielbild höchstens
 
 
-def linien_finden(grau):
-    """Gibt für jeden Pixel an, wie viel Bleistift dort ist (0 = Papier, 1 = Strich)."""
+def linien_finden(grau, schwelle=0.045):
+    """Gibt für jeden Pixel an, wie viel Bleistift dort ist (0 = Papier, 1 = Strich).
+
+    schwelle: so viel dunkler als das Papier muss es mindestens sein, damit es zählt.
+    """
     grau = ndimage.gaussian_filter(grau, 1.5)
     # Das Papier ist nicht überall gleich hell (Schatten, Lampenlicht). Darum
     # schätzen wir die Papierhelligkeit rund um jeden Pixel und vergleichen damit.
     papier = ndimage.gaussian_filter(ndimage.maximum_filter(grau, size=61), 45)
     dunkler = 1.0 - grau / np.maximum(papier, 1e-6)
-    linien = np.clip((dunkler - 0.045) / 0.16, 0.0, 1.0)
+    linien = np.clip((dunkler - schwelle) / 0.16, 0.0, 1.0)
 
     # Kleine Flecken und Staubkörner auf dem Papier wegwerfen.
     stuecke, anzahl = ndimage.label(linien > 0.2)
@@ -188,6 +226,10 @@ def bunt_vorbereiten(eintrag):
     flaeche = ndimage.binary_closing(striche, iterations=8, border_value=0)
     flaeche = ndimage.binary_fill_holes(flaeche)
     flaeche = ndimage.binary_dilation(flaeche, iterations=9)
+    if eintrag.get("ein_stueck"):
+        stuecke, anzahl = ndimage.label(flaeche)
+        groessen = ndimage.sum(np.ones_like(stuecke), stuecke, range(1, anzahl + 1))
+        flaeche = stuecke == np.argmax(groessen) + 1
     deckkraft = np.clip(ndimage.gaussian_filter(flaeche.astype(float), 1.5) * 1.2, 0.0, 1.0)
 
     # Farben etwas kräftiger machen, damit sie auf dem dunklen Boden leuchten.
@@ -397,7 +439,7 @@ def vorbereiten(eintrag):
         bild = bild.rotate(eintrag["drehen"], expand=True)
     grau = np.asarray(bild, dtype=float) / 255.0
 
-    linien = linien_finden(grau)
+    linien = linien_finden(grau, eintrag.get("schwelle", 0.045))
     koerper = koerper_finden(linien)
     schein = np.clip(ndimage.gaussian_filter(linien, 9) * 1.6, 0.0, 1.0)
 
@@ -405,10 +447,14 @@ def vorbereiten(eintrag):
     hoehe, breite = grau.shape
     farbe = np.zeros((hoehe, breite, 3))
     deckkraft = np.zeros((hoehe, breite))
+    figur = eintrag["ziel"].startswith("charaktere/")
+    koerperfarbe = FIGUR_FARBEN["koerper"] if figur else KOERPERFARBE
+    leuchtfarbe = FIGUR_FARBEN["leuchten"] if figur else LEUCHTFARBE
+    linienfarbe = FIGUR_FARBEN["linien"] if figur else LINIENFARBE
     for schicht_farbe, schicht_deckkraft in (
-        (KOERPERFARBE, koerper * 0.78),
-        (LEUCHTFARBE, schein * 0.55),
-        (LINIENFARBE, linien),
+        (koerperfarbe, koerper * 0.78),
+        (leuchtfarbe, schein * (0.75 if figur else 0.55)),
+        (linienfarbe, linien),
     ):
         neu = schicht_deckkraft + deckkraft * (1 - schicht_deckkraft)
         anteil = np.divide(schicht_deckkraft, neu, out=np.zeros_like(neu), where=neu > 0)
@@ -423,7 +469,7 @@ if __name__ == "__main__":
     import sys
 
     # Mit Namen dahinter werden nur diese Bilder gemacht, zum Beispiel:
-    #   python3 werkzeuge/bilder_vorbereiten.py bolo mola
+    #   .venv/bin/python werkzeuge/bilder_vorbereiten.py bolo mola
     nur = {name.lower() for name in sys.argv[1:]}
     for eintrag in ZEICHNUNGEN:
         if not nur or Path(eintrag["ziel"]).stem in nur:

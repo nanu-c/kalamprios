@@ -3,6 +3,9 @@
 // Gibt es für einen Satz eine Aufnahme in public/stimme (gemacht mit
 // `npm run stimmen`), wird sie abgespielt. Sonst liest die Stimme vor, die im
 // Browser eingebaut ist. Wo der Browser nicht vorlesen kann, bleibt es still.
+// Solange vorgelesen wird, ist die Musik leiser.
+
+import { musikLeiser } from './klang/klang.js';
 
 const sprache = window.speechSynthesis;
 const ORDNER = `${import.meta.env.BASE_URL}stimme/`;
@@ -34,7 +37,10 @@ function browserSprechen(text) {
   satz.lang = 'de-DE';
   satz.voice = deutscheStimme();
   satz.rate = 0.9; // etwas langsamer als normal
+  satz.onstart = () => musikLeiser(true);
+  satz.onend = () => musikLeiser(false);
   satz.onerror = (fehler) => {
+    musikLeiser(false);
     if (fehler.error === 'not-allowed') wartet = text;
   };
   sprache.speak(satz);
@@ -48,6 +54,8 @@ function sprechen(text) {
     return;
   }
   ton = new Audio(`${ORDNER}${datei}`);
+  ton.onplaying = () => musikLeiser(true);
+  ton.onended = () => musikLeiser(false);
   ton.play().catch((fehler) => {
     if (fehler.name === 'NotAllowedError') wartet = text;
     else if (fehler.name !== 'AbortError') browserSprechen(text);
@@ -65,6 +73,7 @@ export function verstummen() {
   sprache?.cancel();
   ton?.pause();
   ton = null;
+  musikLeiser(false);
 }
 
 const nachholen = () => {

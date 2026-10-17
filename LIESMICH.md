@@ -24,47 +24,57 @@ Der Code liegt auf <https://github.com/nanu-c/kalamprios>. Sobald dort eine neue
 | `src/daten/attacken.js` | alle Attacken mit Stärke und Pause |
 | `src/daten/elemente.js` | alle Elemente mit ihren Farben |
 | `src/daten/charaktere.js` | die Figuren und was sie als Rivalin sagen |
-| `src/daten/geschichte.js` | die Geschichte: was am Anfang erzählt wird, was die dunklen Kristalle flüstern und was am Ende bei der Party erzählt wird |
+| `src/daten/geschichte.js` | die Geschichte: was am Anfang erzählt wird, was die dunklen Kristalle flüstern, was am Ende bei der Party erzählt wird und was die Rätselsteine zwischendurch sagen |
 | `src/daten/orte.js` | alle Orte und wo das Spiel beginnt |
-| `src/daten/orte/…` | ein Ort pro Datei (Lila Dorf, Kristallwald, Prismastahl-Mine, Mondsee): wo Häuser, Bäume, Felsen, Gold, hohes Gras, Wege, Fangkristalle und wilde Kalamprios sind |
-| `src/daten/regeln.js` | Lauftempo, Erholungszeit, wie oft im Gras etwas auftaucht, wie leicht man Kalamprios fängt und wie viel Erfahrung es für ein Level braucht |
+| `src/daten/orte/…` | ein Ort pro Datei (Lila Dorf, Kristallwald, Prismastahl-Mine, Mondsee): wo Häuser, Bäume, Felsen, Gold, hohes Gras, Wege, Fangkristalle und wilde Kalamprios sind, und das Rätsel des Ortes |
+| `src/daten/regeln.js` | Lauftempo, Erholungszeit, wie oft im Gras etwas auftaucht, wie leicht man Kalamprios fängt, wie viel Erfahrung es für ein Level braucht und wie viele Kalamprios mit in einen Kampf dürfen |
 
 In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich vertippst, zeigt das Spiel einen Hinweis auf dem Bildschirm.
 
 ## So spielt man
 
 1. Auf „Los geht’s!“ tippen, die Geschichte anhören (sie wird vorgelesen) oder überspringen, dann Figur und Kalamprio wählen.
+   Das Spiel speichert sich alle paar Sekunden von selbst im Browser. Kommt man wieder, steht auf dem Startbildschirm „Weiterspielen“ und „Neues Spiel“. Bei „Neues Spiel“ fragt das Spiel nach, bevor es den Spielstand löscht. Der Spielstand gilt nur für diesen Browser auf diesem Gerät.
 2. Das Spiel beginnt im Lila Dorf. Laufen: mit den Pfeiltasten, mit W A S D oder indem man dorthin tippt.
 3. Am Rand führen Wege mit Schildern zum nächsten Ort: Lila Dorf → Kristallwald → Prismastahl-Mine → Mondsee.
-4. Wilde Kalamprios laufen herum oder verstecken sich im hohen Gras (in der Mine im Geröll, am See im Schilf). Wer eines berührt, kämpft.
+4. Wilde Kalamprios laufen herum, unter ihnen leuchtet ein Ring in der Farbe ihres Elements. Andere verstecken sich im hohen Gras (in der Mine im Geröll, am See im Schilf). Wer eines berührt, kämpft.
 5. Die andere Figur wartet als Rivalin im Kristallwald, oben rechts.
 6. Nach einer Niederlage muss sich das Kalamprio kurz erholen.
-7. Am Mondsee versteckt sich ein geheimes Kalamprio im Schilf. Spätestens nach drei anderen Kalamprios im Schilf taucht es auf. Besiegen kann man es nur mit mindestens drei Kalamprios im Team (die Zahl steht in `regeln.js` bei `teamFuerGeheimes`), sonst schützt es ein Schild aus Licht. Wer es besiegt oder fängt, hat das Spiel geschafft: Dann gibt es eine Party, und das Ende wird erzählt.
+7. Am Mondsee versteckt sich ein geheimes Kalamprio im Schilf. Spätestens nach drei anderen Kalamprios im Schilf taucht es auf. Besiegen kann man es nur, wenn mindestens drei Kalamprios mit in den Kampf kommen (die Zahl steht in `regeln.js` bei `teamFuerGeheimes`), sonst schützt es ein Schild aus Licht. Wer es besiegt oder fängt, hat das Spiel geschafft: Dann gibt es eine Party, und das Ende wird erzählt.
 8. An jedem Ort steht ein dunkler Kristall. Wer zu ihm geht, hört mehr über den Schatten, der das Licht stiehlt.
 9. Man hat drei Fangkristalle dabei, weitere liegen in der Welt zum Aufsammeln. Im Kampf gegen ein wildes Kalamprio kann man einen werfen. Je schwächer das Kalamprio schon ist, desto eher klappt es. Gefangene Kalamprios kommen ins Team.
-10. Mit dem Knopf „Team“ wählt man, wer kämpft. Auch im Kampf kann man mit „Tauschen“ wechseln, das kostet einen Zug. Kann ein Kalamprio nicht mehr, kommt automatisch das nächste aus dem Team.
+10. In einen Kampf dürfen höchstens drei Kalamprios mit (`imKampfHoechstens` in `regeln.js`). Mit dem Knopf „Team“ tippt man an, wer mitkommt; die Nummer zeigt die Reihenfolge, die 1 kämpft zuerst. Tippt man auf eines, das schon mitkommt, kämpft es zuerst. Mit dem × bleibt es da. Im Kampf kann man mit „Tauschen“ wechseln, das kostet einen Zug. Kann ein Kalamprio nicht mehr, kommt automatisch das nächste. Ein gefangenes Kalamprio kommt gleich mit, wenn noch Platz ist.
 11. Kalamprios haben ein Level von 1 bis 3. Für jeden Sieg bekommen sie Erfahrung, so viel wie das Level des Gegners. Mit 5 Erfahrung kommt Level 2, mit 15 Level 3. Mit jedem Level wird ein Kalamprio ein bisschen stärker. Nach einem Sieg sieht man, wie viel Erfahrung es bekommen hat und wie viel bis zum nächsten Level fehlt. Die wilden Kalamprios am Mondsee haben Level 3, die Rivalin ist so stark wie dein stärkstes Kalamprio.
 12. In der Prismastahl-Mine ist es dunkel, nur rund um die Figur ist es hell. Dort glitzert auch Gold.
-13. Der Knopf unten links schaltet das Vollbild ein. Am Handy spielt man quer.
+13. An jedem Ort steht ein Rätselstein mit einem goldenen Fragezeichen. Wer zu ihm geht, bekommt ein Rätsel:
+    - Lila Dorf: drei goldene Glöckchen finden, die hinter Häusern und Bäumen liegen.
+    - Kristallwald: Vier bunte Klangsteine leuchten nacheinander auf. Dann läuft man in derselben Reihenfolge über sie. Wer sich vertut, fängt von vorn an.
+    - Prismastahl-Mine: drei Glühsteine im Dunkeln finden. Danach scheint das Licht um die Figur viel weiter.
+    - Mondsee: zwei Rätselfragen beantworten.
+
+    Als Belohnung gibt es Fangkristalle. Ist ein Rätsel gelöst, wird aus dem Fragezeichen ein Stern. Wie man eigene Rätsel baut, steht oben in `src/daten/orte/kristallwald.js` bei `raetsel`.
+14. Der Knopf unten links schaltet das Vollbild ein. Am Handy spielt man quer.
 
 ## Eine neue Zeichnung ins Spiel bringen
 
 1. Das Foto in den Ordner `Kalamprios` oder `Charaktere` legen.
-2. Das Foto in `werkzeuge/bilder_vorbereiten.py` eintragen. Dafür braucht es den Ausschnitt in Pixeln, am besten Claude darum bitten. Bei Buntstift-Zeichnungen kommt `"bunt": True` dazu, dann bleiben die Farben.
-3. Im Terminal `python3 werkzeuge/bilder_vorbereiten.py` starten. Das fertige Spielbild liegt dann in `public/bilder`. Mit Namen dahinter (zum Beispiel `python3 werkzeuge/bilder_vorbereiten.py bolo`) wird nur dieses Bild neu gemacht.
+2. Das Foto in `werkzeuge/bilder_vorbereiten.py` eintragen. Dafür braucht es den Ausschnitt in Pixeln, am besten Claude darum bitten. Bei Buntstift-Zeichnungen kommt `"bunt": True` dazu, dann bleiben die Farben. Bleistift-Figuren aus `Charaktere` leuchten golden, Bleistift-Kalamprios lila, damit man sie nicht verwechselt.
+3. Im Terminal `.venv/bin/python werkzeuge/bilder_vorbereiten.py` starten. Das fertige Spielbild liegt dann in `public/bilder`. Mit Namen dahinter (zum Beispiel `.venv/bin/python werkzeuge/bilder_vorbereiten.py bolo`) wird nur dieses Bild neu gemacht.
 4. Das Tier in `src/daten/kalamprios.js` eintragen.
+
+Das Bilder-Werkzeug braucht numpy, scipy und pillow. Die liegen im Ordner `.venv` (der wird nicht hochgeladen). Fehlt der Ordner, macht man ihn so neu: `sudo apt install python3-venv`, dann `python3 -m venv .venv` und `.venv/bin/pip install -r werkzeuge/requirements.txt`.
 
 ## Landschaft, Gegenstände und Titel
 
-Der Mondsee, zwei Bäume (`Landschaft`) und der Fangkristall (`Gegenstände`) werden wie ein Ausmalbild ausgemalt: Jede Fläche zwischen den Strichen bekommt eine passende Farbe. Auch das geht mit `python3 werkzeuge/bilder_vorbereiten.py`, zum Beispiel `python3 werkzeuge/bilder_vorbereiten.py mondsee`.
+Der Mondsee, zwei Bäume (`Landschaft`) und der Fangkristall (`Gegenstände`) werden wie ein Ausmalbild ausgemalt: Jede Fläche zwischen den Strichen bekommt eine passende Farbe. Auch das geht mit `.venv/bin/python werkzeuge/bilder_vorbereiten.py`, zum Beispiel `.venv/bin/python werkzeuge/bilder_vorbereiten.py mondsee`.
 
-Den Titel-Schriftzug (`Sonstiges/Title.jpg`) hat eine OpenAI-Bild-KI ausgemalt, die Umrisse der Buchstaben sind dabei geblieben. Neu machen: `python3 werkzeuge/titel_verschoenern.py`. Das kostet ein bisschen Geld vom OpenAI-Konto. Das ausgemalte Bild wird in `Sonstiges/Titel-ausgemalt.png` aufgehoben. Mit `--ohne-ki` dahinter wird nur der Hintergrund noch einmal entfernt, ohne OpenAI zu fragen.
+Den Titel-Schriftzug (`Sonstiges/Title.jpg`) hat eine OpenAI-Bild-KI ausgemalt, die Umrisse der Buchstaben sind dabei geblieben. Neu machen: `.venv/bin/python werkzeuge/titel_verschoenern.py`. Das kostet ein bisschen Geld vom OpenAI-Konto. Das ausgemalte Bild wird in `Sonstiges/Titel-ausgemalt.png` aufgehoben. Mit `--ohne-ki` dahinter wird nur der Hintergrund noch einmal entfernt, ohne OpenAI zu fragen.
 
 ## Die Vorlese-Stimme
 
-Die Geschichte und die dunklen Kristalle werden vorgelesen. Die Aufnahmen liegen in `public/stimme` und kommen von einer OpenAI-Stimme.
+Die Geschichte, die dunklen Kristalle und die Rätselsteine werden vorgelesen. Die Aufnahmen liegen in `public/stimme` und kommen von einer OpenAI-Stimme.
 
-Wenn du in `src/daten/geschichte.js` einen Satz änderst oder dazuschreibst, im Terminal `npm run stimmen` starten. Dann werden nur die neuen Sätze gesprochen. Bis dahin liest die Stimme des Browsers sie vor.
+Wenn du in `src/daten/geschichte.js` oder bei einem Rätsel in `src/daten/orte/…` einen Satz änderst oder dazuschreibst, im Terminal `npm run stimmen` starten. Dann werden nur die neuen Sätze gesprochen. Bis dahin liest die Stimme des Browsers sie vor.
 
 Dafür braucht es den OpenAI-Schlüssel in der Datei `.env`. Diese Datei wird nie hochgeladen, der Schlüssel bleibt geheim.
 

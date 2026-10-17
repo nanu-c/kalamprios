@@ -20,9 +20,10 @@ export const PRISMASTAHL_MINE = {
     { art: 'kapapa', x: 900, y: 800 },
     { art: 'kapapa', x: 1600, y: 440 },
     { art: 'qalutu', x: 1200, y: 1000 },
+    { art: 'simfita', x: 1850, y: 560 },
   ],
 
-  tiereImGras: ['kapapa', 'kapapa', 'qalutu'],
+  tiereImGras: ['kapapa', 'kapapa', 'qalutu', 'simfita'],
   hohesGras: [
     { links: 330, oben: 920, breite: 460, hoehe: 300 },
     { links: 1300, oben: 560, breite: 500, hoehe: 290 },
@@ -68,4 +69,24 @@ export const PRISMASTAHL_MINE = {
 
   // In der Höhle ist es dunkel, nur rund um die Figur ist es hell.
   dunkel: 0.82,
+
+  // Das Rätsel: Drei Glühsteine liegen im Dunkeln. Wer alle findet, hat mehr Licht.
+  raetsel: {
+    art: 'suchen',
+    x: 560,
+    y: 760,
+    aufgabe: [
+      'Ein Rätselstein mit einem goldenen Fragezeichen. Er leuchtet ein kleines bisschen.',
+      '„In der Mine sind drei Glühsteine verloren gegangen. Mit ihnen wird es heller.“',
+      '„Im Dunkeln siehst du sie erst, wenn du ganz nah bist. Such gut!“',
+    ],
+    farbe: 'blau',
+    dinge: [
+      { x: 250, y: 1150 },
+      { x: 1150, y: 450 },
+      { x: 1990, y: 260 },
+    ],
+    geschafft: '„Du hast alle Glühsteine gefunden! Jetzt leuchtet dein Licht viel weiter.“',
+    belohnung: { fangkristalle: 1, mehrLicht: true },
+  },
 };

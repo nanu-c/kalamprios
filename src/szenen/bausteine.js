@@ -1,6 +1,7 @@
 // Bausteine, aus denen die Bildschirme zusammengesetzt sind:
 // Textfelder, Knöpfe und Auswahlkarten.
 
+import { klick } from '../klang/geraeusche.js';
 import { FARBEN, schrift } from './stil.js';
 
 // Der gemalte Schriftzug "Kalamprios", der sanft leuchtet und schwebt.
@@ -40,12 +41,16 @@ export function textKnopf(szene, x, y, breite, hoehe, text, beimKlick) {
   const beschriftung = szene.add
     .text(x + breite / 2, y + hoehe / 2, text, schrift(26))
     .setOrigin(0.5);
-  flaeche.on('pointerdown', beimKlick);
+  flaeche.on('pointerdown', () => {
+    klick();
+    beimKlick();
+  });
   return [flaeche, beschriftung];
 }
 
 // Eine Karte zum Auswählen, mit Bild, Name und einer kleinen Zeile darunter.
-export function karte(szene, { x, y, breite, bild, name, zusatz = '', zusatzFarbe = '#d9c9ff', randFarbe, beimKlick }) {
+// beimZeigen wird aufgerufen, wenn die Maus auf die Karte kommt.
+export function karte(szene, { x, y, breite, bild, name, zusatz = '', zusatzFarbe = '#d9c9ff', randFarbe, beimKlick, beimZeigen }) {
   const hoehe = 400;
   const flaeche = szene.add
     .rectangle(x, y, breite, hoehe, FARBEN.feld, 0.9)
@@ -59,9 +64,15 @@ export function karte(szene, { x, y, breite, bild, name, zusatz = '', zusatzFarb
   szene.add.text(x, y + 118, name, schrift(Math.min(34, breite / 5))).setOrigin(0.5);
   szene.add.text(x, y + 160, zusatz, schrift(22, zusatzFarbe)).setOrigin(0.5);
 
-  flaeche.on('pointerover', () => flaeche.setStrokeStyle(6, randFarbe ?? 0xffffff));
+  flaeche.on('pointerover', () => {
+    flaeche.setStrokeStyle(6, randFarbe ?? 0xffffff);
+    beimZeigen?.();
+  });
   flaeche.on('pointerout', () => flaeche.setStrokeStyle(3, FARBEN.rand));
-  flaeche.on('pointerdown', beimKlick);
+  flaeche.on('pointerdown', () => {
+    klick();
+    beimKlick();
+  });
 }
 
 // Verteilt Karten nebeneinander und ruft für jede baueKarte(eintrag, x, breite) auf.

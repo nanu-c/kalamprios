@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
 import { ELEMENTE } from '../daten/elemente.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
+import { ruf } from '../klang/geraeusche.js';
 import { spielstand } from '../spielstand.js';
 import { karte, kartenreihe } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
@@ -35,13 +36,17 @@ export class AuswahlSzene extends Phaser.Scene {
         zusatzFarbe: farbeAlsText(element.farbe),
         randFarbe: element.farbe,
         beimKlick: () => this.waehlen(kurzname),
+        // Jedes Kalamprio ruft, wenn man es sich ansieht.
+        beimZeigen: () => ruf(kurzname),
       });
     });
   }
 
   waehlen(kurzname) {
+    ruf(kurzname);
     spielstand.kalamprio = kurzname;
     spielstand.team = [kurzname];
+    spielstand.kampfteam = [kurzname];
     // Die Rivalin bekommt das erste Kalamprio, das man nicht gewählt hat.
     spielstand.rivalinKalamprio = waehlbare().find((anderes) => anderes !== kurzname);
     this.scene.start('Welt');
