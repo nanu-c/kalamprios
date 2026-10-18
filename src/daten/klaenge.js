@@ -47,6 +47,13 @@ export const KLAENGE = {
     taktik: { stimme: 'ticken', hoehe: 'mittel', silben: 4 },
     tschank: { stimme: 'brummen', hoehe: 'mittel', silben: 3 },
     blitznara: { stimme: 'zirpen', hoehe: 'hoch', silben: 5 },
+    pflinia: { stimme: 'glocke', hoehe: 'hoch', silben: 2 },
+    schnektata: { stimme: 'blubbern', hoehe: 'tief', silben: 3 },
+    kristalta: { stimme: 'glitzern', hoehe: 'ganz hoch', silben: 4 },
+    totantia: { stimme: 'brummen', hoehe: 'mittel', silben: 2 },
+    zeittakel: { stimme: 'ticken', hoehe: 'hoch', silben: 6 },
+    elefantia: { stimme: 'brummen', hoehe: 'tief', silben: 4 },
+    zetarata: { stimme: 'ticken', hoehe: 'ganz hoch', silben: 3 },
     geheimnis: { stimme: 'zauber', hoehe: 'mittel', silben: 3 },
   },
 };

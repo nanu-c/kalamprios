@@ -27,7 +27,7 @@ ZIEL = PROJEKT / "public" / "bilder"
 #   radieren:   (optional) Rechtecke im Foto, die nicht zur Zeichnung gehören,
 #               zum Beispiel ein Buchstabe vom Namen, der ins Bild ragt
 #   bunt:       (optional) True für Zeichnungen mit Buntstift: Die Farben bleiben.
-#   ausmalen:   (optional) 'see', 'baum' oder 'kristall': Die Zeichnung wird
+#   ausmalen:   (optional) 'see', 'baum', 'kristall' oder 'mond': Die Zeichnung wird
 #               ausgemalt, so wie es zu diesem Ding passt.
 #   hoehe:      (optional) so hoch wird das Spielbild höchstens, sonst 640
 #   ein_stueck: (optional, nur bunt) True: Nur das größte Stück bleibt, Flecken
@@ -123,6 +123,71 @@ ZEICHNUNGEN = [
         "schwelle": 0.06,
     },
     {
+        "foto": "Kalamprios/Elefantia.jpg",
+        "ziel": "kalamprios/elefantia.png",
+        "ausschnitt": (1840, 260, 3000, 2520),
+        "drehen": 90,
+        "radieren": [(2680, 1940, 2860, 2520)],
+        "bunt": True,
+        "ein_stueck": True,
+    },
+    {
+        "foto": "Kalamprios/Kristalta.jpg",
+        "ziel": "kalamprios/kristalta.png",
+        "ausschnitt": (1960, 1150, 3390, 2250),
+        "drehen": 90,
+        "bunt": True,
+        "ein_stueck": True,
+    },
+    {
+        "foto": "Kalamprios/Pflinia.jpg",
+        "ziel": "kalamprios/pflinia.png",
+        "ausschnitt": (2040, 1040, 3360, 2200),
+        "drehen": 90,
+        "bunt": True,
+        "ein_stueck": True,
+    },
+    {
+        "foto": "Kalamprios/Schnektata.jpg",
+        "ziel": "kalamprios/schnektata.png",
+        "ausschnitt": (2000, 330, 3640, 2580),
+        "drehen": 90,
+        "radieren": [(2990, 1940, 3460, 2900)],
+        "bunt": True,
+    },
+    {
+        "foto": "Kalamprios/Totantia.jpg",
+        "ziel": "kalamprios/totantia.png",
+        "ausschnitt": (1255, 1060, 2920, 2520),
+        "drehen": 90,
+        # Die Schrift "Kristall" und "Totantia" steht ganz nah an der Zeichnung.
+        "radieren": [
+            (2533, 990, 3100, 1268),
+            (2610, 1450, 2700, 1515),
+            (2633, 1700, 3010, 2012),
+            (1250, 1955, 1470, 2520),
+            (2600, 2400, 3000, 2600),
+        ],
+        "bunt": True,
+        "ein_stueck": True,
+    },
+    {
+        "foto": "Kalamprios/Zeltakel.jpg",
+        "ziel": "kalamprios/zeittakel.png",
+        "ausschnitt": (680, 1260, 1640, 2260),
+        "drehen": 0,
+        "bunt": True,
+        "ein_stueck": True,
+    },
+    {
+        "foto": "Kalamprios/Zetarata.jpg",
+        "ziel": "kalamprios/zetarata.png",
+        "ausschnitt": (1720, 1330, 2950, 2120),
+        "drehen": 90,
+        "bunt": True,
+        "ein_stueck": True,
+    },
+    {
         "foto": "Charaktere/kala.jpg",
         "ziel": "charaktere/kala.png",
         "ausschnitt": (900, 1080, 1740, 2700),
@@ -164,6 +229,14 @@ ZEICHNUNGEN = [
         "ausschnitt": (1450, 1150, 2650, 2830),
         "drehen": 90,
         "ausmalen": "kristall",
+        "hoehe": 300,
+    },
+    {
+        "foto": "Landschaft/Mond.jpg",
+        "ziel": "landschaft/mond.png",
+        "ausschnitt": (1560, 920, 2820, 2120),
+        "drehen": 0,
+        "ausmalen": "mond",
         "hoehe": 300,
     },
 ]
@@ -420,7 +493,39 @@ def kristall_ausmalen(eintrag):
     ausmalen(eintrag, farben, gemalt, linien, 0xF6F0FF, mit_schein=True)
 
 
-AUSMALEN = {"see": see_ausmalen, "baum": baum_ausmalen, "kristall": kristall_ausmalen}
+def mond_ausmalen(eintrag):
+    """Der Mond: ganz dicht schraffiert, darum keine Flächen wie im Ausmalbild.
+
+    Die Scheibe wird hell wie Mondlicht. Wo viel Bleistift ist (die Krater und
+    die Schraffur), wird sie etwas dunkler und lila, so bleibt die Zeichnung zu sehen.
+    """
+    foto = Image.open(PROJEKT / eintrag["foto"]).convert("L")
+    bild = foto.crop(eintrag["ausschnitt"])
+    if eintrag["drehen"]:
+        bild = bild.rotate(eintrag["drehen"], expand=True, fillcolor=bild.getpixel((0, 0)))
+    bild = bild.resize((bild.width // 2, bild.height // 2), Image.LANCZOS)
+    linien = linien_finden(np.asarray(bild, dtype=float) / 255.0, 0.03)
+
+    # Die Scheibe: alles innerhalb der Schraffur, nur das größte Stück.
+    scheibe = ndimage.binary_closing(linien > 0.15, iterations=10, border_value=0)
+    scheibe = ndimage.binary_fill_holes(scheibe)
+    stuecke, anzahl = ndimage.label(scheibe)
+    groessen = ndimage.sum(np.ones_like(stuecke), stuecke, range(1, anzahl + 1))
+    scheibe = stuecke == np.argmax(groessen) + 1
+    linien = linien * scheibe
+
+    # Licht kommt von oben links, unten rechts ist der Mond etwas lila.
+    yy, xx = np.indices(scheibe.shape)
+    hoehe, breite = scheibe.shape
+    licht = np.clip(1 - np.hypot(yy - hoehe * 0.3, xx - breite * 0.3) / (max(hoehe, breite) * 0.9), 0.0, 1.0)[..., None]
+    farben = farbe(0xC9B8F0) * (1 - licht) + farbe(0xFFF6D6) * licht
+    bleistift = ndimage.gaussian_filter(linien, 1.0)[..., None] * 0.45
+    farben = farben * (1 - bleistift) + farbe(0x8A76B8) * bleistift
+    deckkraft = np.clip(ndimage.gaussian_filter(scheibe.astype(float), 2) * 1.3, 0.0, 1.0)
+    speichern(eintrag, uebereinander([(farben, deckkraft)]))
+
+
+AUSMALEN = {"see": see_ausmalen, "baum": baum_ausmalen, "kristall": kristall_ausmalen, "mond": mond_ausmalen}
 
 
 def speichern(eintrag, ergebnis):

@@ -21,7 +21,8 @@
 //               Schatten bleibt unten.
 //
 // Die Werte von Kapapa, Qalutu, Bolo, Mola, Kabon, Simfita, Tak-Tik, Tschank,
-// Blitznara und dem geheimen Kalamprio sind Platzhalter. Ändere sie gern!
+// Blitznara, Pflinia, Schnektata, Kristalta, Totantia, Zeittakel, Elefantia,
+// Zetarata und dem geheimen Kalamprio sind Platzhalter. Ändere sie gern!
 
 export const KALAMPRIOS = {
   kalampria: {
@@ -159,6 +160,98 @@ export const KALAMPRIOS = {
     verteidigung: 8,
     tempo: 17,
     attacken: ['schlangenbiss', 'spiralblitz'],
+  },
+
+  // Eine Sonne mit grünen Blättern rundherum. Lebt im Kristallwald.
+  pflinia: {
+    name: 'Pflinia',
+    element: 'pflanze',
+    bild: 'bilder/kalamprios/pflinia.png',
+    blick: 'vorne',
+    kp: 66,
+    angriff: 11,
+    verteidigung: 9,
+    tempo: 13,
+    attacken: ['sonnenblatt', 'blaetterkranz'],
+  },
+
+  // Eine Schnecke mit einem Moospanzer und Ranken. Lebt im Kristallwald.
+  schnektata: {
+    name: 'Schnektata',
+    element: 'pflanze',
+    bild: 'bilder/kalamprios/schnektata.png',
+    blick: 'links',
+    kp: 76,
+    angriff: 9,
+    verteidigung: 13,
+    tempo: 6,
+    attacken: ['rankenpeitsche', 'moosschleim'],
+  },
+
+  // Ein Kristall mit Flossen. Lebt in der Prismastahl-Mine.
+  kristalta: {
+    name: 'Kristalta',
+    element: 'kristall',
+    bild: 'bilder/kalamprios/kristalta.png',
+    blick: 'vorne',
+    kp: 64,
+    angriff: 11,
+    verteidigung: 9,
+    tempo: 15,
+    attacken: ['flossenschlag', 'funkelspitze'],
+  },
+
+  // Mit Hörnern, einem Bauch voller Kristallschuppen und einem gemusterten
+  // Schwanz. Lebt in der Prismastahl-Mine.
+  totantia: {
+    name: 'Totantia',
+    element: 'kristall',
+    bild: 'bilder/kalamprios/totantia.png',
+    blick: 'vorne',
+    kp: 74,
+    angriff: 10,
+    verteidigung: 11,
+    tempo: 9,
+    attacken: ['hornstoss', 'schuppenregen'],
+  },
+
+  // Vier Uhren an langen Armen. Lebt in der Prismastahl-Mine.
+  zeittakel: {
+    name: 'Zeittakel',
+    element: 'zeit',
+    bild: 'bilder/kalamprios/zeittakel.png',
+    blick: 'vorne',
+    kp: 68,
+    angriff: 11,
+    verteidigung: 9,
+    tempo: 14,
+    attacken: ['zeigerschlag', 'uhrenwirbel'],
+  },
+
+  // Ein blauer Elefant mit einem langen Rüssel. Lebt am Mondsee.
+  elefantia: {
+    name: 'Elefantia',
+    element: 'wasser',
+    bild: 'bilder/kalamprios/elefantia.png',
+    blick: 'links',
+    kp: 80,
+    angriff: 11,
+    verteidigung: 11,
+    tempo: 6,
+    attacken: ['ruesselspritzer', 'stampfwelle'],
+  },
+
+  // Bunte Tentakel und zwei Uhren obendrauf. Lebt am Mondsee.
+  zetarata: {
+    name: 'Zetarata',
+    element: 'zeit',
+    bild: 'bilder/kalamprios/zetarata.png',
+    blick: 'vorne',
+    kp: 62,
+    angriff: 12,
+    verteidigung: 8,
+    tempo: 16,
+    attacken: ['tentakeltick', 'zeitsprung'],
   },
 
   // Das geheime Kalamprio. Von ihm weiß man nicht viel ...

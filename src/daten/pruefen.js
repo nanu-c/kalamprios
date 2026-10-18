@@ -79,8 +79,9 @@ export function datenPruefen() {
   if (!aufsteigend || stufen.length === 0) {
     fehler.push('regeln.js: erfahrungFuerLevel muss mit 0 anfangen und dann immer größer werden, zum Beispiel [0, 5, 15].');
   }
-  if (!(REGELN.staerkerProLevel >= 0 && REGELN.staerkerProLevel <= 1)) {
-    fehler.push('regeln.js: staerkerProLevel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.1.');
+  const staerken = REGELN.staerkeJeLevel;
+  if (!(Array.isArray(staerken) && staerken.length === stufen?.length && staerken.every((staerke) => staerke > 0))) {
+    fehler.push('regeln.js: staerkeJeLevel braucht für jedes Level eine Zahl größer als 0, so viele wie bei erfahrungFuerLevel, zum Beispiel [1, 1.35, 1.75].');
   }
 
   for (const name of ['danebenChance', 'ausweichChance', 'abwehrChance', 'abgewehrtSchaden']) {

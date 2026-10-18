@@ -11,6 +11,7 @@ const KLEIN_HOEHE = 320;
 const WEITERE_BILDER = {
   titel: 'bilder/titel.png',
   mondsee: 'bilder/landschaft/mondsee.png',
+  mond: 'bilder/landschaft/mond.png',
   'baum-rund': 'bilder/landschaft/baum-rund.png',
   'baum-schief': 'bilder/landschaft/baum-schief.png',
   fangkristall: 'bilder/gegenstaende/fangkristall.png',

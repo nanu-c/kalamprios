@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
-    "stimmen": "node werkzeuge/stimmen_erzeugen.mjs"
+    "stimmen": "node werkzeuge/stimmen_erzeugen.mjs",
+    "kampfprobe": "node werkzeuge/kampfprobe.mjs"
   },
   "dependencies": {
     "@fontsource/fredoka": "^5.3.0",

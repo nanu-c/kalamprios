@@ -93,9 +93,11 @@ export const KRISTALLWALD = {
     { art: 'qalutu', x: 1720, y: 1920 },
     { art: 'kabon', x: 2350, y: 1960 },
     { art: 'tschank', x: 2900, y: 1450 },
+    { art: 'pflinia', x: 1320, y: 1820 },
+    { art: 'schnektata', x: 2650, y: 600 },
   ],
 
-  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon', 'tschank'],
+  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon', 'tschank', 'pflinia', 'schnektata'],
   hohesGras: [
     { links: 730, oben: 1250, breite: 680, hoehe: 440 },
     { links: 1660, oben: 290, breite: 600, hoehe: 390 },

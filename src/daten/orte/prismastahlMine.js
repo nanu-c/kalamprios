@@ -23,12 +23,15 @@ export const PRISMASTAHL_MINE = {
     { art: 'kapapa', x: 2080, y: 570 },
     { art: 'qalutu', x: 1560, y: 1300 },
     { art: 'simfita', x: 2400, y: 730 },
+    { art: 'kristalta', x: 2700, y: 600 },
+    { art: 'totantia', x: 1100, y: 1500 },
+    { art: 'zeittakel', x: 1050, y: 400 },
   ],
 
   // Die Kalamprios in der Mine sind schon etwas stärker.
   wildesLevel: 2,
 
-  tiereImGras: ['kapapa', 'kapapa', 'qalutu', 'simfita'],
+  tiereImGras: ['kapapa', 'kapapa', 'qalutu', 'simfita', 'kristalta', 'totantia', 'zeittakel'],
   hohesGras: [
     { links: 430, oben: 1200, breite: 600, hoehe: 390 },
     { links: 1690, oben: 730, breite: 650, hoehe: 380 },

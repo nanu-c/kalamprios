@@ -35,9 +35,14 @@ export const REGELN = {
   // (0), Level 2 ab 5, Level 3 ab 15. Mehr Level gibt es nicht.
   erfahrungFuerLevel: [0, 5, 15],
 
-  // Wie viel stärker ein Kalamprio mit jedem Level wird. 0.1 bedeutet: Lebenspunkte,
-  // Angriff, Verteidigung und Tempo werden um 10 von 100 größer.
-  staerkerProLevel: 0.1,
+  // Wie stark ein Kalamprio auf jedem Level ist, für Level 1, 2 und 3.
+  // 1 ist normal, 1.5 bedeutet: Lebenspunkte, Angriff und Verteidigung sind
+  // eineinhalbmal so groß. Das Tempo wächst nur halb so viel.
+  // Jedes Level ist viel stärker als das davor: Gegen ein wildes Kalamprio mit
+  // Level 3 braucht man mindestens zwei Kalamprios mit Level 2, und auch dann
+  // klappt es nicht immer. Mit Level-1-Kalamprios schafft man es nie.
+  // Wie sich andere Zahlen anfühlen, zeigt `npm run kampfprobe`.
+  staerkeJeLevel: [1, 1.35, 1.75],
 
   // --- Wald ---
 

@@ -22,12 +22,14 @@ export const MONDSEE = {
     { art: 'mola', x: 1620, y: 1920 },
     { art: 'taktik', x: 2920, y: 1360 },
     { art: 'blitznara', x: 2250, y: 560 },
+    { art: 'elefantia', x: 2500, y: 1500 },
+    { art: 'zetarata', x: 900, y: 350 },
   ],
 
   // Am Mondsee sind die wilden Kalamprios stärker.
   wildesLevel: 3,
 
-  tiereImGras: ['bolo', 'mola', 'taktik', 'blitznara'],
+  tiereImGras: ['bolo', 'mola', 'taktik', 'blitznara', 'elefantia', 'zetarata'],
   hohesGras: [
     { links: 230, oben: 1460, breite: 570, hoehe: 390 },
     { links: 2440, oben: 310, breite: 520, hoehe: 360 },

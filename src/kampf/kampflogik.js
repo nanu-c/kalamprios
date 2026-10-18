@@ -48,11 +48,14 @@ export function erfahrungFuerSieg(gegner) {
 
 // Macht aus einem Eintrag in kalamprios.js einen Kämpfer für einen Kampf:
 // mit vollen Lebenspunkten und allen Attacken bereit. Mit jedem Level wird
-// er ein bisschen stärker (staerkerProLevel in regeln.js).
+// er stärker (staerkeJeLevel in regeln.js).
 export function kaempferErstellen(kurzname, level = 1) {
   const tier = KALAMPRIOS[kurzname];
   const stufe = Math.min(Math.max(level, 1), MAX_LEVEL);
-  const mal = (wert) => Math.round(wert * (1 + (stufe - 1) * REGELN.staerkerProLevel));
+  const staerke = REGELN.staerkeJeLevel[stufe - 1] ?? 1;
+  const mal = (wert) => Math.round(wert * staerke);
+  // Das Tempo wächst nur halb so viel, sonst ist ein hohes Level immer zuerst dran.
+  const tempo = Math.round(tier.tempo * (1 + (staerke - 1) / 2));
   return {
     kurzname,
     name: tier.name,
@@ -63,7 +66,7 @@ export function kaempferErstellen(kurzname, level = 1) {
     kp: mal(tier.kp),
     angriff: mal(tier.angriff),
     verteidigung: mal(tier.verteidigung),
-    tempo: mal(tier.tempo),
+    tempo,
     attacken: tier.attacken.map((attacke) => ({
       kurzname: attacke,
       ...ATTACKEN[attacke],

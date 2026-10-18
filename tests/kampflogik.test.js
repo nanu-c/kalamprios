@@ -182,12 +182,12 @@ test('ein stärkerer Gegner bringt mehr Erfahrung', () => {
   assert.equal(erfahrungFuerSieg(kaempferErstellen('bolo', 3)), 3);
 });
 
-test('mit jedem Level wird ein Kalamprio nur ein bisschen stärker', () => {
+test('mit jedem Level wird ein Kalamprio so viel stärker, wie in regeln.js steht', () => {
   const eins = kaempferErstellen('kalampria', 1);
   const drei = kaempferErstellen('kalampria', 3);
   assert.equal(eins.maxKp, KALAMPRIOS.kalampria.kp);
   assert.ok(drei.maxKp > eins.maxKp && drei.angriff > eins.angriff);
-  assert.ok(drei.maxKp <= eins.maxKp * (1 + 2 * REGELN.staerkerProLevel) + 1);
+  assert.equal(drei.maxKp, Math.round(eins.maxKp * REGELN.staerkeJeLevel[2]));
   assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.erfahrungFuerLevel.length);
 });
 

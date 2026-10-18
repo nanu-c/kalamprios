@@ -76,6 +76,34 @@ export const ATTACKEN = {
   schlangenbiss: { name: 'Schlangenbiss', staerke: 10, pause: 0, effekt: 'biss' },
   spiralblitz: { name: 'Spiralblitz', staerke: 20, pause: 2 },
 
+  // Pflinia
+  sonnenblatt: { name: 'Sonnenblatt', staerke: 10, pause: 0, effekt: 'strahl' },
+  blaetterkranz: { name: 'Blätterkranz', staerke: 19, pause: 2 },
+
+  // Schnektata
+  rankenpeitsche: { name: 'Rankenpeitsche', staerke: 10, pause: 0, effekt: 'faden' },
+  moosschleim: { name: 'Moosschleim', staerke: 18, pause: 2, effekt: 'wirbel' },
+
+  // Kristalta
+  flossenschlag: { name: 'Flossenschlag', staerke: 10, pause: 0, effekt: 'hieb' },
+  funkelspitze: { name: 'Funkelspitze', staerke: 19, pause: 2 },
+
+  // Totantia
+  hornstoss: { name: 'Hornstoß', staerke: 10, pause: 0, effekt: 'krallen' },
+  schuppenregen: { name: 'Schuppenregen', staerke: 19, pause: 2 },
+
+  // Zeittakel
+  zeigerschlag: { name: 'Zeigerschlag', staerke: 10, pause: 0, effekt: 'hieb' },
+  uhrenwirbel: { name: 'Uhrenwirbel', staerke: 19, pause: 2, effekt: 'wirbel' },
+
+  // Elefantia
+  ruesselspritzer: { name: 'Rüsselspritzer', staerke: 10, pause: 0, effekt: 'strahl' },
+  stampfwelle: { name: 'Stampfwelle', staerke: 20, pause: 2 },
+
+  // Zetarata
+  tentakeltick: { name: 'Tentakel-Tick', staerke: 10, pause: 0, effekt: 'faden' },
+  zeitsprung: { name: 'Zeitsprung', staerke: 19, pause: 2 },
+
   // Das geheime Kalamprio
   kronenblitz: { name: 'Kronenblitz', staerke: 11, pause: 0, effekt: 'krone' },
   geheimsturm: { name: '???', staerke: 20, pause: 2 },
