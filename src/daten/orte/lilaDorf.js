@@ -5,51 +5,54 @@
 export const LILA_DORF = {
   name: 'Lila Dorf',
   stil: 'dorf',
-  breite: 1800,
-  hoehe: 1200,
+  breite: 2340,
+  hoehe: 1560,
 
-  ausgaenge: [{ nach: 'kristallwald', seite: 'rechts', mitte: 640 }],
+  ausgaenge: [{ nach: 'kristallwald', seite: 'rechts', mitte: 830 }],
 
-  start: { x: 520, y: 700 },
+  start: { x: 680, y: 910 },
 
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
-  dunklerKristall: { x: 300, y: 720 },
+  dunklerKristall: { x: 390, y: 940 },
 
   wildeKalamprios: [],
   tiereImGras: [],
   hohesGras: [],
 
   haeuser: [
-    { x: 380, y: 430 },
-    { x: 880, y: 400 },
-    { x: 1380, y: 440 },
-    { x: 700, y: 1000 },
-    { x: 1260, y: 1010 },
+    { x: 490, y: 560 },
+    { x: 1140, y: 520 },
+    { x: 1790, y: 570 },
+    { x: 910, y: 1300 },
+    { x: 1640, y: 1310 },
   ],
 
   baeume: [
-    { x: 1620, y: 320 },
-    { x: 160, y: 960 },
-    { x: 1000, y: 1120 },
-    { x: 1640, y: 1000 },
+    { x: 2110, y: 420 },
+    { x: 210, y: 1250 },
+    { x: 1300, y: 1460 },
+    { x: 2130, y: 1300 },
+    { x: 2050, y: 650 },
+    { x: 1800, y: 1420 },
+    { x: 480, y: 1450 },
   ],
 
   // Leuchtkristalle wie Laternen am Weg, und der große Kristall auf dem Platz
   kristalle: [
-    { x: 640, y: 560 },
-    { x: 1150, y: 560 },
-    { x: 900, y: 690 },
-    { x: 640, y: 810 },
-    { x: 1150, y: 810 },
+    { x: 830, y: 730 },
+    { x: 1500, y: 730 },
+    { x: 1170, y: 900 },
+    { x: 830, y: 1050 },
+    { x: 1500, y: 1050 },
   ],
 
-  fangkristalle: [{ x: 1500, y: 720 }],
+  fangkristalle: [{ x: 1950, y: 940 }],
 
   // Das Rätsel: Drei Glöckchen liegen versteckt hinter Häusern und Bäumen.
   raetsel: {
     art: 'suchen',
-    x: 780,
-    y: 700,
+    x: 1010,
+    y: 910,
     aufgabe: [
       'Ein alter Rätselstein mit einem goldenen Fragezeichen. Er brummt freundlich.',
       '„Der Schatten hat drei goldene Glöckchen aus dem Dorf mitgenommen und auf der Flucht verloren.“',
@@ -57,9 +60,9 @@ export const LILA_DORF = {
     ],
     farbe: 'gelb',
     dinge: [
-      { x: 380, y: 300 },
-      { x: 1290, y: 880 },
-      { x: 1620, y: 250 },
+      { x: 490, y: 390 },
+      { x: 1680, y: 1140 },
+      { x: 2110, y: 320 },
     ],
     geschafft: '„Alle drei Glöckchen! Hör nur, wie schön sie klingen. Das hier ist für dich.“',
     belohnung: { fangkristalle: 2 },

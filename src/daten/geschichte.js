@@ -10,6 +10,8 @@
 // ende:   wird bei der Party erzählt, wenn man das geheime Kalamprio
 //         besiegt oder gefangen hat
 // raetsel: was die Rätselsteine zwischendurch sagen, an jedem Ort gleich.
+//         (nochEinRaetsel und richtig sagt der Rätselstein am Mondsee, wenn
+//         man nach dem Lösen wiederkommt und zum Spaß weiterrät.)
 //         Was sie am Anfang und am Ende sagen, steht in der Datei des Ortes
 //         bei raetsel. {fehlen} wird durch die Zahl ersetzt, die noch fehlt.
 
@@ -62,5 +64,8 @@ export const GESCHICHTE = {
     gefunden: 'Gefunden!',
     jetztDu: 'Jetzt du!',
     falscherStein: 'Huch! Nochmal von vorn.',
+    rundeGeschafft: 'Super! Die nächste Runde wird länger.',
+    nochEinRaetsel: '„Schön, dass du wieder da bist! Möchtest du noch ein Rätsel hören?“',
+    richtig: '„Richtig! Das hast du toll gemacht.“',
   },
 };

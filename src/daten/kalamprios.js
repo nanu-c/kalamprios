@@ -20,8 +20,8 @@
 // fliegt:       (optional) true bedeutet: Es schwebt über dem Boden, sein
 //               Schatten bleibt unten.
 //
-// Die Werte von Kapapa, Qalutu, Bolo, Mola, Kabon, Simfita, Tak-Tik und dem
-// geheimen Kalamprio sind Platzhalter. Ändere sie gern!
+// Die Werte von Kapapa, Qalutu, Bolo, Mola, Kabon, Simfita, Tak-Tik, Tschank,
+// Blitznara und dem geheimen Kalamprio sind Platzhalter. Ändere sie gern!
 
 export const KALAMPRIOS = {
   kalampria: {
@@ -133,6 +133,32 @@ export const KALAMPRIOS = {
     verteidigung: 10,
     tempo: 13,
     attacken: ['ticktack', 'weckerklingeln'],
+  },
+
+  // Ein Baum mit Äpfeln und einem Gesicht am Stamm. Lebt im Kristallwald.
+  tschank: {
+    name: 'Tschank',
+    element: 'pflanze',
+    bild: 'bilder/kalamprios/tschank.png',
+    blick: 'vorne',
+    kp: 78,
+    angriff: 10,
+    verteidigung: 12,
+    tempo: 7,
+    attacken: ['wurzelgriff', 'apfelregen'],
+  },
+
+  // Eine Schlange, die sich zu einer Spirale einrollt. Lebt am Mondsee.
+  blitznara: {
+    name: 'Blitznara',
+    element: 'elektro',
+    bild: 'bilder/kalamprios/blitznara.png',
+    blick: 'vorne',
+    kp: 62,
+    angriff: 12,
+    verteidigung: 8,
+    tempo: 17,
+    attacken: ['schlangenbiss', 'spiralblitz'],
   },
 
   // Das geheime Kalamprio. Von ihm weiß man nicht viel ...

@@ -83,6 +83,15 @@ export function datenPruefen() {
     fehler.push('regeln.js: staerkerProLevel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.1.');
   }
 
+  for (const name of ['danebenChance', 'ausweichChance', 'abwehrChance', 'abgewehrtSchaden']) {
+    if (!(REGELN[name] >= 0 && REGELN[name] <= 1)) {
+      fehler.push(`regeln.js: ${name} muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.1.`);
+    }
+  }
+  if (REGELN.danebenChance + REGELN.ausweichChance * 2 + REGELN.abwehrChance > 0.9) {
+    fehler.push('regeln.js: danebenChance, ausweichChance und abwehrChance sind zusammen zu groß. Dann trifft fast nie eine Attacke.');
+  }
+
   for (const name of ['schadenZufall', 'tempoZufall']) {
     if (!(REGELN[name] >= 0 && REGELN[name] < 1)) {
       fehler.push(`regeln.js: ${name} muss eine Zahl von 0 bis knapp unter 1 sein, zum Beispiel 0.3.`);
@@ -111,6 +120,9 @@ export function datenPruefen() {
     fehler.push('regeln.js: imKampfHoechstens muss eine ganze Zahl ab 1 sein, zum Beispiel 3.');
   } else if (REGELN.teamFuerGeheimes > REGELN.imKampfHoechstens) {
     fehler.push('regeln.js: teamFuerGeheimes darf nicht größer sein als imKampfHoechstens, sonst kann man das geheime Kalamprio nie besiegen.');
+  }
+  if (!(Number.isInteger(REGELN.teamFuerRivalin) && REGELN.teamFuerRivalin >= 1 && REGELN.teamFuerRivalin <= REGELN.imKampfHoechstens)) {
+    fehler.push('regeln.js: teamFuerRivalin muss eine ganze Zahl ab 1 sein und darf nicht größer sein als imKampfHoechstens.');
   }
   if (!(Number.isInteger(REGELN.teamFuerGeheimes) && REGELN.teamFuerGeheimes >= 1)) {
     fehler.push('regeln.js: teamFuerGeheimes muss eine ganze Zahl ab 1 sein, zum Beispiel 3.');
@@ -189,6 +201,9 @@ function ortPruefen(kurzname, ort) {
   if (ort.dunkel !== undefined && !(ort.dunkel >= 0 && ort.dunkel <= 1)) {
     fehler.push(`${name}: dunkel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.8.`);
   }
+  if (ort.licht !== undefined && !(ort.licht > 0)) {
+    fehler.push(`${name}: licht muss eine Zahl größer als 0 sein, zum Beispiel 0.7.`);
+  }
   for (const see of liste('seen')) {
     if (see.bild !== undefined && see.bild !== 'mondsee') {
       fehler.push(`${name}: Ein See-Bild "${see.bild}" gibt es nicht. Nimm 'mondsee' oder lass bild weg.`);
@@ -211,6 +226,12 @@ function ortPruefen(kurzname, ort) {
     if (!(ausgang.mitte >= 0 && ausgang.mitte <= laenge)) {
       fehler.push(`${name}: Beim Ausgang nach ${ziel.name} liegt mitte außerhalb des Ortes.`);
     }
+    if (ausgang.erstNachRivalin && !ort.rivalin) {
+      fehler.push(`${name}: Den Ausgang nach ${ziel.name} soll die Rivalin bewachen, aber hier gibt es keinen rivalin-Punkt.`);
+    }
+    if (ausgang.erstNachRaetsel && !ort.raetsel) {
+      fehler.push(`${name}: Der Ausgang nach ${ziel.name} soll erst nach dem Rätsel frei werden, aber hier gibt es kein Rätsel.`);
+    }
     if (!(ziel.ausgaenge ?? []).some((zurueck) => zurueck.nach === kurzname)) {
       fehler.push(`${ziel.name} braucht einen Ausgang zurück nach "${kurzname}".`);
     }
@@ -219,6 +240,7 @@ function ortPruefen(kurzname, ort) {
   const punkte = [
     ['start', ort.start],
     ['rivalin', ort.rivalin],
+    ['rivalinNachSieg', ort.rivalinNachSieg],
     ['dunklerKristall', ort.dunklerKristall],
     ...ort.wildeKalamprios.map((wild) => [`das wilde Kalamprio "${wild.art}"`, wild]),
     ...liste('baeume').map((punkt) => ['ein Baum', punkt]),
@@ -269,6 +291,10 @@ function raetselPruefen(name, raetsel) {
   }
   if (raetsel.art === 'reihenfolge') {
     if (!(raetsel.steine?.length >= 2)) fehler.push(`${name}: Beim Reihenfolge-Rätsel braucht es mindestens zwei Klangsteine bei steine.`);
+    const runden = raetsel.runden ?? [raetsel.steine?.length ?? 0];
+    if (!(Array.isArray(runden) && runden.length > 0 && runden.every((anzahl) => Number.isInteger(anzahl) && anzahl >= 1))) {
+      fehler.push(`${name}: Beim Reihenfolge-Rätsel muss runden eine Liste mit ganzen Zahlen sein, zum Beispiel [3, 4, 5].`);
+    }
     for (const stein of raetsel.steine ?? []) {
       if (!RAETSEL_FARBEN.includes(stein.farbe)) {
         fehler.push(`${name}: Die Farbe "${stein.farbe}" bei einem Klangstein gibt es nicht. Nimm ${RAETSEL_FARBEN.join(', ')}.`);
@@ -277,6 +303,10 @@ function raetselPruefen(name, raetsel) {
   }
   if (raetsel.art === 'frage') {
     if (!(raetsel.fragen?.length > 0)) fehler.push(`${name}: Beim Frage-Rätsel braucht es mindestens eine Frage bei fragen.`);
+    const wieViele = raetsel.wieViele ?? raetsel.fragen?.length;
+    if (!(Number.isInteger(wieViele) && wieViele >= 1 && wieViele <= (raetsel.fragen?.length ?? 0))) {
+      fehler.push(`${name}: Beim Frage-Rätsel muss wieViele eine ganze Zahl ab 1 sein und darf nicht größer sein, als es Fragen gibt.`);
+    }
     for (const frage of raetsel.fragen ?? []) {
       const antworten = frage.antworten ?? [];
       if (typeof frage.frage !== 'string') fehler.push(`${name}: Bei einer Rätselfrage fehlt der Satz bei frage.`);

@@ -68,6 +68,14 @@ export const ATTACKEN = {
   ticktack: { name: 'Tick-Tack', staerke: 10, pause: 0 },
   weckerklingeln: { name: 'Weckerklingeln', staerke: 19, pause: 2 },
 
+  // Tschank
+  wurzelgriff: { name: 'Wurzelgriff', staerke: 10, pause: 0, effekt: 'faden' },
+  apfelregen: { name: 'Apfelregen', staerke: 19, pause: 2, effekt: 'bombe' },
+
+  // Blitznara
+  schlangenbiss: { name: 'Schlangenbiss', staerke: 10, pause: 0, effekt: 'biss' },
+  spiralblitz: { name: 'Spiralblitz', staerke: 20, pause: 2 },
+
   // Das geheime Kalamprio
   kronenblitz: { name: 'Kronenblitz', staerke: 11, pause: 0, effekt: 'krone' },
   geheimsturm: { name: '???', staerke: 20, pause: 2 },

@@ -5,7 +5,9 @@ import { KALAMPRIOS } from '../src/daten/kalamprios.js';
 import { datenPruefen } from '../src/daten/pruefen.js';
 import { REGELN } from '../src/daten/regeln.js';
 import {
+  angreifen,
   attackeAusfuehren,
+  ausgangWuerfeln,
   fangChance,
   fangen,
   gegnerWaehlt,
@@ -187,4 +189,38 @@ test('mit jedem Level wird ein Kalamprio nur ein bisschen stärker', () => {
   assert.ok(drei.maxKp > eins.maxKp && drei.angriff > eins.angriff);
   assert.ok(drei.maxKp <= eins.maxKp * (1 + 2 * REGELN.staerkerProLevel) + 1);
   assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.erfahrungFuerLevel.length);
+});
+
+test('manchmal geht eine Attacke daneben, der Gegner weicht aus oder wehrt ab', () => {
+  const a = kaempfer();
+  const b = kaempfer();
+  assert.equal(ausgangWuerfeln(a, b, immer(0)), 'daneben');
+  assert.equal(ausgangWuerfeln(a, b, immer(REGELN.danebenChance + 0.001)), 'ausgewichen');
+  assert.equal(ausgangWuerfeln(a, b, immer(REGELN.danebenChance + REGELN.ausweichChance + 0.001)), 'abgewehrt');
+  assert.equal(ausgangWuerfeln(a, b, immer(0.99)), 'treffer');
+});
+
+test('wer schneller ist, weicht öfter aus', () => {
+  const langsam = kaempfer({ tempo: 10 });
+  const schnell = kaempfer({ tempo: 20 });
+  const wurf = immer(REGELN.danebenChance + REGELN.ausweichChance * 1.5);
+  assert.equal(ausgangWuerfeln(langsam, schnell, wurf), 'ausgewichen');
+  assert.notEqual(ausgangWuerfeln(schnell, langsam, wurf), 'ausgewichen');
+});
+
+test('daneben macht keinen Schaden, abgewehrt nur die Hälfte, die Pause zählt trotzdem', () => {
+  const a = kaempfer();
+  const ziel = kaempfer();
+  const stark = a.attacken[1];
+  const daneben = angreifen(a, ziel, stark, immer(0));
+  assert.deepEqual(daneben, { ausgang: 'daneben', schaden: 0 });
+  assert.equal(ziel.kp, 50);
+  assert.equal(stark.bereitIn, stark.pause + 1);
+
+  const abwehr = immer(REGELN.danebenChance + REGELN.ausweichChance + 0.001);
+  const voll = schadenBerechnen(a, ziel, a.attacken[0], abwehr);
+  const { ausgang, schaden } = angreifen(a, ziel, a.attacken[0], abwehr);
+  assert.equal(ausgang, 'abgewehrt');
+  assert.equal(schaden, Math.max(1, Math.round(voll * REGELN.abgewehrtSchaden)));
+  assert.equal(ziel.kp, 50 - schaden);
 });

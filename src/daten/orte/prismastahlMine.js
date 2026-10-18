@@ -5,88 +5,97 @@
 export const PRISMASTAHL_MINE = {
   name: 'Prismastahl-Mine',
   stil: 'mine',
-  breite: 2200,
-  hoehe: 1500,
+  breite: 2860,
+  hoehe: 1950,
 
   ausgaenge: [
-    { nach: 'kristallwald', seite: 'links', mitte: 750 },
-    { nach: 'mondsee', seite: 'rechts', mitte: 420 },
+    { nach: 'kristallwald', seite: 'links', mitte: 980 },
+    // Der Weg zum Mondsee ist verschüttet. Erst wenn das Rätsel gelöst ist,
+    // wird er frei.
+    { nach: 'mondsee', seite: 'rechts', mitte: 550, erstNachRaetsel: true },
   ],
 
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
-  dunklerKristall: { x: 430, y: 860 },
+  dunklerKristall: { x: 560, y: 1120 },
 
   wildeKalamprios: [
-    { art: 'kapapa', x: 900, y: 800 },
-    { art: 'kapapa', x: 1600, y: 440 },
-    { art: 'qalutu', x: 1200, y: 1000 },
-    { art: 'simfita', x: 1850, y: 560 },
+    { art: 'kapapa', x: 1170, y: 1040 },
+    { art: 'kapapa', x: 2080, y: 570 },
+    { art: 'qalutu', x: 1560, y: 1300 },
+    { art: 'simfita', x: 2400, y: 730 },
   ],
+
+  // Die Kalamprios in der Mine sind schon etwas stärker.
+  wildesLevel: 2,
 
   tiereImGras: ['kapapa', 'kapapa', 'qalutu', 'simfita'],
   hohesGras: [
-    { links: 330, oben: 920, breite: 460, hoehe: 300 },
-    { links: 1300, oben: 560, breite: 500, hoehe: 290 },
-    { links: 1500, oben: 1110, breite: 420, hoehe: 290 },
+    { links: 430, oben: 1200, breite: 600, hoehe: 390 },
+    { links: 1690, oben: 730, breite: 650, hoehe: 380 },
+    { links: 1950, oben: 1440, breite: 550, hoehe: 380 },
   ],
 
   felsen: [
-    { x: 520, y: 420 },
-    { x: 960, y: 330 },
-    { x: 1100, y: 1180 },
-    { x: 1180, y: 680 },
-    { x: 1940, y: 920 },
-    { x: 300, y: 1340 },
+    { x: 680, y: 550 },
+    { x: 1250, y: 430 },
+    { x: 1430, y: 1530 },
+    { x: 1530, y: 880 },
+    { x: 2520, y: 1200 },
+    { x: 390, y: 1740 },
+    { x: 800, y: 1720 },
+    { x: 2000, y: 1320 },
   ],
 
   prismastahl: [
-    { x: 700, y: 620 },
-    { x: 1000, y: 950 },
-    { x: 1420, y: 330 },
-    { x: 2000, y: 680 },
-    { x: 820, y: 1360 },
-    { x: 1300, y: 1380 },
+    { x: 910, y: 810 },
+    { x: 1300, y: 1240 },
+    { x: 1850, y: 430 },
+    { x: 2600, y: 880 },
+    { x: 1070, y: 1770 },
+    { x: 1690, y: 1790 },
   ],
 
   kristalle: [
-    { x: 380, y: 620 },
-    { x: 1650, y: 980 },
-    { x: 1950, y: 1350 },
+    { x: 490, y: 810 },
+    { x: 2140, y: 1270 },
+    { x: 2540, y: 1760 },
   ],
 
   gold: [
-    { x: 620, y: 1100 },
-    { x: 1480, y: 860 },
-    { x: 1820, y: 330 },
-    { x: 260, y: 470 },
-    { x: 1700, y: 1430 },
+    { x: 810, y: 1430 },
+    { x: 1920, y: 1120 },
+    { x: 2370, y: 430 },
+    { x: 340, y: 610 },
+    { x: 2210, y: 1860 },
   ],
 
   fangkristalle: [
-    { x: 1050, y: 560 },
-    { x: 1900, y: 1150 },
+    { x: 1360, y: 730 },
+    { x: 2470, y: 1500 },
   ],
 
-  // In der Höhle ist es dunkel, nur rund um die Figur ist es hell.
-  dunkel: 0.82,
+  // In der Höhle ist es richtig dunkel, nur ganz nah um die Figur ist es hell.
+  dunkel: 0.97,
+  licht: 0.7,
 
   // Das Rätsel: Drei Glühsteine liegen im Dunkeln. Wer alle findet, hat mehr Licht.
   raetsel: {
     art: 'suchen',
-    x: 560,
-    y: 760,
+    x: 730,
+    y: 990,
     aufgabe: [
       'Ein Rätselstein mit einem goldenen Fragezeichen. Er leuchtet ein kleines bisschen.',
       '„In der Mine sind drei Glühsteine verloren gegangen. Mit ihnen wird es heller.“',
       '„Im Dunkeln siehst du sie erst, wenn du ganz nah bist. Such gut!“',
+      '„Ohne ihr Licht findest du den Weg zum Mondsee nie.“',
     ],
     farbe: 'blau',
     dinge: [
-      { x: 250, y: 1150 },
-      { x: 1150, y: 450 },
-      { x: 1990, y: 260 },
+      { x: 320, y: 1500 },
+      { x: 1500, y: 580 },
+      { x: 2590, y: 340 },
     ],
-    geschafft: '„Du hast alle Glühsteine gefunden! Jetzt leuchtet dein Licht viel weiter.“',
+    geschafft: '„Du hast alle Glühsteine gefunden! Jetzt leuchtet dein Licht viel weiter. Und hörst du das Rumpeln? Der Weg zum Mondsee ist frei!“',
     belohnung: { fangkristalle: 1, mehrLicht: true },
   },
 };

@@ -7,30 +7,31 @@
 export const MONDSEE = {
   name: 'Mondsee',
   stil: 'see',
-  breite: 2400,
-  hoehe: 1600,
+  breite: 3120,
+  hoehe: 2080,
 
-  ausgaenge: [{ nach: 'prismastahlMine', seite: 'links', mitte: 500 }],
+  ausgaenge: [{ nach: 'prismastahlMine', seite: 'links', mitte: 650 }],
 
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
-  dunklerKristall: { x: 480, y: 640 },
+  dunklerKristall: { x: 620, y: 830 },
 
   wildeKalamprios: [
-    { art: 'bolo', x: 520, y: 880 },
-    { art: 'mola', x: 1400, y: 300 },
-    { art: 'bolo', x: 2080, y: 1000 },
-    { art: 'mola', x: 1250, y: 1480 },
-    { art: 'taktik', x: 2250, y: 1050 },
+    { art: 'bolo', x: 680, y: 1140 },
+    { art: 'mola', x: 1820, y: 390 },
+    { art: 'bolo', x: 2700, y: 1300 },
+    { art: 'mola', x: 1620, y: 1920 },
+    { art: 'taktik', x: 2920, y: 1360 },
+    { art: 'blitznara', x: 2250, y: 560 },
   ],
 
   // Am Mondsee sind die wilden Kalamprios stärker.
   wildesLevel: 3,
 
-  tiereImGras: ['bolo', 'mola', 'taktik'],
+  tiereImGras: ['bolo', 'mola', 'taktik', 'blitznara'],
   hohesGras: [
-    { links: 180, oben: 1120, breite: 440, hoehe: 300 },
-    { links: 1880, oben: 240, breite: 400, hoehe: 280 },
-    { links: 1720, oben: 1260, breite: 480, hoehe: 280 },
+    { links: 230, oben: 1460, breite: 570, hoehe: 390 },
+    { links: 2440, oben: 310, breite: 520, hoehe: 360 },
+    { links: 2240, oben: 1640, breite: 620, hoehe: 360 },
   ],
 
   // Das geheime Kalamprio versteckt sich im Schilf.
@@ -41,40 +42,46 @@ export const MONDSEE = {
 
   // Das gemalte Bild ist 1300 mal 1086 Pixel groß. Damit es nicht verzerrt
   // wird, sollte breite geteilt durch hoehe ungefähr 1.2 sein.
-  seen: [{ x: 1250, y: 880, breite: 1150, hoehe: 960, bild: 'mondsee' }],
+  seen: [{ x: 1620, y: 1140, breite: 1350, hoehe: 1120, bild: 'mondsee' }],
 
   baeume: [
-    { x: 330, y: 300 },
-    { x: 1000, y: 290 },
-    { x: 1700, y: 280 },
-    { x: 260, y: 1050 },
-    { x: 2200, y: 760 },
-    { x: 2180, y: 1380 },
+    { x: 430, y: 390 },
+    { x: 1300, y: 380 },
+    { x: 2210, y: 360 },
+    { x: 340, y: 1360 },
+    { x: 2860, y: 990 },
+    { x: 2830, y: 1790 },
+    { x: 1000, y: 620 },
+    { x: 2560, y: 1060 },
+    { x: 1110, y: 1950 },
   ],
 
   kristalle: [
-    { x: 620, y: 420 },
-    { x: 2240, y: 560 },
-    { x: 1000, y: 1460 },
-    { x: 700, y: 1480 },
+    { x: 810, y: 550 },
+    { x: 2910, y: 730 },
+    { x: 1300, y: 1900 },
+    { x: 910, y: 1920 },
   ],
 
   fangkristalle: [
-    { x: 2050, y: 620 },
-    { x: 1600, y: 1460 },
+    { x: 2660, y: 810 },
+    { x: 2080, y: 1900 },
   ],
 
-  // Das Rätsel: Zwei Rätselfragen. Die Antworten sollten kurz sein, sonst
-  // passen sie nicht auf die Knöpfe. Die Antworten stehen auch in der Frage,
-  // damit sie mit vorgelesen werden.
+  // Das Rätsel: Rätselfragen. Bei jedem Versuch stellt der Rätselstein
+  // andere Fragen, durcheinander aus der Liste bei fragen. Wer so viele
+  // richtig beantwortet, wie bei wieViele steht, hat das Rätsel gelöst.
+  // Die Antworten sollten kurz sein, sonst passen sie nicht auf die Knöpfe.
+  // Die Antworten stehen auch in der Frage, damit sie mit vorgelesen werden.
   raetsel: {
     art: 'frage',
-    x: 320,
-    y: 580,
+    x: 420,
+    y: 750,
     aufgabe: [
       'Ein alter Rätselstein mit einem goldenen Fragezeichen. Er glitzert im Mondlicht.',
-      '„Ich habe zwei Rätsel für dich. Wenn du beide löst, bekommst du etwas Schönes.“',
+      '„Ich kenne viele Rätsel, und jedes Mal frage ich etwas anderes. Wenn du drei richtig beantwortest, bekommst du etwas Schönes.“',
     ],
+    wieViele: 3,
     fragen: [
       {
         frage: '„Ich bin rund und leuchte in der Nacht. Im See siehst du mich gleich zweimal. Bin ich ein Stern, der Mond oder eine Laterne?“',
@@ -85,6 +92,56 @@ export const MONDSEE = {
         frage: '„Was wird immer nasser, je mehr es trocknet: ein Fisch, der Regen oder ein Handtuch?“',
         antworten: ['Ein Fisch', 'Der Regen', 'Ein Handtuch'],
         richtig: 'Ein Handtuch',
+      },
+      {
+        frage: '„Ich habe Zähne, aber ich beiße nie. Ich mache deine Haare schön. Bin ich ein Kamm, eine Gabel oder ein Hai?“',
+        antworten: ['Ein Kamm', 'Eine Gabel', 'Ein Hai'],
+        richtig: 'Ein Kamm',
+      },
+      {
+        frage: '„Ich habe viele Blätter, aber ich bin kein Baum. Man kann mich lesen. Bin ich ein Buch, ein Salat oder eine Blume?“',
+        antworten: ['Ein Buch', 'Ein Salat', 'Eine Blume'],
+        richtig: 'Ein Buch',
+      },
+      {
+        frage: '„Je mehr du von mir wegnimmst, desto größer werde ich. Bin ich ein Loch, ein Kuchen oder ein Berg?“',
+        antworten: ['Ein Loch', 'Ein Kuchen', 'Ein Berg'],
+        richtig: 'Ein Loch',
+      },
+      {
+        frage: '„Ich habe Zeiger, aber keine Finger, und ich laufe, aber ich habe keine Beine. Bin ich eine Uhr, ein Hund oder ein Fluss?“',
+        antworten: ['Eine Uhr', 'Ein Hund', 'Ein Fluss'],
+        richtig: 'Eine Uhr',
+      },
+      {
+        frage: '„Ich bin immer bei dir, aber du kannst mich nie fangen. Im Dunkeln verschwinde ich. Bin ich dein Schatten, dein Rucksack oder der Wind?“',
+        antworten: ['Dein Schatten', 'Dein Rucksack', 'Der Wind'],
+        richtig: 'Dein Schatten',
+      },
+      {
+        frage: '„Ich falle vom Himmel, bin weiß und kalt, und in deiner warmen Hand schmelze ich. Bin ich Schnee, Zucker oder eine Feder?“',
+        antworten: ['Schnee', 'Zucker', 'Eine Feder'],
+        richtig: 'Schnee',
+      },
+      {
+        frage: '„Ich habe einen Hals, aber keinen Kopf, und oft ist Wasser in mir. Bin ich eine Flasche, eine Giraffe oder ein Eimer?“',
+        antworten: ['Eine Flasche', 'Eine Giraffe', 'Ein Eimer'],
+        richtig: 'Eine Flasche',
+      },
+      {
+        frage: '„Welches Kalamprio hat Flügel und schwebt über dem Boden: Mola, Kapapa oder Bolo?“',
+        antworten: ['Mola', 'Kapapa', 'Bolo'],
+        richtig: 'Mola',
+      },
+      {
+        frage: '„Was gehört dir, aber andere benutzen es viel öfter als du: dein Name, dein Bett oder dein Teller?“',
+        antworten: ['Dein Name', 'Dein Bett', 'Dein Teller'],
+        richtig: 'Dein Name',
+      },
+      {
+        frage: '„Wie viele Beine hat eine Spinne: sechs, acht oder zehn?“',
+        antworten: ['Sechs', 'Acht', 'Zehn'],
+        richtig: 'Acht',
       },
     ],
     geschafft: '„Richtig! Du bist wirklich klug. Hier, nimm diese Fangkristalle mit.“',

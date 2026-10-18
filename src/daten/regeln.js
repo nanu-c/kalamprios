@@ -12,6 +12,19 @@ export const REGELN = {
   // Tier zuerst dran. 0 bedeutet: Das schnellere ist immer zuerst dran.
   tempoZufall: 0.3,
 
+  // Nicht jede Attacke trifft richtig. 0.08 bedeutet 8 von 100.
+  //
+  // So oft haut ein Kalamprio daneben und macht gar keinen Schaden.
+  danebenChance: 0.08,
+  // So oft springt der Gegner zur Seite und weicht aus. Wer schneller ist als
+  // der Angreifer, weicht öfter aus (höchstens doppelt so oft), wer
+  // langsamer ist, seltener.
+  ausweichChance: 0.08,
+  // So oft wehrt der Gegner die Attacke ab ...
+  abwehrChance: 0.1,
+  // ... und bekommt dann nur so viel vom Schaden ab. 0.5 bedeutet die Hälfte.
+  abgewehrtSchaden: 0.5,
+
   // --- Level ---
 
   // Für jeden Sieg bekommt ein Kalamprio Erfahrung: so viel, wie das Level
@@ -64,6 +77,13 @@ export const REGELN = {
   // So viele Kalamprios dürfen höchstens mit in einen Kampf. Welche das sind,
   // wählt man mit dem Knopf „Team“.
   imKampfHoechstens: 3,
+
+  // --- Die Rivalin ---
+
+  // So viele Kalamprios müssen mindestens mit in den Kampf kommen, damit die
+  // Rivalin kämpft. Sie bewacht den Weg in die Mine: Mit nur einem
+  // Kalamprio kommt man nicht an ihr vorbei.
+  teamFuerRivalin: 2,
 
   // --- Das geheime Kalamprio ---
 

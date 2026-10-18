@@ -45,6 +45,8 @@ export const KLAENGE = {
     kabon: { stimme: 'gurren', hoehe: 'tief', silben: 3 },
     simfita: { stimme: 'zirpen', hoehe: 'ganz hoch', silben: 3 },
     taktik: { stimme: 'ticken', hoehe: 'mittel', silben: 4 },
+    tschank: { stimme: 'brummen', hoehe: 'mittel', silben: 3 },
+    blitznara: { stimme: 'zirpen', hoehe: 'hoch', silben: 5 },
     geheimnis: { stimme: 'zauber', hoehe: 'mittel', silben: 3 },
   },
 };

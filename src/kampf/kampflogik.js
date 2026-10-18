@@ -85,12 +85,42 @@ export function schadenBerechnen(angreifer, verteidiger, attacke, zufall = Math.
 }
 
 // Führt eine Attacke aus und gibt zurück, wie viel Schaden sie gemacht hat.
-export function attackeAusfuehren(angreifer, verteidiger, attacke, zufall = Math.random) {
-  const schaden = Math.min(verteidiger.kp, schadenBerechnen(angreifer, verteidiger, attacke, zufall));
+// anteil: so viel vom Schaden kommt an (1 ist alles, 0.5 die Hälfte).
+export function attackeAusfuehren(angreifer, verteidiger, attacke, zufall = Math.random, anteil = 1) {
+  const voll = schadenBerechnen(angreifer, verteidiger, attacke, zufall);
+  const schaden = Math.min(verteidiger.kp, Math.max(1, Math.round(voll * anteil)));
   verteidiger.kp -= schaden;
   // +1, weil rundeBeenden am Ende dieser Runde gleich wieder 1 abzieht.
   attacke.bereitIn = attacke.pause + 1;
   return schaden;
+}
+
+// Wie die Attacke ausgeht: 'treffer', 'daneben' (der Angreifer haut
+// daneben), 'ausgewichen' (der Gegner springt zur Seite) oder 'abgewehrt'
+// (der Gegner bekommt nur einen Teil ab). Die Chancen stehen in regeln.js.
+export function ausgangWuerfeln(angreifer, verteidiger, zufall = Math.random) {
+  const schneller = Math.min(2, Math.max(0.5, verteidiger.tempo / angreifer.tempo));
+  const wurf = zufall();
+  let grenze = REGELN.danebenChance;
+  if (wurf < grenze) return 'daneben';
+  grenze += REGELN.ausweichChance * schneller;
+  if (wurf < grenze) return 'ausgewichen';
+  grenze += REGELN.abwehrChance;
+  if (wurf < grenze) return 'abgewehrt';
+  return 'treffer';
+}
+
+// Ein ganzer Angriff: Erst wird gewürfelt, wie er ausgeht, dann gibt es
+// Schaden. Zurück kommt { ausgang, schaden }. Auch wer danebenhaut, muss
+// danach die Pause der Attacke abwarten.
+export function angreifen(angreifer, verteidiger, attacke, zufall = Math.random) {
+  const ausgang = ausgangWuerfeln(angreifer, verteidiger, zufall);
+  if (ausgang === 'daneben' || ausgang === 'ausgewichen') {
+    attacke.bereitIn = attacke.pause + 1;
+    return { ausgang, schaden: 0 };
+  }
+  const anteil = ausgang === 'abgewehrt' ? REGELN.abgewehrtSchaden : 1;
+  return { ausgang, schaden: attackeAusfuehren(angreifer, verteidiger, attacke, zufall, anteil) };
 }
 
 // Am Ende jeder Runde rückt jede Pause um eine Runde näher ans Ende.

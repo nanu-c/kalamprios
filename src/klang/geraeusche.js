@@ -409,3 +409,39 @@ export function zerspringen() {
 export function erfahrung() {
   for (let i = 0; i < 6; i += 1) ton({ frequenz: hertz(79 + i * 2), start: i * 0.07, dauer: 0.2, lautstaerke: 0.07, art: 'triangle' });
 }
+
+// ------------------------------------------------------------- Rätsel
+
+// Jeder Klangstein singt seinen eigenen Ton (Töne wie auf einem Glockenspiel).
+const KLANGSTEIN_NOTEN = [72, 74, 76, 79, 81, 84];
+export function klangstein(nummer) {
+  const note = KLANGSTEIN_NOTEN[nummer % KLANGSTEIN_NOTEN.length];
+  ton({ frequenz: hertz(note), dauer: 0.9, lautstaerke: 0.16, art: 'triangle' });
+  ton({ frequenz: hertz(note + 12), dauer: 0.5, lautstaerke: 0.05 });
+}
+
+// Felsen rollen zur Seite und ein verschütteter Weg wird frei.
+export function geroell() {
+  rauschen({ dauer: 1.6, lautstaerke: 0.35, anschlag: 0.1, filter: { frequenz: 500, zu: 90 }, zittern: 13 });
+  for (let i = 0; i < 6; i += 1) ton({ frequenz: zufall(70, 140), start: i * 0.22 + zufall(0, 0.1), dauer: 0.2, lautstaerke: 0.25 });
+}
+
+// ------------------------------------------------- Daneben und Abwehren
+
+// Eine Attacke saust ins Leere.
+export function daneben() {
+  wusch(0.3, true);
+  ton({ frequenz: 700, gleitenZu: 300, start: 0.1, dauer: 0.35, lautstaerke: 0.08, art: 'triangle' });
+}
+
+// Ein Kalamprio springt zur Seite.
+export function ausweichen() {
+  wusch(0.25);
+  ton({ frequenz: 400, gleitenZu: 900, dauer: 0.18, lautstaerke: 0.09, art: 'triangle' });
+}
+
+// Ein Kalamprio wehrt eine Attacke ab: ein dumpfer Schlag auf einen Schild.
+export function abwehren() {
+  ton({ frequenz: 180, gleitenZu: 120, dauer: 0.25, lautstaerke: 0.3 });
+  metall(0.6);
+}

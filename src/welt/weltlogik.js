@@ -134,6 +134,23 @@ export function ausgangAmRand(ort, position, grenzen) {
   return null;
 }
 
+// Eine unsichtbare Sperre quer über einen Weg hinaus, direkt am Rand: eine
+// Reihe von Kreisen, durch die niemand hindurchpasst. So kommt man nicht an
+// der Rivalin vorbei, solange sie den Weg bewacht.
+export function wegSperre(ausgang, grenzen) {
+  const quer = ausgang.seite === 'links' || ausgang.seite === 'rechts';
+  const kreise = [];
+  for (let seitlich = -AUSGANG_BREITE; seitlich <= AUSGANG_BREITE; seitlich += 30) {
+    const punkt = hinterDemAusgang(ausgang, grenzen, 30);
+    kreise.push({
+      x: punkt.x + (quer ? 0 : seitlich),
+      y: punkt.y + (quer ? seitlich : 0),
+      radius: 30,
+    });
+  }
+  return kreise;
+}
+
 // Wo man ein Stück hinter einem Ausgang steht, also gerade angekommen ist.
 export function hinterDemAusgang(ausgang, grenzen, weite = 70) {
   switch (ausgang.seite) {
@@ -158,14 +175,36 @@ export function ankunft(ort, vonOrt) {
 
 // ----------------------------------------------------------------- Rätsel
 
+// Würfelt, in welcher Reihenfolge die Klangsteine aufleuchten: laenge
+// Nummern von 0 bis anzahl - 1. Derselbe Stein kommt nie zweimal hintereinander.
+export function reihenfolgeWuerfeln(anzahl, laenge, zufall = Math.random) {
+  const folge = [];
+  while (folge.length < laenge) {
+    const nummer = Math.floor(zufall() * anzahl);
+    if (anzahl < 2 || nummer !== folge.at(-1)) folge.push(nummer);
+  }
+  return folge;
+}
+
 // Beim Rätsel mit der Reihenfolge: Man ist auf den Stein mit der Nummer
-// nummer getreten. geschafft sagt, wie viele Steine schon richtig waren.
+// nummer getreten. folge sagt, in welcher Reihenfolge die Steine dran sind,
+// geschafft, wie viele davon schon richtig waren.
 // Zurück kommt, wie viele es jetzt sind, und was passiert ist:
-// 'schon' (der Stein leuchtet schon), 'richtig', 'falsch' (dann geht es von
-// vorn los) oder 'fertig' (alle Steine in der richtigen Reihenfolge).
-export function reihenfolgeTreten(geschafft, nummer, anzahl) {
-  if (nummer < geschafft) return { geschafft, ergebnis: 'schon' };
-  if (nummer !== geschafft) return { geschafft: 0, ergebnis: 'falsch' };
+// 'schon' (das ist der Stein, auf dem man gerade richtig war), 'richtig',
+// 'falsch' (dann geht es von vorn los) oder 'fertig' (alle richtig).
+export function reihenfolgeTreten(geschafft, nummer, folge) {
+  if (geschafft > 0 && nummer === folge[geschafft - 1]) return { geschafft, ergebnis: 'schon' };
+  if (nummer !== folge[geschafft]) return { geschafft: 0, ergebnis: 'falsch' };
   const jetzt = geschafft + 1;
-  return { geschafft: jetzt, ergebnis: jetzt === anzahl ? 'fertig' : 'richtig' };
+  return { geschafft: jetzt, ergebnis: jetzt === folge.length ? 'fertig' : 'richtig' };
+}
+
+// Beim Frage-Rätsel: Bringt die Fragen durcheinander (gibt die Nummern zurück).
+export function durcheinander(anzahl, zufall = Math.random) {
+  const nummern = Array.from({ length: anzahl }, (_, nummer) => nummer);
+  for (let i = nummern.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(zufall() * (i + 1));
+    [nummern[i], nummern[j]] = [nummern[j], nummern[i]];
+  }
+  return nummern;
 }

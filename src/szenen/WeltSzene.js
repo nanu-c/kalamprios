@@ -11,7 +11,7 @@ import { KLAENGE } from '../daten/klaenge.js';
 import { ORTE } from '../daten/orte.js';
 import { REGELN } from '../daten/regeln.js';
 import { erfahrungBisNaechstesLevel, levelFortschritt } from '../kampf/kampflogik.js';
-import { aufsammeln, funkeln, klick, kristallSummen, ortWechsel, ruf, schritt as schrittGeraeusch, umgebung, wusch } from '../klang/geraeusche.js';
+import { aufsammeln, funkeln, geroell, klick, kristallSummen, ortWechsel, ruf, schritt as schrittGeraeusch, umgebung, wusch } from '../klang/geraeusche.js';
 import { hallStaerke } from '../klang/klang.js';
 import { musikSpielen } from '../klang/musik.js';
 import { erholtSichNoch, levelVon, mitnehmen, spielstand, weglassen, zuerstKaempfen } from '../spielstand.js';
@@ -25,10 +25,11 @@ import {
   istImGras,
   richtungZu,
   schritt,
+  wegSperre,
   weltGrenzen,
 } from '../welt/weltlogik.js';
 import { feld, textKnopf } from './bausteine.js';
-import { DUNKEL_TIEFE, LICHT_TIEFE, lichtschein, ortAufbauen } from './landschaft.js';
+import { DUNKEL_TIEFE, LICHT_TIEFE, lichtschein, ortAufbauen, wegFreimachen } from './landschaft.js';
 import { Raetsel } from './raetsel.js';
 import { BREITE, FARBEN, HOEHE, farbeAlsText, schrift } from './stil.js';
 
@@ -50,6 +51,9 @@ const SCHRITT_WEITE = 70; // nach so vielen Pixeln hört man einen Schritt
 const MEHR_LICHT = 1.6; // so viel weiter scheint das Licht, wenn ein Rätsel mehrLicht gebracht hat
 
 export class WeltSzene extends Phaser.Scene {
+  // Was jemand gleich nach einem Kampf sagen soll (zum Beispiel die Rivalin).
+  static nachricht = null;
+
   constructor() {
     super('Welt');
   }
@@ -58,8 +62,11 @@ export class WeltSzene extends Phaser.Scene {
     this.ortName = spielstand.ort;
     this.ort = ORTE[this.ortName];
     this.grenzen = weltGrenzen(this.ort);
-    this.verdecker = ortAufbauen(this, this.ortName);
-    this.hindernisse = hindernisseAmOrt(this.ort);
+    // Manche Ausgänge sind verschüttet, bis das Rätsel des Ortes gelöst ist.
+    const { verdecker, verschuettet } = ortAufbauen(this, this.ortName, (ausgang) => !ausgang.erstNachRaetsel || this.ausgangOffen(ausgang));
+    this.verdecker = verdecker;
+    this.verschuettet = verschuettet;
+    this.hindernisse = [...hindernisseAmOrt(this.ort), ...verschuettet.flatMap((weg) => weg.hindernisse)];
 
     this.gespraech = null; // die Teile des Textfelds, solange jemand spricht
     this.wechselt = false; // true, sobald es zum Kampf geht
@@ -74,8 +81,14 @@ export class WeltSzene extends Phaser.Scene {
     hallStaerke(this.ort.stil === 'mine' ? 'hoehle' : 'normal');
 
     // Die Rivalin wartet nur an einem Ort.
+    // Bewacht sie einen Weg, steht sie mitten darin und sperrt ihn ganz.
+    // Wer sie besiegt hat, dem macht sie Platz (rivalinNachSieg).
     if (this.ort.rivalin) {
-      const platz = this.ort.rivalin;
+      const bewacht = this.ort.ausgaenge.filter((ausgang) => ausgang.erstNachRivalin && !this.ausgangOffen(ausgang));
+      const platz = bewacht.length > 0 ? this.ort.rivalin : this.ort.rivalinNachSieg ?? this.ort.rivalin;
+      this.rivalinPlatz = platz;
+      this.rivalinBewacht = bewacht.length > 0;
+      for (const ausgang of bewacht) this.hindernisse.push(...wegSperre(ausgang, this.grenzen));
       this.hindernisse.push({ ...platz, radius: RIVALIN_RADIUS });
       this.rivalin = this.figurBauen(`charakter-${spielstand.rivalin}`, FIGUR_HOEHE, platz);
       this.figurZeigen(this.rivalin, 0);
@@ -158,6 +171,11 @@ export class WeltSzene extends Phaser.Scene {
     this.umgebungPlanen();
     this.anzeigeBauen();
     if (spielstand.ortsnameZeigen) this.ortsnameZeigen();
+
+    // Gerade die Rivalin zum ersten Mal besiegt? Dann sagt sie etwas dazu.
+    const nachricht = WeltSzene.nachricht;
+    WeltSzene.nachricht = null;
+    if (nachricht) this.time.delayedCall(500, () => this.gespraechZeigen(nachricht, [['Danke!', () => this.gespraechSchliessen()]]));
   }
 
   update(zeit, delta) {
@@ -232,6 +250,9 @@ export class WeltSzene extends Phaser.Scene {
 
   // Ein großes dunkles Tuch mit einem hellen Loch in der Mitte. Das Loch
   // wandert mit der Figur mit, so ist es nur rund um sie herum hell.
+  // Rund um das Tuch liegen noch vier riesige dunkle Flächen. So bleibt es
+  // auch dunkel, wenn die Kamera nicht bei der Figur ist (am Rand des Ortes
+  // oder wenn sie zu einem Ausgang schaut).
   dunkelheitBauen() {
     const name = 'dunkelheit';
     if (!this.textures.exists(name)) {
@@ -247,8 +268,22 @@ export class WeltSzene extends Phaser.Scene {
       stift.fillRect(0, 0, breite, hoehe);
       tuch.refresh();
     }
-    this.dunkelheit = this.add.image(0, 0, name).setAlpha(this.ort.dunkel).setDepth(DUNKEL_TIEFE);
-    this.lichtFlackern(this.raetsel?.mehrLicht() ? MEHR_LICHT : 1);
+    const tuch = this.add.image(0, 0, name);
+    const breite = tuch.width / 2;
+    const hoehe = tuch.height / 2;
+    const weit = 20000;
+    const rand = (x, y, w, h) => this.add.rectangle(x, y, w, h, 0x080412).setOrigin(0);
+    this.dunkelheit = this.add
+      .container(0, 0, [
+        tuch,
+        rand(-breite - weit, -hoehe - weit, weit, hoehe * 2 + weit * 2), // links
+        rand(breite, -hoehe - weit, weit, hoehe * 2 + weit * 2), // rechts
+        rand(-breite, -hoehe - weit, breite * 2, weit), // oben
+        rand(-breite, hoehe, breite * 2, weit), // unten
+      ])
+      .setAlpha(this.ort.dunkel)
+      .setDepth(DUNKEL_TIEFE);
+    this.lichtFlackern(this.raetsel?.mehrLicht() ? MEHR_LICHT : this.ort.licht ?? 1);
   }
 
   // Das Licht flackert ein kleines bisschen, wie von einer Laterne.
@@ -365,11 +400,16 @@ export class WeltSzene extends Phaser.Scene {
     );
     const gelaufen = abstand(vorher, this.spieler.ort);
 
-    const ausgang = ausgangAmRand(this.ort, this.spieler.ort, this.grenzen);
+    const offen = { ausgaenge: this.ort.ausgaenge.filter((weg) => this.ausgangOffen(weg)) };
+    const ausgang = ausgangAmRand(offen, this.spieler.ort, this.grenzen);
     if (ausgang) {
       this.ortWechseln(ausgang.nach);
       return;
     }
+    // Wer an einem Weg steht, den die Rivalin bewacht, wird von ihr angesprochen.
+    const bewacht = ausgangAmRand(this.ort, this.spieler.ort, this.grenzen)?.erstNachRivalin === true;
+    if (bewacht && !this.warAmBewachtenWeg && !this.gespraech) this.rivalinSpricht();
+    this.warAmBewachtenWeg = bewacht;
 
     // Kommt die Figur auf dem Weg zum getippten Ziel nicht weiter, gibt sie auf.
     if (this.laufziel) {
@@ -396,10 +436,48 @@ export class WeltSzene extends Phaser.Scene {
 
     // Selten ist es das geheime Kalamprio, und spätestens nach ein paar
     // anderen kommt es sicher (spaetestensNach beim Ort).
+    // Wer das geheime Kalamprio schon gefangen hat, trifft es nicht noch einmal.
     const bisher = spielstand.grasOhneGeheimes[this.ortName] ?? 0;
-    const { art, geheim } = grasBegegnung(this.ort, bisher);
+    const schonGefangen = spielstand.team.includes(this.ort.geheimesImGras?.art);
+    const { art, geheim } = grasBegegnung(schonGefangen ? { ...this.ort, geheimesImGras: null } : this.ort, bisher);
     spielstand.grasOhneGeheimes[this.ortName] = geheim ? 0 : bisher + 1;
     this.kampfBeginnen({ gegner: art });
+  }
+
+  // Ein Ausgang mit erstNachRaetsel ist erst offen, wenn das Rätsel gelöst
+  // ist, einer mit erstNachRivalin erst, wenn man die Rivalin besiegt hat.
+  ausgangOffen(ausgang) {
+    if (ausgang.erstNachRivalin && !spielstand.rivalinBesiegt) return false;
+    return !ausgang.erstNachRaetsel || spielstand.raetselGeloest[this.ortName] === true;
+  }
+
+  // Das Rätsel ist gelöst: Verschüttete Wege werden frei. Die Kamera schaut
+  // kurz hin, damit man sieht, wo es weitergeht.
+  raetselGeloest() {
+    const wege = this.verschuettet;
+    this.verschuettet = [];
+    if (wege.length === 0) return;
+    const kamera = this.cameras.main;
+    this.time.delayedCall(600, () => {
+      kamera.stopFollow();
+      kamera.pan(wege[0].mitte.x, wege[0].mitte.y, 1200, 'Sine.easeInOut');
+    });
+    this.time.delayedCall(1700, () => {
+      geroell();
+      kamera.shake(900, 0.006);
+      for (const weg of wege) {
+        wegFreimachen(this, weg);
+        this.hindernisse = this.hindernisse.filter((hindernis) => !weg.hindernisse.includes(hindernis));
+        // Ein Lichtblitz, den man auch im Dunkeln sieht
+        const blitz = lichtschein(this, weg.mitte.x, weg.mitte.y - 60, 500, 500, 0xe8e0ff).setDepth(LICHT_TIEFE).setAlpha(0);
+        this.tweens.add({ targets: blitz, alpha: 0.9, duration: 500, yoyo: true, hold: 600, onComplete: () => blitz.destroy() });
+      }
+    });
+    this.time.delayedCall(4000, () => {
+      kamera.pan(this.spieler.ort.x, this.spieler.ort.y, 900, 'Sine.easeInOut', false, (_, fertig) => {
+        if (fertig === 1) kamera.startFollow(this.spieler.schatten, true, 0.12, 0.12);
+      });
+    });
   }
 
   // Geht durch einen Ausgang zum nächsten Ort.
@@ -555,7 +633,9 @@ export class WeltSzene extends Phaser.Scene {
 
   istBeiRivalin() {
     if (!this.ort.rivalin) return false;
-    return abstand(this.spieler.ort, this.ort.rivalin) < SPIELER_RADIUS + RIVALIN_RADIUS + 14;
+    // Bewacht sie einen Weg, spricht sie einen schon an, wenn man in die Nähe kommt.
+    const nah = this.rivalinBewacht ? 170 : SPIELER_RADIUS + RIVALIN_RADIUS + 14;
+    return abstand(this.spieler.ort, this.rivalinPlatz) < nah;
   }
 
   istBeimKristall() {
@@ -601,6 +681,17 @@ export class WeltSzene extends Phaser.Scene {
       return;
     }
 
+    // Mit zu wenigen Kalamprios kämpft sie gar nicht erst (teamFuerRivalin in regeln.js).
+    const noetig = REGELN.teamFuerRivalin;
+    if (!spielstand.rivalinBesiegt && spielstand.kampfteam.length < noetig) {
+      const tipp =
+        spielstand.team.length >= noetig ? ` Tippe auf „Team“ und nimm ${noetig} mit.` : ' Fang erst noch Kalamprios im hohen Gras!';
+      this.gespraechZeigen(`${rivalin.name}: „${rivalin.zuWenige.replace('{anzahl}', noetig)}“${tipp}`, [
+        ['Okay', () => this.gespraechSchliessen()],
+      ]);
+      return;
+    }
+
     const satz = spielstand.rivalinBesiegt ? rivalin.revanche : rivalin.gruss;
     this.gespraechZeigen(`${rivalin.name}: „${satz}“`, [
       [
@@ -612,6 +703,7 @@ export class WeltSzene extends Phaser.Scene {
             gegnerLevel: Math.max(...spielstand.team.map(levelVon)),
             trainerin: rivalin.name,
             beiSieg: () => {
+              if (!spielstand.rivalinBesiegt) WeltSzene.nachricht = `${rivalin.name}: „${rivalin.besiegt}“`;
               spielstand.rivalinBesiegt = true;
             },
           }),

@@ -8,10 +8,12 @@ import {
   ankunft,
   ausgangAmRand,
   grasBegegnung,
+  hinterDemAusgang,
   hindernisseAmOrt,
   istImGras,
   richtungZu,
   schritt,
+  wegSperre,
   weltGrenzen,
 } from '../src/welt/weltlogik.js';
 
@@ -93,6 +95,7 @@ for (const [kurzname, ort] of Object.entries(ORTE)) {
     const punkte = [
       ort.start,
       ort.rivalin,
+      ort.rivalinNachSieg,
       ...ort.wildeKalamprios,
       ...ort.ausgaenge.map((ausgang) => ankunft(ort, ausgang.nach)),
     ].filter(Boolean);
@@ -155,4 +158,25 @@ test('im Schilf kommt das geheime Kalamprio spätestens nach ein paar anderen', 
 
 test('im Wald gibt es kein geheimes Kalamprio im Gras', () => {
   assert.equal(grasBegegnung(ORTE.kristallwald, 100, () => 0).geheim, false);
+});
+
+test('an einem Weg, den die Rivalin bewacht, kommt niemand vorbei', () => {
+  for (const ort of Object.values(ORTE)) {
+    const grenzen = weltGrenzen(ort);
+    for (const ausgang of ort.ausgaenge.filter((weg) => weg.erstNachRivalin)) {
+      const hindernisse = [...hindernisseAmOrt(ort), ...wegSperre(ausgang, grenzen), { ...ort.rivalin, radius: 56 }];
+      // Von vielen Stellen aus geradewegs auf den Ausgang zu laufen, auch schräg von oben und unten.
+      for (let seitlich = -400; seitlich <= 400; seitlich += 40) {
+        const quer = ausgang.seite === 'links' || ausgang.seite === 'rechts';
+        const start = hinterDemAusgang(ausgang, grenzen, 400);
+        let wo = { x: start.x + (quer ? 0 : seitlich), y: start.y + (quer ? seitlich : 0) };
+        const ziel = hinterDemAusgang(ausgang, grenzen, -50);
+        for (let i = 0; i < 400; i += 1) {
+          const { richtung } = richtungZu(wo, ziel);
+          wo = schritt(wo, { x: richtung.x * 5, y: richtung.y * 5 }, 18, hindernisse, grenzen);
+          assert.equal(ausgangAmRand(ort, wo, grenzen), null, `von ${seitlich} aus kommt man bei (${wo.x}, ${wo.y}) hinaus`);
+        }
+      }
+    }
+  }
 });

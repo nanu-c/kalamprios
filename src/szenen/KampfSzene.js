@@ -6,7 +6,7 @@ import { ELEMENTE } from '../daten/elemente.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
 import {
-  attackeAusfuehren,
+  angreifen,
   erfahrungBisNaechstesLevel,
   erfahrungFuerSieg,
   fangChance,
@@ -394,6 +394,16 @@ export class KampfSzene extends Phaser.Scene {
     });
   }
 
+  // Ein Wort wie „Daneben!“ steigt über einem Kalamprio auf.
+  wortZeigen(bild, wort, hoeher = 0) {
+    const text = this.add
+      .text(bild.x, bild.y - bild.displayHeight - 10 + hoeher, wort, schrift(38, '#f6f0ff', { fontStyle: '600' }))
+      .setOrigin(0.5)
+      .setStroke('#2a1650', 8)
+      .setDepth(1001);
+    this.tweens.add({ targets: text, y: text.y - 50, alpha: 0, delay: 500, duration: 900, onComplete: () => text.destroy() });
+  }
+
   // Zwei kleine Helfer, damit der Ablauf unten Schritt für Schritt lesbar ist:
   // "await" wartet, bis die Bewegung oder die Pause vorbei ist.
   bewegen(einstellungen) {
@@ -575,9 +585,11 @@ export class KampfSzene extends Phaser.Scene {
     await this.gegnerIstDran();
   }
 
+  // Manchmal haut ein Kalamprio daneben, oder der Gegner weicht aus oder
+  // wehrt ab (die Chancen stehen in regeln.js).
   async angriffZeigen(angreifer, verteidiger, attacke) {
     const kpVorher = verteidiger.kp;
-    const schaden = attackeAusfuehren(angreifer, verteidiger, attacke);
+    const { ausgang, schaden } = angreifen(angreifer, verteidiger, attacke);
     const vonAngreifer = this.anzeige.get(angreifer);
     const vonVerteidiger = this.anzeige.get(verteidiger);
 
@@ -594,9 +606,18 @@ export class KampfSzene extends Phaser.Scene {
       vonVerteidiger.bild,
       attacke.pause > 0,
       vonAngreifer.richtung,
+      ausgang,
     );
 
+    if (ausgang === 'daneben' || ausgang === 'ausgewichen') {
+      this.wortZeigen(vonVerteidiger.bild, ausgang === 'daneben' ? 'Daneben!' : 'Ausgewichen!');
+      this.sagen(ausgang === 'daneben' ? `${angreifer.name} haut daneben!` : `${verteidiger.name} weicht aus!`);
+      await this.warten(1100);
+      return;
+    }
+
     // Schadenszahl, Lebensbalken schrumpft
+    if (ausgang === 'abgewehrt') this.wortZeigen(vonVerteidiger.bild, 'Abgewehrt!', -60);
     this.schadenZeigen(vonVerteidiger.bild, schaden);
     await this.bewegen({
       targets: { kp: kpVorher },
@@ -605,7 +626,11 @@ export class KampfSzene extends Phaser.Scene {
       onUpdate: (tween, zaehler) => this.kpZeigen(verteidiger, zaehler.kp),
     });
 
-    this.sagen(`${verteidiger.name} verliert ${schaden} Lebenspunkte.`);
+    this.sagen(
+      ausgang === 'abgewehrt'
+        ? `${verteidiger.name} wehrt ab und verliert nur ${schaden} Lebenspunkte.`
+        : `${verteidiger.name} verliert ${schaden} Lebenspunkte.`,
+    );
     await this.warten(900);
   }
 
@@ -809,12 +834,13 @@ export class KampfSzene extends Phaser.Scene {
 
   // Versteckt die Knöpfe und zeigt nur noch "Weiter". gewonnen ist auch true,
   // wenn man das Kalamprio gefangen hat: Dann ist es aus der Welt verschwunden.
-  // Wer das geheime Kalamprio besiegt oder gefangen hat, kommt zur Party.
+  // Wer das geheime Kalamprio besiegt oder gefangen hat, kommt zur Party
+  // (nur beim ersten Mal, danach spielt man einfach weiter).
   weiterZeigen(gewonnen) {
     for (const knopf of [...this.knoepfe, this.fangKnopf, this.tauschKnopf].filter(Boolean)) {
       for (const teil of knopf.teile) teil.setVisible(false);
     }
-    const party = gewonnen && this.geheim;
+    const party = gewonnen && this.geheim && !spielstand.festGefeiert;
     textKnopf(this, 620, 570, 620, 62, party ? 'Zur Party!' : 'Weiter', () => {
       this.auswahl.nachKampf?.(gewonnen);
       this.cameras.main.fadeOut(500, 23, 11, 44);

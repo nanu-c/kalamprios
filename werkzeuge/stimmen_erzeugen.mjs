@@ -6,6 +6,7 @@
 // Der Schlüssel steht in der Datei .env (sie wird nicht hochgeladen).
 // Es werden nur Sätze neu gesprochen, die sich geändert haben oder neu sind.
 // Sätze ohne Aufnahme liest das Spiel mit der Stimme des Browsers vor.
+// Neue Sätze werden etwas zügiger gesprochen (ZUEGIG). Alte Aufnahmen bleiben, wie sie sind.
 
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -26,6 +27,9 @@ const RAETSELSTEIN =
   ERZAEHLERIN +
   ' Was in Anführungszeichen steht, sagt ein alter, freundlicher Rätselstein: ' +
   'tief, gemütlich und ein bisschen verschmitzt, wie ein lieber Großvater.';
+
+// Kommt bei neuen Sätzen zur Anweisung dazu.
+const ZUEGIG = ' Sprich dabei etwas zügiger als sonst, aber immer noch deutlich.';
 
 const ORDNER = new URL('../public/stimme/', import.meta.url);
 const LISTE = new URL('stimmen.json', ORDNER);
@@ -79,7 +83,13 @@ const schluessel = schluesselLesen();
 mkdirSync(ORDNER, { recursive: true });
 const liste = {};
 let neu = 0;
-for (const [text, anweisung] of saetze) {
+for (const [text, langsam] of saetze) {
+  // Gibt es schon eine Aufnahme (noch in der alten, ruhigeren Art)? Dann bleibt sie.
+  if (existsSync(new URL(dateiname(text, langsam), ORDNER))) {
+    liste[text] = dateiname(text, langsam);
+    continue;
+  }
+  const anweisung = langsam + ZUEGIG;
   const name = dateiname(text, anweisung);
   liste[text] = name;
   if (existsSync(new URL(name, ORDNER))) continue;

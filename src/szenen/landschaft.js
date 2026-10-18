@@ -484,11 +484,15 @@ function masse(szene, name) {
   return { breite: quelle.width, hoehe: quelle.height, fuss: quelle.height * 0.97 };
 }
 
-// Stellt den Ort mit dem Kurznamen schluessel auf. Gibt alles zurück, was die
-// Figur verdecken kann (Bäume und Häuser), damit es durchsichtig werden kann.
+// Stellt den Ort mit dem Kurznamen schluessel auf. Gibt zurück:
+//   verdecker:   alles, was die Figur verdecken kann (Bäume und Häuser),
+//                damit es durchsichtig werden kann
+//   verschuettet: die Ausgänge, die noch nicht offen sind (offen sagt das
+//                für jeden Ausgang). Davor liegt Geröll, und ihr Schild und
+//                ihre Höhle sind versteckt, bis man sie mit wegFreimachen öffnet.
 // Was weiter unten steht, verdeckt, was weiter oben steht: Darum bekommt jedes
 // Bild als Tiefe sein y.
-export function ortAufbauen(szene, schluessel) {
+export function ortAufbauen(szene, schluessel, offen = () => true) {
   const ort = ORTE[schluessel];
   bilderErzeugen(szene);
   szene.add.image(0, 0, bodenErzeugen(szene, schluessel, ort)).setOrigin(0).setDepth(-10);
@@ -542,10 +546,58 @@ export function ortAufbauen(szene, schluessel) {
   for (const see of ort.seen ?? []) if (see.bild) gemaltenSeeAufstellen(szene, see, licht);
 
   randAufbauen(ort, stellen, baumStellen);
-  hoehlenAufstellen(szene, ort, stellen, licht);
-  schilderAufstellen(szene, ort, stellen);
+  // Zu jedem Ausgang merken wir uns, was zu ihm gehört: Höhle, Licht und Schild.
+  const zumAusgang = new Map(ort.ausgaenge.map((ausgang) => [ausgang, []]));
+  hoehlenAufstellen(szene, ort, stellen, licht, zumAusgang);
+  schilderAufstellen(szene, ort, stellen, zumAusgang);
   glitzernLassen(szene, glitzernde, licht);
-  return verdecker;
+  const verschuettet = ort.ausgaenge.filter((ausgang) => !offen(ausgang)).map((ausgang) => geroellAufschuetten(ort, ausgang, stellen, zumAusgang.get(ausgang)));
+  return { verdecker, verschuettet };
+}
+
+// Vor einem verschütteten Ausgang liegt ein Haufen Felsen. Schild und Höhle
+// sind noch nicht zu sehen.
+function geroellAufschuetten(ort, ausgang, stellen, teile) {
+  const grenzen = weltGrenzen(ort);
+  const quer = ausgang.seite === 'links' || ausgang.seite === 'rechts';
+  const felsen = [];
+  for (const [weit, seitlich, groesse] of [[20, -80, 1], [20, 0, 1.15], [20, 80, 1], [90, -40, 0.8], [90, 45, 0.85]]) {
+    const punkt = hinterDemAusgang(ausgang, grenzen, weit);
+    const x = punkt.x + (quer ? 0 : seitlich);
+    const y = punkt.y + (quer ? seitlich : 0) + 30;
+    felsen.push({ bild: stellen('felsen', x, y, false, groesse), x, y, radius: 44 * groesse });
+  }
+  for (const teil of teile) teil.setVisible(false);
+  return {
+    ausgang,
+    teile,
+    felsen,
+    hindernisse: felsen.map(({ x, y, radius }) => ({ x, y: y - 14, radius })),
+    mitte: hinterDemAusgang(ausgang, grenzen, 60),
+  };
+}
+
+// Die Felsen rollen zur Seite, und Höhle und Schild tauchen auf.
+export function wegFreimachen(szene, weg) {
+  weg.felsen.forEach(({ bild }, nummer) => {
+    szene.tweens.add({
+      targets: bild,
+      x: bild.x + (nummer % 2 ? 60 : -60),
+      y: bild.y + 40,
+      angle: nummer % 2 ? 40 : -40,
+      alpha: 0,
+      delay: nummer * 160,
+      duration: 700,
+      ease: 'Quad.easeIn',
+      onComplete: () => bild.destroy(),
+    });
+  });
+  for (const teil of weg.teile) {
+    teil.setVisible(true);
+    if (teil.type !== 'Image' || teil.blendMode === Phaser.BlendModes.ADD) continue;
+    teil.setAlpha(0);
+    szene.tweens.add({ targets: teil, alpha: 1, delay: 500, duration: 900 });
+  }
 }
 
 // Ein weicher, pulsierender Lichtschein um etwas, das leuchtet.
@@ -672,7 +724,7 @@ function istHoehle(ort, ausgang) {
 
 // Führt ein Weg in die Mine oder aus ihr hinaus, steht dort ein Höhleneingang.
 // Draußen ist die Öffnung dunkel, drinnen kommt durch sie das Licht herein.
-function hoehlenAufstellen(szene, ort, stellen, licht) {
+function hoehlenAufstellen(szene, ort, stellen, licht, zumAusgang) {
   const grenzen = weltGrenzen(ort);
   for (const ausgang of ort.ausgaenge) {
     if (!istHoehle(ort, ausgang)) continue;
@@ -682,10 +734,12 @@ function hoehlenAufstellen(szene, ort, stellen, licht) {
     const tor = stellen(hinaus ? 'hoehle-hinaus' : 'hoehle-hinein', punkt.x, punkt.y + 40);
     // Aber die Figur soll vor der Öffnung zu sehen sein, nicht dahinter verschwinden.
     tor.setDepth(punkt.y - 60);
+    zumAusgang.get(ausgang).push(tor);
 
     if (hinaus) {
       const strahl = lichtschein(szene, punkt.x, punkt.y - 60, 420, 420, 0xe8e0ff).setAlpha(0.5).setDepth(licht ?? punkt.y);
       szene.tweens.add({ targets: strahl, alpha: 0.75, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      zumAusgang.get(ausgang).push(strahl);
     }
   }
 }
@@ -716,7 +770,7 @@ function randAufbauen(ort, stellen, baumStellen) {
 }
 
 // An jedem Ausgang steht ein Schild mit dem Namen des nächsten Ortes.
-function schilderAufstellen(szene, ort, stellen) {
+function schilderAufstellen(szene, ort, stellen, zumAusgang) {
   const grenzen = weltGrenzen(ort);
   for (const ausgang of ort.ausgaenge) {
     // Bei einer Höhle steht das Schild ein Stück davor, sonst verdeckt sie es.
@@ -724,14 +778,15 @@ function schilderAufstellen(szene, ort, stellen) {
     const quer = ausgang.seite === 'links' || ausgang.seite === 'rechts';
     const x = quer ? punkt.x : punkt.x + AUSGANG_BREITE / 2 + 30;
     const y = quer ? punkt.y - AUSGANG_BREITE / 2 - 10 : punkt.y;
-    stellen('schild', x, y);
+    const pfosten = stellen('schild', x, y);
     const pfeil = { links: '← ', rechts: '', oben: '↑ ', unten: '↓ ' }[ausgang.seite];
     const ende = ausgang.seite === 'rechts' ? ' →' : '';
-    szene.add
+    const tafel = szene.add
       .text(x, y - 70, `${pfeil}${ORTE[ausgang.nach].name}${ende}`, schrift(20, '#ffffff'))
       .setOrigin(ausgang.seite === 'rechts' ? 0.85 : ausgang.seite === 'links' ? 0.15 : 0.5, 0.5)
       .setPadding(10, 6)
       .setBackgroundColor('#5a3a2a')
       .setDepth(y + 1);
+    zumAusgang.get(ausgang).push(pfosten, tafel);
   }
 }

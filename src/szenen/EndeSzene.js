@@ -1,6 +1,7 @@
 // Die Party am Ende: Das geheime Kalamprio ist besiegt, die Kristalle leuchten
 // wieder, und das ganze Team tanzt. Dazu wird das Ende erzählt (die Sätze
 // stehen in daten/geschichte.js bei ende). Zum Schluss steht groß "Ende" da.
+// Danach kann man weiterspielen: Man ist wieder am Mondsee, mit dem ganzen Team.
 
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
@@ -27,6 +28,7 @@ export class EndeSzene extends Phaser.Scene {
     hintergrundMalen(this, 'geschichte');
     this.cameras.main.fadeIn(800, 23, 11, 44);
     musikSpielen('ende');
+    spielstand.festGefeiert = true;
 
     this.kristalleLeuchten();
     this.tanzen();
@@ -155,8 +157,8 @@ export class EndeSzene extends Phaser.Scene {
     this.tweens.add({ targets: this.text, alpha: 1, duration: 350 });
   }
 
-  // Zum Schluss: der Titel, groß "Ende", wer das Spiel gemacht hat, und ein
-  // Knopf, um noch einmal von vorn zu spielen.
+  // Zum Schluss: der Titel, groß "Ende", wer das Spiel gemacht hat, ein Knopf
+  // zum Weiterspielen und einer, um noch einmal von vorn zu spielen.
   endeZeigen() {
     verstummen();
     for (const teil of this.textfeld) teil.destroy();
@@ -176,8 +178,12 @@ export class EndeSzene extends Phaser.Scene {
       .setOrigin(0.5)
       .setStroke('#2a1650', 6)
       .setDepth(20);
+    const weiter = textKnopf(this, 40, 620, 250, 60, 'Weiterspielen', () => {
+      this.cameras.main.fadeOut(500, 23, 11, 44);
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('Welt'));
+    });
     const knopf = textKnopf(this, BREITE - 290, 620, 250, 60, 'Nochmal spielen', () => window.location.reload());
-    for (const teil of knopf) teil.setDepth(21);
+    for (const teil of [...weiter, ...knopf]) teil.setDepth(21);
     const name = CHARAKTERE[spielstand.charakter]?.name;
     if (name) {
       this.add

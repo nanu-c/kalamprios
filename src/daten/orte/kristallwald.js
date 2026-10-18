@@ -12,8 +12,15 @@
 //                  seite ist 'links', 'rechts', 'oben' oder 'unten', und
 //                  mitte sagt, wo an dieser Seite der Weg hinausführt.
 //                  Wichtig: Der andere Ort braucht einen Weg zurück.
+//                  Mit erstNachRaetsel: true ist der Weg verschüttet, bis
+//                  das Rätsel dieses Ortes gelöst ist. Man findet ihn vorher nicht.
+//                  Mit erstNachRivalin: true bewacht die Rivalin den Weg. Man
+//                  kommt erst hindurch, wenn man sie besiegt hat.
 // start:           (nur im Startort) hier beginnt die Figur
-// rivalin:         (nur im Wald) hier wartet die Figur, die man nicht gewählt hat
+// rivalin:         (nur im Wald) hier wartet die Figur, die man nicht gewählt hat.
+//                  Bewacht sie einen Weg (erstNachRivalin), steht sie mitten
+//                  darin, und niemand kommt an ihr vorbei.
+// rivalinNachSieg: (optional) hierhin geht sie zur Seite, wenn man sie besiegt hat
 // dunklerKristall: hier steht der dunkle Kristall, der die Geschichte flüstert
 // wildeKalamprios: diese Tiere laufen sichtbar herum. art ist ein Kurzname
 //                  aus kalamprios.js.
@@ -31,6 +38,8 @@
 //                  liegt wieder einer da (siehe regeln.js).
 // dunkel:          (optional) wie dunkel es ist, von 0 (hell) bis 1 (ganz
 //                  schwarz). Nur rund um die Figur ist es hell.
+// licht:           (optional, nur wenn es dunkel ist) wie weit das Licht um
+//                  die Figur scheint. 1 ist normal, 0.7 ist weniger weit.
 // raetsel:         (optional) ein Rätsel. Bei x und y steht der Rätselstein
 //                  mit dem goldenen Fragezeichen, er erklärt die Aufgabe.
 //                  art sagt, was für ein Rätsel es ist:
@@ -40,10 +49,16 @@
 //                  'reihenfolge': Bei steine stehen bunte Klangsteine. Sie
 //                                 leuchten nacheinander auf, dann muss man in
 //                                 derselben Reihenfolge darüberlaufen. Die
-//                                 richtige Reihenfolge ist die in der Liste.
+//                                 Reihenfolge würfelt das Spiel jedes Mal neu.
+//                                 Bei runden steht, wie viele Steine in jeder
+//                                 Runde aufleuchten, zum Beispiel [3, 4, 5].
+//                                 Wer sich vertut, fängt die Runde von vorn an.
 //                  'frage':       Bei fragen stehen Rätselfragen mit bis zu
 //                                 vier antworten. richtig ist die richtige
-//                                 Antwort, genau so geschrieben.
+//                                 Antwort, genau so geschrieben. Bei wieViele
+//                                 steht, wie viele Fragen man richtig
+//                                 beantworten muss. Die Fragen kommen jedes
+//                                 Mal durcheinander dran.
 //                  Farben gibt es: 'rot', 'gelb', 'blau', 'gruen', 'lila', 'weiss'.
 //                  aufgabe:   was der Stein am Anfang sagt (Sätze wie in geschichte.js)
 //                  geschafft: was er sagt, wenn das Rätsel gelöst ist
@@ -55,95 +70,104 @@
 export const KRISTALLWALD = {
   name: 'Kristallwald',
   stil: 'wald',
-  breite: 2400,
-  hoehe: 1600,
+  breite: 3120,
+  hoehe: 2080,
 
   ausgaenge: [
-    { nach: 'lilaDorf', seite: 'links', mitte: 820 },
-    { nach: 'prismastahlMine', seite: 'rechts', mitte: 1440 },
+    { nach: 'lilaDorf', seite: 'links', mitte: 1070 },
+    // Den Weg in die Mine bewacht die Rivalin.
+    { nach: 'prismastahlMine', seite: 'rechts', mitte: 1870, erstNachRivalin: true },
   ],
 
-  rivalin: { x: 2040, y: 430 },
+  // Die Rivalin steht im Eingang zur Mine. Wer sie besiegt, dem macht sie Platz.
+  rivalin: { x: 2940, y: 1870 },
+  rivalinNachSieg: { x: 2600, y: 1880 },
 
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
-  dunklerKristall: { x: 400, y: 700 },
+  dunklerKristall: { x: 520, y: 910 },
 
   wildeKalamprios: [
-    { art: 'bisakatze', x: 960, y: 540 },
-    { art: 'kalampria', x: 1500, y: 900 },
-    { art: 'bisakatze', x: 420, y: 1340 },
-    { art: 'qalutu', x: 1320, y: 1480 },
-    { art: 'kabon', x: 1950, y: 1460 },
+    { art: 'bisakatze', x: 1250, y: 700 },
+    { art: 'kalampria', x: 1950, y: 1170 },
+    { art: 'bisakatze', x: 550, y: 1740 },
+    { art: 'qalutu', x: 1720, y: 1920 },
+    { art: 'kabon', x: 2350, y: 1960 },
+    { art: 'tschank', x: 2900, y: 1450 },
   ],
 
-  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon'],
+  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon', 'tschank'],
   hohesGras: [
-    { links: 560, oben: 960, breite: 520, hoehe: 340 },
-    { links: 1280, oben: 220, breite: 460, hoehe: 300 },
-    { links: 1720, oben: 1020, breite: 480, hoehe: 360 },
+    { links: 730, oben: 1250, breite: 680, hoehe: 440 },
+    { links: 1660, oben: 290, breite: 600, hoehe: 390 },
+    { links: 2240, oben: 1330, breite: 620, hoehe: 470 },
   ],
 
   baeume: [
-    { x: 1870, y: 270 },
-    { x: 690, y: 280 },
-    { x: 320, y: 290 },
-    { x: 1040, y: 340 },
-    { x: 210, y: 550 },
-    { x: 1850, y: 560 },
-    { x: 1400, y: 590 },
-    { x: 620, y: 620 },
-    { x: 1690, y: 690 },
-    { x: 1140, y: 730 },
-    { x: 2060, y: 740 },
-    { x: 890, y: 750 },
-    { x: 1280, y: 870 },
-    { x: 1020, y: 910 },
-    { x: 1710, y: 940 },
-    { x: 210, y: 1100 },
-    { x: 1480, y: 1110 },
-    { x: 1230, y: 1190 },
-    { x: 1640, y: 1290 },
-    { x: 1460, y: 1340 },
+    { x: 2430, y: 350 },
+    { x: 420, y: 380 },
+    { x: 1350, y: 440 },
+    { x: 270, y: 720 },
+    { x: 2400, y: 730 },
+    { x: 1820, y: 770 },
+    { x: 2200, y: 900 },
+    { x: 1480, y: 950 },
+    { x: 2680, y: 960 },
+    { x: 1160, y: 980 },
+    { x: 1660, y: 1130 },
+    { x: 1330, y: 1180 },
+    { x: 2220, y: 1220 },
+    { x: 270, y: 1430 },
+    { x: 1920, y: 1440 },
+    { x: 1600, y: 1550 },
+    { x: 2130, y: 1680 },
+    { x: 1900, y: 1740 },
+    { x: 2050, y: 1950 },
+    { x: 600, y: 1150 },
+    { x: 2900, y: 1000 },
   ],
 
   kristalle: [
-    { x: 2200, y: 260 },
-    { x: 1220, y: 280 },
-    { x: 450, y: 480 },
-    { x: 770, y: 480 },
-    { x: 1200, y: 480 },
-    { x: 700, y: 870 },
-    { x: 1970, y: 910 },
-    { x: 2160, y: 960 },
-    { x: 470, y: 1110 },
-    { x: 220, y: 1380 },
-    { x: 1150, y: 1400 },
-    { x: 890, y: 1420 },
-    { x: 690, y: 1440 },
+    { x: 2860, y: 340 },
+    { x: 1590, y: 360 },
+    { x: 1050, y: 250 },
+    { x: 1560, y: 620 },
+    { x: 910, y: 1130 },
+    { x: 2560, y: 1180 },
+    { x: 2810, y: 1250 },
+    { x: 610, y: 1440 },
+    { x: 290, y: 1790 },
+    { x: 1500, y: 1820 },
+    { x: 1160, y: 1850 },
+    { x: 900, y: 1870 },
+    { x: 2950, y: 1650 },
   ],
 
   fangkristalle: [
-    { x: 1560, y: 400 },
-    { x: 330, y: 900 },
+    { x: 2030, y: 520 },
+    { x: 430, y: 1170 },
   ],
 
-  // Das Rätsel: Vier Klangsteine liegen um den Rätselstein herum.
+  // Das Rätsel: Fünf Klangsteine liegen auf einer Lichtung um den Rätselstein
+  // herum. Sie leuchten in jeder Runde in einer neuen Reihenfolge auf, und
+  // jede Runde leuchten mehr Steine.
   raetsel: {
     art: 'reihenfolge',
-    x: 580,
-    y: 360,
+    x: 760,
+    y: 560,
     aufgabe: [
-      'Ein Rätselstein mit einem goldenen Fragezeichen. Um ihn herum liegen vier bunte Klangsteine.',
-      '„Gleich leuchten die Klangsteine nacheinander auf. Schau ganz genau hin!“',
-      '„Dann lauf in genau dieser Reihenfolge über die Steine.“',
+      'Ein Rätselstein mit einem goldenen Fragezeichen. Um ihn herum liegen fünf bunte Klangsteine.',
+      '„Gleich leuchten die Klangsteine nacheinander auf. Schau ganz genau hin und hör gut zu!“',
+      '„Dann lauf in genau dieser Reihenfolge über die Steine. Es gibt drei Runden, und jede ist ein bisschen länger.“',
     ],
-    // In dieser Reihenfolge muss man darüberlaufen.
     steine: [
-      { x: 720, y: 360, farbe: 'gelb' },
-      { x: 580, y: 270, farbe: 'blau' },
-      { x: 440, y: 360, farbe: 'rot' },
-      { x: 580, y: 450, farbe: 'gruen' },
+      { x: 760, y: 385, farbe: 'gelb' },
+      { x: 926, y: 506, farbe: 'blau' },
+      { x: 863, y: 702, farbe: 'gruen' },
+      { x: 657, y: 702, farbe: 'rot' },
+      { x: 594, y: 506, farbe: 'lila' },
     ],
+    // So viele Steine leuchten in jeder Runde auf: erst 3, dann 4, dann 5.
+    runden: [3, 4, 5],
     geschafft: '„Wunderbar! Die Klangsteine singen wieder. Hier, nimm diese Fangkristalle mit.“',
     belohnung: { fangkristalle: 2 },
   },

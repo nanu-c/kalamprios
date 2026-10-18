@@ -39,7 +39,9 @@ const anfangsStand = () => ({
   geschichteGehoert: {}, // Kurzname des Ortes -> true, wenn der dunkle Kristall erzählt hat
   raetselAngefangen: {}, // Kurzname des Ortes -> true, wenn der Rätselstein die Aufgabe erklärt hat
   raetselGefunden: {}, // Kurzname des Ortes -> Nummern der Dinge, die man schon gefunden hat
+  raetselRunde: {}, // Kurzname des Ortes -> so viele Runden vom Klangstein-Rätsel sind geschafft
   raetselGeloest: {}, // Kurzname des Ortes -> true, wenn das Rätsel gelöst ist
+  festGefeiert: false, // true, sobald man das geheime Kalamprio besiegt und gefeiert hat
   hinweisGesehen: false, // der Tipp zur Steuerung wird nur einmal gezeigt
 });
 
@@ -180,7 +182,9 @@ function gespeichertLesen(speicher) {
         .filter(([, nummern]) => Array.isArray(nummern))
         .map(([ort, nummern]) => [ort, nummern.filter(Number.isInteger)]),
     ),
+    raetselRunde: liste(alt.raetselRunde),
     raetselGeloest: liste(alt.raetselGeloest),
+    festGefeiert: alt.festGefeiert === true,
     hinweisGesehen: alt.hinweisGesehen === true,
   };
 }

@@ -995,12 +995,65 @@ const EFFEKTE = {
 // Bei diesen Attacken läuft der Angreifer zum Gegner hin.
 const NAHKAMPF = ['krallen', 'biss', 'hieb'];
 
+// Der Angriff geht daneben: Ein bisschen Staub und Glitzer, wo er auftrifft.
+function insLeere(szene, ort, farbe) {
+  geraeusch.daneben();
+  platzen(szene, ort, [farbe, 0xffffff], 8, 120);
+  const wolke = szene.add.circle(ort.x, ort.y, 26, 0xd9c9ff, 0.35).setDepth(VORNE);
+  ausblenden(szene, wolke, 500, { scale: 2.4 });
+}
+
+// Der Gegner springt hoch und zur Seite, die Attacke saust unter ihm durch.
+// Das Atmen und Schweben hält so lange an.
+function ausweichen(szene, bild, richtung) {
+  const start = { x: bild.x, y: bild.y };
+  const lebendig = szene.tweens.getTweensOf(bild);
+  lebendig.forEach((laufend) => laufend.pause());
+  bild.setData('angehalten', lebendig);
+  szene.time.delayedCall(80, () => geraeusch.ausweichen());
+  return tween(szene, {
+    targets: bild,
+    x: start.x + richtung * 90,
+    y: start.y - 150,
+    angle: richtung * 14,
+    duration: 260,
+    ease: 'Quad.easeOut',
+  });
+}
+
+async function zurueckLanden(szene, bild, start) {
+  await tween(szene, { targets: bild, x: start.x, y: start.y, angle: 0, duration: 320, ease: 'Bounce.easeOut' });
+  geraeusch.landen();
+  for (const laufend of bild.getData('angehalten') ?? []) laufend.resume();
+}
+
+// Der Gegner wehrt ab: Vor ihm leuchtet kurz ein Schild auf, und er wird nur
+// ein kleines Stück zurückgeschoben.
+async function abwehren(szene, bild, farbe, richtung) {
+  const ort = mitte(bild);
+  geraeusch.abwehren();
+  szene.cameras.main.shake(120, 0.003);
+  const schild = szene.add
+    .ellipse(ort.x - richtung * bild.displayWidth * 0.45, ort.y, 60, bild.displayHeight * 0.9, 0xd9c9ff, 0.35)
+    .setStrokeStyle(6, 0xffffff, 0.9)
+    .setBlendMode(Phaser.BlendModes.ADD)
+    .setDepth(VORNE)
+    .setScale(0.4, 0.6);
+  platzen(szene, { x: schild.x, y: ort.y }, [farbe, 0xffffff], 12, 200);
+  szene.tweens.add({ targets: schild, scaleX: 1, scaleY: 1, duration: 140, ease: 'Back.easeOut' });
+  ausblenden(szene, schild, 400, { delay: 250 });
+  await tween(szene, { targets: bild, x: bild.x + richtung * 15, duration: 90, yoyo: true, ease: 'Quad.easeOut' });
+}
+
 // Spielt die ganze Attacke: aufladen, fliegen, treffen.
 //   aussehen:  ein Kurzname aus elemente.js oder 'herz' (bestimmt, was fliegt)
 //   element:   das Element des Angreifers (bestimmt die Farbe beim Aufladen)
 //   angreifer: das Bild des Angreifers, getroffener: das Bild des Gegners
 //   richtung:  1, wenn der Angreifer nach rechts schießt, sonst -1
-export async function attackeAnimieren(szene, aussehen, element, angreifer, getroffener, stark, richtung) {
+//   ausgang:   wie es ausgeht: 'treffer', 'daneben' (fliegt am Gegner
+//              vorbei), 'ausgewichen' (der Gegner springt weg) oder
+//              'abgewehrt' (der Gegner hält einen Schild davor)
+export async function attackeAnimieren(szene, aussehen, element, angreifer, getroffener, stark, richtung, ausgang = 'treffer') {
   bilderErzeugen(szene);
   const farbe = aussehen === 'herz' ? 0xff6f9c : (ELEMENTE[aussehen] ?? ELEMENTE[element])?.farbe ?? 0xc9b8ff;
   const hell = mischen(farbe, 0xffffff, 0.55);
@@ -1013,6 +1066,19 @@ export async function attackeAnimieren(szene, aussehen, element, angreifer, getr
     szene.tweens.add({ targets: angreifer, x: angreifer.x + richtung * 45, duration: 110, yoyo: true, ease: 'Quad.easeOut' });
   }
 
-  await effekt(szene, mitte(angreifer), mitte(getroffener), stark, farbe, { angreifer, getroffener, richtung });
-  await treffen(szene, getroffener, farbe, hell, stark, richtung);
+  // Wer danebenhaut, zielt über den Gegner hinweg.
+  const ziel = mitte(getroffener);
+  if (ausgang === 'daneben') {
+    ziel.x += richtung * 160;
+    ziel.y -= getroffener.displayHeight * 0.55;
+  }
+  const start = { x: getroffener.x, y: getroffener.y };
+  if (ausgang === 'ausgewichen') ausweichen(szene, getroffener, richtung);
+
+  await effekt(szene, mitte(angreifer), ziel, stark, farbe, { angreifer, getroffener, richtung });
+
+  if (ausgang === 'treffer') await treffen(szene, getroffener, farbe, hell, stark, richtung);
+  if (ausgang === 'abgewehrt') await abwehren(szene, getroffener, farbe, richtung);
+  if (ausgang === 'daneben') insLeere(szene, ziel, farbe);
+  if (ausgang === 'ausgewichen') await zurueckLanden(szene, getroffener, start);
 }
