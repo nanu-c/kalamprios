@@ -57,7 +57,7 @@ In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich verti
 
     Als Belohnung gibt es Fangkristalle. Ist ein Rätsel gelöst, wird aus dem Fragezeichen ein Stern. Wie man eigene Rätsel baut, steht oben in `src/daten/orte/kristallwald.js` bei `raetsel`.
 14. Der Knopf unten links schaltet das Vollbild ein. Am Handy spielt man quer.
-15. Der Knopf daneben schaltet den Ton an und aus. Jeder Ort hat seine eigene Musik, und im Kampf läuft Kampfmusik. Jedes Kalamprio hat eine eigene Stimme. Wilde Kalamprios hört man nur, wenn man in der Nähe ist: Je näher man hingeht, desto lauter rufen sie, so wie das Licht in der Mine nur in der Nähe hell ist. In der dunklen Mine hört man sie, bevor man sie sieht. Auch der dunkle Kristall summt, wenn man näher kommt.
+15. Der Knopf daneben schaltet den Ton an und aus. Jeder Ort hat seine eigene Musik. Für Kämpfe gibt es vier Kampflieder, bei jedem Kampf kommt ein anderes dran, und im Kampf ist die Musik etwas leiser (`kampflieder` und `musikImKampf` in `klaenge.js`). Jedes Kalamprio hat eine eigene Stimme. Im Kampf ruft es, wenn es auftaucht und wenn es angreift, und quiekt kurz, wenn es getroffen wird. Wilde Kalamprios hört man nur, wenn man in der Nähe ist: Je näher man hingeht, desto lauter rufen sie, so wie das Licht in der Mine nur in der Nähe hell ist. In der dunklen Mine hört man sie, bevor man sie sieht. Auch der dunkle Kristall summt, wenn man näher kommt.
 
 ## Eine neue Zeichnung ins Spiel bringen
 

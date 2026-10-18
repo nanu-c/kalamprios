@@ -19,6 +19,7 @@ import {
   rundeBeenden,
   werZuerst,
 } from '../kampf/kampflogik.js';
+import { KLAENGE } from '../daten/klaenge.js';
 import { REGELN } from '../daten/regeln.js';
 import {
   aufprallen,
@@ -35,7 +36,7 @@ import {
   wusch,
   zerspringen,
 } from '../klang/geraeusche.js';
-import { melodieSpielen, musikSpielen } from '../klang/musik.js';
+import { kampfmusikSpielen, melodieSpielen, musikSpielen } from '../klang/musik.js';
 import { erholtSichNoch, levelVon, mitnehmen, spielstand, zuerstKaempfen } from '../spielstand.js';
 import { attackeAnimieren } from './attackenEffekte.js';
 import { feld, textKnopf } from './bausteine.js';
@@ -71,7 +72,9 @@ export class KampfSzene extends Phaser.Scene {
     // Der Hintergrund passt zum Ort, an dem gekämpft wird.
     hintergrundMalen(this, ORTE[spielstand.ort].stil);
     this.cameras.main.fadeIn(300, 23, 11, 44);
-    musikSpielen(KALAMPRIOS[this.auswahl.gegner].geheim ? 'geheim' : 'kampf');
+    // Bei jedem Kampf ein anderes Lied, etwas leiser als draußen (klaenge.js).
+    if (KALAMPRIOS[this.auswahl.gegner].geheim) musikSpielen('geheim', KLAENGE.musikImKampf);
+    else kampfmusikSpielen();
 
     // Wer mitkommt (unter „Team“ gewählt) und bereit ist. Wer kämpft, steht vorne in der Liste.
     const bereit = spielstand.kampfteam.filter((kurzname) => kurzname !== this.auswahl.spieler && erholtSichNoch(kurzname) === 0);
@@ -594,6 +597,8 @@ export class KampfSzene extends Phaser.Scene {
     const vonVerteidiger = this.anzeige.get(verteidiger);
 
     this.sagen(`${angreifer.name} setzt ${attacke.name} ein!`);
+    // Wer angreift, ruft. Man hört es von der Seite, auf der es steht.
+    ruf(angreifer.kurzname, { ort: { pan: this.seiteImRaum(vonAngreifer.bild) } });
     await this.warten(300);
 
     // Die Animation der Attacke: aufladen, zum Gegner fliegen, treffen
@@ -616,8 +621,12 @@ export class KampfSzene extends Phaser.Scene {
       return;
     }
 
-    // Schadenszahl, Lebensbalken schrumpft
+    // Schadenszahl, Lebensbalken schrumpft, und wer getroffen ist, quiekt kurz.
+    // Wer gleich umfällt, ruft gleich sowieso traurig.
     if (ausgang === 'abgewehrt') this.wortZeigen(vonVerteidiger.bild, 'Abgewehrt!', -60);
+    if (verteidiger.kp > 0) {
+      ruf(verteidiger.kurzname, { traurig: true, hoechstens: 2, ort: { pan: this.seiteImRaum(vonVerteidiger.bild) } });
+    }
     this.schadenZeigen(vonVerteidiger.bild, schaden);
     await this.bewegen({
       targets: { kp: kpVorher },
@@ -632,6 +641,11 @@ export class KampfSzene extends Phaser.Scene {
         : `${verteidiger.name} verliert ${schaden} Lebenspunkte.`,
     );
     await this.warten(900);
+  }
+
+  // Für Töne: -0.5 ganz links, 0.5 ganz rechts.
+  seiteImRaum(bild) {
+    return (bild.x - BREITE / 2) / BREITE;
   }
 
   // ----------------------------------------------------------- Fangen

@@ -7,6 +7,7 @@ import { ELEMENTE } from './elemente.js';
 import { GESCHICHTE } from './geschichte.js';
 import { KALAMPRIOS } from './kalamprios.js';
 import { HOEHEN, KLAENGE, STIMMEN } from './klaenge.js';
+import { LIEDER } from '../klang/lieder.js';
 import { ORTE, START_ORT } from './orte.js';
 import { REGELN } from './regeln.js';
 
@@ -143,10 +144,17 @@ export function datenPruefen() {
 
 function klaengePruefen() {
   const fehler = [];
-  for (const name of ['musik', 'geraeusche']) {
+  for (const name of ['musik', 'musikImKampf', 'geraeusche']) {
     if (!(KLAENGE[name] >= 0 && KLAENGE[name] <= 1)) {
       fehler.push(`klaenge.js: ${name} muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.5.`);
     }
+  }
+  const kampflieder = KLAENGE.kampflieder;
+  if (!(Array.isArray(kampflieder) && kampflieder.length > 0)) {
+    fehler.push("klaenge.js: Bei kampflieder muss mindestens ein Lied stehen, zum Beispiel ['kampf'].");
+  }
+  for (const lied of kampflieder ?? []) {
+    if (!LIEDER[lied]) fehler.push(`klaenge.js: Das Kampflied "${lied}" steht nicht in src/klang/lieder.js.`);
   }
   if (!(KLAENGE.hoerweite > 0)) {
     fehler.push('klaenge.js: hoerweite muss eine Zahl größer als 0 sein, zum Beispiel 650.');

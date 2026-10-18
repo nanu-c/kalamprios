@@ -8,6 +8,14 @@ export const KLAENGE = {
   // Wie laut die Musik ist, von 0 (still) bis 1 (ganz laut).
   musik: 0.45,
 
+  // Wie laut die Musik im Kampf ist, im Vergleich zur Musik draußen.
+  // 1 ist gleich laut, 0.6 ist etwas leiser.
+  musikImKampf: 0.6,
+
+  // Die Lieder für Kämpfe (aus src/klang/lieder.js). Bei jedem Kampf kommt
+  // ein anderes dran, nie zweimal hintereinander dasselbe.
+  kampflieder: ['kampf', 'kampfHuepfend', 'kampfWirbel', 'kampfMutig'],
+
   // Wie laut die Geräusche sind (Schritte, Attacken, Rufe), von 0 bis 1.
   geraeusche: 0.8,
 
@@ -16,8 +24,9 @@ export const KLAENGE = {
   // Zum Vergleich: Der Bildschirm ist 1280 Pixel breit.
   hoerweite: 650,
 
-  // Die Stimme jedes Kalamprios. Wilde Kalamprios rufen ab und zu, und im
-  // Kampf ruft jedes, wenn es auftaucht.
+  // Die Stimme jedes Kalamprios. Wilde Kalamprios rufen ab und zu. Im Kampf
+  // ruft jedes, wenn es auftaucht und wenn es angreift, und quiekt kurz, wenn
+  // es getroffen wird.
   //
   // stimme: wie es klingt. Zur Auswahl:
   //         'piepsen'  kleine helle Piepser

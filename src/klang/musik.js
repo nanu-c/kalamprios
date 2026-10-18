@@ -1,6 +1,7 @@
 // Spielt die Lieder aus lieder.js ab.
 
 import { akkordLesen, akkordTon, LIEDER, liedVorbereiten, MELODIEN, noteLesen } from './lieder.js';
+import { KLAENGE } from '../daten/klaenge.js';
 import { bereit, hertz, jetzt, musikAusgang, neuerKnoten, rauschen, ton } from './klang.js';
 
 const VORBEREITET = Object.fromEntries(Object.entries(LIEDER).map(([name, lied]) => [name, liedVorbereiten(lied)]));
@@ -102,6 +103,7 @@ function schrittSpielen(lauf, schritt, zeit) {
 
 let laeuft = null; // das Lied, das gerade spielt: { name, lied, weg, schritt, zeit }
 let gewuenscht = null; // das Lied, das spielen soll, sobald der Ton angeht
+let gewuenschtLaut = 1; // wie laut es spielen soll (im Kampf leiser)
 
 // Ein eigener Lautstärkeregler pro Lied, damit Lieder ineinander übergehen können.
 function liedWeg() {
@@ -119,7 +121,7 @@ function ausblenden(lauf, sekunden) {
 function liedStarten(name) {
   if (laeuft) ausblenden(laeuft, 0.8);
   const weg = liedWeg();
-  weg.gain.setTargetAtTime(1, jetzt(), 0.3);
+  weg.gain.setTargetAtTime(gewuenschtLaut, jetzt(), 0.3);
   laeuft = { name, lied: VORBEREITET[name], weg, schritt: 0, zeit: 0 };
 }
 
@@ -141,9 +143,23 @@ setInterval(planen, 25);
 
 // Spielt ein Lied aus lieder.js in Dauerschleife. Läuft es schon, spielt es
 // einfach weiter. Ist der Ton noch nicht an, fängt es an, sobald er angeht.
-export function musikSpielen(name) {
+// laut: 1 ist normal, 0.5 halb so laut.
+export function musikSpielen(name, laut = 1) {
   gewuenscht = name;
+  if (laeuft?.name === name && gewuenschtLaut !== laut) laeuft.weg.gain.setTargetAtTime(laut, jetzt(), 0.3);
+  gewuenschtLaut = laut;
   planen();
+}
+
+let letztesKampflied = null;
+
+// Spielt eins der Kampflieder aus klaenge.js, etwas leiser als draußen.
+// Nie zweimal hintereinander dasselbe, wenn es mehrere gibt.
+export function kampfmusikSpielen() {
+  const auswahl = KLAENGE.kampflieder.filter((name) => name !== letztesKampflied);
+  const liste = auswahl.length ? auswahl : KLAENGE.kampflieder;
+  letztesKampflied = liste[Math.floor(Math.random() * liste.length)];
+  musikSpielen(letztesKampflied, KLAENGE.musikImKampf);
 }
 
 export function musikAus(sekunden = 0.6) {

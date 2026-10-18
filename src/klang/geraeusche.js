@@ -106,8 +106,10 @@ export function funkeln(ort) {
 
 // Jedes Kalamprio ruft mit seiner Stimme aus daten/klaenge.js.
 // traurig: true macht den Ruf tiefer und langsamer (wenn es nicht mehr kann).
-export function ruf(art, { ort = {}, traurig = false } = {}) {
-  const { stimme = 'piepsen', hoehe = 'mittel', silben = 2 } = KLAENGE.rufe[art] ?? {};
+// hoechstens: (optional) so viele Silben höchstens, für einen kurzen Ruf
+export function ruf(art, { ort = {}, traurig = false, hoechstens = 6 } = {}) {
+  const { stimme = 'piepsen', hoehe = 'mittel', silben: alleSilben = 2 } = KLAENGE.rufe[art] ?? {};
+  const silben = Math.min(alleSilben, hoechstens);
   const weg = raumWeg({ ...ort, sekunden: 3 });
   if (!weg) return;
   const f = 520 * (HOEHEN[hoehe] ?? 1) * (traurig ? 0.7 : 1);

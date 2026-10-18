@@ -1,5 +1,6 @@
-// Die Lieder des Spiels: für jeden Ort ein eigenes Lied, eins für den Kampf,
-// eins für den Kampf gegen das geheime Kalamprio und eins für die Party.
+// Die Lieder des Spiels: für jeden Ort ein eigenes Lied, vier für Kämpfe
+// (welche, steht in klaenge.js bei kampflieder), eins für den Kampf gegen das
+// geheime Kalamprio und eins für die Party.
 // Dazu kurze Melodien, wenn man gewinnt, verliert, etwas fängt oder ein
 // Level höher kommt.
 //
@@ -124,6 +125,67 @@ export const LIEDER = {
     bass: '18185818',
     begleitung: '1358535813585358',
     schlagzeug: 'k.h.s.h.k.k.s.h.',
+  },
+
+  // Kampf: hüpfend und fröhlich
+  kampfHuepfend: {
+    tempo: 150,
+    klang: 'zupfen',
+    akkorde: ['D', 'D', 'G', 'A', 'Bm', 'G', 'Em A', 'D'],
+    melodie: [
+      'D5 - F#5 - A5 - F#5 -',
+      'D5 - A4 - D5 - F#5 E5',
+      'G5 - - - B5 - A5 G5',
+      'A5 - - - E5 - . .',
+      'F#5 - D5 - B4 - D5 F#5',
+      'G5 - B5 - D6 - B5 -',
+      'G5 - E5 - C#5 - E5 -',
+      'D5 - - - - - . .',
+    ],
+    bass: '18181818',
+    begleitung: '1358535813585358',
+    schlagzeug: 'k...s.h.k.k.s.h.',
+  },
+
+  // Kampf: wirbelnd und flink
+  kampfWirbel: {
+    tempo: 156,
+    klang: 'quadrat',
+    akkorde: ['Am', 'F', 'G', 'E', 'Am', 'F', 'Dm E', 'Am'],
+    melodie: [
+      'A4 C5 E5 A5 G5 E5 C5 E5',
+      'F5 - A5 - C6 - A5 -',
+      'G5 - B5 - D6 - B5 G5',
+      'G#5 - - - E5 - B4 -',
+      'A5 - E5 - C5 - E5 A5',
+      'C6 - A5 - F5 - A5 -',
+      'D5 - F5 - E5 - G#5 -',
+      'A5 - - - E5 - A4 -',
+    ],
+    bass: '1.851.85',
+    begleitung: '1358135813581358',
+    schlagzeug: 'k.hks.hhk.hks.hs',
+  },
+
+  // Kampf: mutig wie ein Held, mit Glocken
+  kampfMutig: {
+    tempo: 132,
+    klang: 'glocke',
+    akkorde: ['G', 'D', 'Em', 'C', 'G', 'D', 'C D', 'G'],
+    melodie: [
+      'B4 - D5 - G5 - - -',
+      'F#5 - E5 - D5 - A4 -',
+      'B4 - E5 - G5 - B5 -',
+      'A5 - G5 - E5 - C5 -',
+      'D5 - G5 - B5 - A5 G5',
+      'F#5 - A5 - D6 - - -',
+      'E5 - C5 - F#5 - A5 -',
+      'G5 - - - - - . .',
+    ],
+    bass: '1.5.1.5.',
+    begleitung: '13581358',
+    flaeche: true,
+    schlagzeug: 'k.h.s.h.k.h.s.hh',
   },
 
   // Kampf gegen das geheime Kalamprio: noch schneller und spannender
