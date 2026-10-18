@@ -16,7 +16,8 @@ export class StartSzene extends Phaser.Scene {
   }
 
   create() {
-    hintergrundMalen(this);
+    // Der Mond steht oben rechts, damit der Titel ihn nicht verdeckt.
+    hintergrundMalen(this, 'wald', { mond: { x: 1185, y: 92 } });
     this.add.rectangle(0, 0, BREITE, HOEHE, 0x170b2c, 0.35).setOrigin(0);
     this.cameras.main.fadeIn(600, 23, 11, 44);
     // Die Musik fängt an, sobald man das erste Mal tippt.
