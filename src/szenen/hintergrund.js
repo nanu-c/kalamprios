@@ -57,17 +57,15 @@ function himmel(stift, oben, unten) {
 
 // Der gemalte Mond (Landschaft/Mond.jpg) mit einem Schein drumherum.
 // Gibt einen neuen Stift zurück: Was danach gemalt wird, liegt vor dem Mond.
-// ort: (optional) { x, y } woanders hin, zum Beispiel weg vom Titel.
-function mond(szene, stift, x, y, ort = {}) {
-  const mitte = { x, y, ...ort };
+function mond(szene, stift, x, y) {
   stift.fillStyle(0xf3e9ff, 0.12);
-  stift.fillCircle(mitte.x, mitte.y, 120);
+  stift.fillCircle(x, y, 120);
   if (szene.textures.exists('mond')) {
-    const bild = szene.add.image(mitte.x, mitte.y, 'mond');
+    const bild = szene.add.image(x, y, 'mond');
     bild.setScale(140 / bild.height);
   } else {
     stift.fillStyle(0xf3e9ff, 0.95);
-    stift.fillCircle(mitte.x, mitte.y, 62);
+    stift.fillCircle(x, y, 62);
   }
   return szene.add.graphics();
 }
@@ -121,9 +119,7 @@ function boden(stift, farbe, kante) {
   stift.fillRect(0, HORIZONT, BREITE, 10);
 }
 
-// Mit mond: { x, y } steht der Mond woanders (der Startbildschirm braucht
-// die Mitte für den Titel).
-export function hintergrundMalen(szene, stil = 'wald', { mond: mondOrt } = {}) {
+export function hintergrundMalen(szene, stil = 'wald') {
   bilderErzeugen(szene); // für den Glitzerstern
   let stift = szene.add.graphics();
 
@@ -162,7 +158,7 @@ export function hintergrundMalen(szene, stil = 'wald', { mond: mondOrt } = {}) {
   if (stil === 'see') {
     // Der Mondsee: Der Mond spiegelt sich im Wasser.
     himmel(stift, 0x0f0b33, 0x4a4aa8);
-    stift = mond(szene, stift, 640, 180, mondOrt);
+    stift = mond(szene, stift, 640, 180);
     baum(stift, 140, 240);
     baum(stift, 1150, 260);
     kristall(stift, 1240, 60, 160, 0x5b8fe0);
@@ -195,7 +191,7 @@ export function hintergrundMalen(szene, stil = 'wald', { mond: mondOrt } = {}) {
   }
 
   himmel(stift, 0x170b2c, 0x7a48b8);
-  stift = mond(szene, stift, 640, 210, mondOrt);
+  stift = mond(szene, stift, 640, 210);
 
   if (stil === 'dorf') {
     haus(stift, 170, 150);
