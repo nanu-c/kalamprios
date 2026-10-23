@@ -10,15 +10,18 @@ import { HOEHEN, KLAENGE, STIMMEN } from './klaenge.js';
 import { LIEDER } from '../klang/lieder.js';
 import { ORTE, START_ORT } from './orte.js';
 import { REGELN } from './regeln.js';
+import { ZUSAMMEN } from './zusammen.js';
+import { BEET } from './beet.js';
 
 const ZAHLEN = ['kp', 'angriff', 'verteidigung', 'tempo'];
 const BLICKE = ['vorne', 'links', 'rechts'];
-const STILE = ['dorf', 'wald', 'mine', 'see', 'gang', 'haus', 'wasser', 'regenwald'];
-const TUER_ARTEN = ['haustuer', 'treppe', 'pilzring', 'tauchplatz', 'portal'];
+const STILE = ['dorf', 'wald', 'mine', 'see', 'gang', 'haus', 'wasser', 'regenwald', 'himmel', 'garten'];
+const TUER_ARTEN = ['haustuer', 'treppe', 'pilzring', 'tauchplatz', 'portal', 'freundschaftstor', 'wolkentreppe', 'stollen'];
+const NACHTBLUMEN_ARTEN = ['mondwinde', 'nachtkerze', 'sternbluete', 'leuchtglocke', 'mondrose'];
 const SEITEN = ['links', 'rechts', 'oben', 'unten'];
 // Wie Attacken außer den Elementen noch aussehen können (siehe attacken.js).
 const AUSSEHEN = ['herz', 'strahl', 'traum', 'krallen', 'blitzschlag', 'biss', 'wirbel', 'faden', 'bombe', 'hieb', 'krone'];
-const RAETSEL_ARTEN = ['suchen', 'reihenfolge', 'frage', 'farben', 'stimmen', 'paare', 'weg', 'spiegel', 'lichter'];
+const RAETSEL_ARTEN = ['suchen', 'reihenfolge', 'frage', 'farben', 'stimmen', 'paare', 'weg', 'spiegel', 'lichter', 'zuZweit', 'fluestern', 'tor'];
 const GRUNDFARBEN = ['rot', 'gelb', 'blau'];
 const MISCHFARBEN = ['orange', 'gruen', 'lila'];
 // Die Farben aus szenen/raetsel.js
@@ -153,6 +156,40 @@ export function datenPruefen() {
     }
   }
   fehler.push(...klaengePruefen());
+  fehler.push(...zusammenPruefen());
+  fehler.push(...beetPruefen());
+  return fehler;
+}
+
+function beetPruefen() {
+  const fehler = [];
+  for (const name of ['keimenSekunden', 'reifSekunden', 'ausbreitenSekunden']) {
+    if (!(BEET[name] > 0)) fehler.push(`beet.js: ${name} muss eine Zahl größer als 0 sein.`);
+  }
+  if (!(BEET.reifSekunden > BEET.keimenSekunden)) fehler.push('beet.js: reifSekunden muss größer sein als keimenSekunden.');
+  if (!(BEET.andereArt >= 0 && BEET.andereArt <= 1)) fehler.push('beet.js: andereArt muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.15.');
+  if (!(Number.isInteger(BEET.hoechstens) && BEET.hoechstens >= 18)) fehler.push('beet.js: hoechstens muss eine ganze Zahl ab 18 sein.');
+  for (const [art, samen] of Object.entries(BEET.samen)) {
+    if (!(samen.name && samen.pflanze && samen.groesse > 0)) fehler.push(`beet.js: Das Saatgut "${art}" braucht name, pflanze und groesse.`);
+  }
+  return fehler;
+}
+
+function zusammenPruefen() {
+  const fehler = [];
+  const bilder = ZUSAMMEN.codeBilder ?? [];
+  for (const kurzname of bilder) {
+    if (!KALAMPRIOS[kurzname]) fehler.push(`zusammen.js: Das Kalamprio "${kurzname}" bei codeBilder steht nicht in kalamprios.js.`);
+  }
+  if (new Set(bilder).size < 4) fehler.push('zusammen.js: Bei codeBilder braucht es mindestens 4 verschiedene Kalamprios.');
+  if (!(Number.isInteger(ZUSAMMEN.codeLaenge) && ZUSAMMEN.codeLaenge >= 3 && ZUSAMMEN.codeLaenge <= 6)) {
+    fehler.push('zusammen.js: codeLaenge muss eine ganze Zahl von 3 bis 6 sein, zum Beispiel 4.');
+  }
+  if (!(ZUSAMMEN.nahGenug > 0)) fehler.push('zusammen.js: nahGenug muss eine Zahl größer als 0 sein, zum Beispiel 260.');
+  if (!(ZUSAMMEN.wildeZuZweit > 0)) fehler.push('zusammen.js: wildeZuZweit muss eine Zahl größer als 0 sein, zum Beispiel 1.6.');
+  if (!(Number.isInteger(ZUSAMMEN.zuZweitImKampf) && ZUSAMMEN.zuZweitImKampf >= 1)) {
+    fehler.push('zusammen.js: zuZweitImKampf muss eine ganze Zahl ab 1 sein, zum Beispiel 3.');
+  }
   return fehler;
 }
 
@@ -197,7 +234,7 @@ function ortPruefen(kurzname, ort) {
   const liste = (feld) => ort[feld] ?? [];
   const name = ort.name ?? kurzname;
   if (!STILE.includes(ort.stil)) {
-    fehler.push(`${name}: stil muss 'dorf', 'wald', 'mine', 'see', 'gang', 'haus', 'wasser' oder 'regenwald' sein.`);
+    fehler.push(`${name}: stil muss 'dorf', 'wald', 'mine', 'see', 'gang', 'haus', 'wasser', 'regenwald', 'himmel' oder 'garten' sein.`);
   }
 
   const geheimes = ort.geheimesImGras;
@@ -264,6 +301,55 @@ function ortPruefen(kurzname, ort) {
     if (!zurueck) fehler.push(`${ziel.name} braucht einen Ausgang oder eine Tür zurück nach "${kurzname}".`);
   }
 
+  if (ort.nurZuZweit && !ORTE[ort.zurueckNach]) {
+    fehler.push(`${name}: Hierher kommt man nur zu zweit. Bei zurueckNach muss ein Ort aus orte.js stehen, wohin man allein zurückkommt.`);
+  }
+  if (ort.nachtblumen !== undefined) {
+    const { anzahl, arten } = ort.nachtblumen;
+    if (!(Number.isInteger(anzahl) && anzahl >= 0)) fehler.push(`${name}: Bei nachtblumen muss anzahl 0 oder eine ganze Zahl sein, zum Beispiel 200.`);
+    for (const art of arten ?? []) {
+      if (!NACHTBLUMEN_ARTEN.includes(art)) fehler.push(`${name}: Die Nachtblume "${art}" gibt es nicht. Nimm ${NACHTBLUMEN_ARTEN.join(', ')}.`);
+    }
+  }
+  for (const punkt of liste('saatgut')) {
+    if (!BEET.samen[punkt.art]) fehler.push(`${name}: Das Saatgut "${punkt.art}" gibt es nicht. Nimm eins aus beet.js: ${Object.keys(BEET.samen).join(', ')}.`);
+  }
+  for (const [nummer, erfindung] of (ort.werkbank?.erfindungen ?? []).entries()) {
+    const bauteile = ['rampe', 'wippe', 'domino', 'feder', 'trichter', 'kissen', 'loeffel'];
+    const wo = `${name}: Beim Bauplan ${nummer + 1} (${erfindung.name})`;
+    if (!erfindung.schritte?.at(-1)?.ziel || !['baum', 'eimer', 'futter'].includes(erfindung.schritte.at(-1).ziel)) fehler.push(`${wo} muss der letzte Schritt ein ziel sein: 'baum', 'eimer' oder 'futter'.`);
+    for (const schritt of erfindung.schritte.slice(0, -1)) {
+      if (!bauteile.slice(0, 5).includes(schritt.teil)) fehler.push(`${wo} gibt es das Teil "${schritt.teil}" nicht. Nimm 'rampe', 'wippe', 'domino', 'feder' oder 'trichter'.`);
+    }
+    for (const teil of erfindung.teile ?? []) if (!bauteile.includes(teil)) fehler.push(`${wo} liegt "${teil}" in der Kiste, aber dieses Bauteil gibt es nicht.`);
+    // Für jeden leeren Platz muss das passende Teil in der Kiste liegen.
+    const kiste = [...(erfindung.teile ?? [])];
+    for (const schritt of erfindung.schritte.filter((s) => s.slot)) {
+      const stelle = kiste.indexOf(schritt.teil);
+      if (stelle < 0) fehler.push(`${wo} fehlt in der Kiste eine ${schritt.teil}. So kann man die Maschine nie fertig bauen.`);
+      else kiste.splice(stelle, 1);
+    }
+  }
+  if (ort.flaschenpost) {
+    const post = ort.flaschenpost;
+    const besondere = Object.values(ORTE).flatMap((anderer) => (anderer.besonderes ?? []).map((ding) => ding.art));
+    if (!besondere.includes(post.braucht)) fehler.push(`${name}: Für das Wasserrad braucht es "${post.braucht}", aber so ein besonderes Ding gibt es nirgends (besonderes).`);
+    if (!ORTE[post.muellOrt]?.muellQuest) fehler.push(`${name}: Bei muellOrt muss ein Ort mit einer Müll-Aufgabe stehen, zum Beispiel 'unterwasser'.`);
+    if (!(post.froesche?.length > 0)) fehler.push(`${name}: Bei der Flaschenpost braucht es mindestens einen Frosch.`);
+  }
+  if (ort.statue) {
+    if (!KALAMPRIOS[ort.statue.kalamprio]) fehler.push(`${name}: Die Statue zeigt "${ort.statue.kalamprio}", aber das steht nicht in kalamprios.js.`);
+    if (typeof ort.statue.inschrift !== 'string' || typeof ort.statue.satz !== 'string') fehler.push(`${name}: Die Statue braucht eine inschrift und einen satz.`);
+    if (!ort.raetsel) fehler.push(`${name}: Die Statue taucht auf, wenn das Rätsel gelöst ist, aber hier gibt es kein Rätsel.`);
+  }
+  if (ort.beet && !(ort.beet.breite >= 200 && ort.beet.hoehe >= 120)) {
+    fehler.push(`${name}: Das Beet muss mindestens 200 breit und 120 hoch sein.`);
+  }
+  const saetze = ort.ankommen;
+  if (saetze !== undefined && !(Array.isArray(saetze) && saetze.length > 0 && saetze.every((satz) => typeof satz === 'string'))) {
+    fehler.push(`${name}: Bei ankommen braucht es eine Liste mit mindestens einem Satz.`);
+  }
+
   if (ort.rivalinAmAnfang) {
     const essen = Object.values(ORTE).flatMap((anderer) => anderer.kueche?.rezepte ?? []);
     if (!essen.some((rezept) => rezept.kurzname === ort.rivalinAmAnfang.wuenscht)) {
@@ -277,7 +363,10 @@ function ortPruefen(kurzname, ort) {
       continue;
     }
     if (!TUER_ARTEN.includes(tuer.art)) {
-      fehler.push(`${name}: Bei der Tür nach ${ziel.name} muss art 'haustuer', 'treppe', 'pilzring', 'tauchplatz' oder 'portal' sein.`);
+      fehler.push(`${name}: Bei der Tür nach ${ziel.name} muss art 'haustuer', 'treppe', 'pilzring', 'tauchplatz', 'portal', 'freundschaftstor', 'wolkentreppe' oder 'stollen' sein.`);
+    }
+    if (tuer.erstNachRaetsel && !ort.raetsel) {
+      fehler.push(`${name}: Die Tür nach ${ziel.name} soll erst nach dem Rätsel aufgehen, aber hier gibt es kein Rätsel.`);
     }
     const besondere = Object.values(ORTE).flatMap((anderer) => (anderer.besonderes ?? []).map((ding) => ding.art));
     if (tuer.braucht && !besondere.includes(tuer.braucht)) {
@@ -337,6 +426,19 @@ function ortPruefen(kurzname, ort) {
     ['rivalin', ort.rivalin],
     ['rivalinNachSieg', ort.rivalinNachSieg],
     ['dunklerKristall', ort.dunklerKristall],
+    ['lagerfeuer', ort.lagerfeuer],
+    ['das Beet', ort.beet],
+    ['die Statue', ort.statue],
+    ['die Werkbank', ort.werkbank],
+    ...(ort.flaschenpost
+      ? [
+          ['die Flaschenpost', ort.flaschenpost.flasche],
+          ['die Froschbucht', ort.flaschenpost.bucht],
+          ['das Wasserrad', ort.flaschenpost.wasserrad],
+          ...ort.flaschenpost.froesche.map((punkt) => ['ein Frosch', punkt]),
+        ]
+      : []),
+    ...liste('saatgut').map((punkt) => [`das Saatgut "${punkt.art}"`, punkt]),
     ...ort.wildeKalamprios.map((wild) => [`das wilde Kalamprio "${wild.art}"`, wild]),
     ...liste('baeume').map((punkt) => ['ein Baum', punkt]),
     ...liste('kristalle').map((punkt) => ['ein Kristall', punkt]),
@@ -359,6 +461,10 @@ function ortPruefen(kurzname, ort) {
     ...(ort.raetsel ? [['der Rätselstein', ort.raetsel]] : []),
     ...(ort.raetsel?.dinge ?? []).map((punkt) => ['ein Ding beim Rätsel', punkt]),
     ...(ort.raetsel?.steine ?? []).map((punkt) => ['ein Klangstein beim Rätsel', punkt]),
+    ...(ort.raetsel?.art === 'zuZweit' ? (ort.raetsel.runden ?? []).flat().map((punkt) => ['eine Sternplatte beim Rätsel', punkt]) : []),
+    ...(ort.raetsel?.blumen ?? []).map((punkt) => ['eine Blume beim Rätsel', punkt]),
+    ...(ort.raetsel?.platte ? [['der Mondstein beim Rätsel', ort.raetsel.platte]] : []),
+    ...(ort.raetsel?.blume ? [['der Mondtau beim Rätsel', ort.raetsel.blume]] : []),
   ].filter(([, punkt]) => punkt);
   if (ort.raetsel) fehler.push(...raetselPruefen(name, ort.raetsel));
 
@@ -448,6 +554,24 @@ function raetselPruefen(name, raetsel) {
     if (!(raetsel.runden?.length > 0 && raetsel.runden.every((tritte) => Number.isInteger(tritte) && tritte >= 1 && tritte <= 9))) {
       fehler.push(`${name}: Beim Lichter-Rätsel muss runden eine Liste mit Zahlen von 1 bis 9 sein, zum Beispiel [3, 5].`);
     }
+  }
+  if (raetsel.art === 'zuZweit') {
+    const paare = Array.isArray(raetsel.runden) && raetsel.runden.length > 0 && raetsel.runden.every((paar) => Array.isArray(paar) && paar.length === 2);
+    if (!paare) fehler.push(`${name}: Beim Rätsel zu zweit braucht es bei runden für jede Runde zwei Sternplatten, zum Beispiel [[{ x: 900, y: 600 }, { x: 1600, y: 600 }]].`);
+  }
+  if (raetsel.art === 'fluestern') {
+    if (!(raetsel.blumen?.length >= 3)) fehler.push(`${name}: Beim Blumenflüstern braucht es mindestens drei blumen.`);
+    for (const blume of raetsel.blumen ?? []) {
+      if (!NACHTBLUMEN_ARTEN.includes(blume.art)) fehler.push(`${name}: Die Blume "${blume.art}" beim Rätsel gibt es nicht. Nimm ${NACHTBLUMEN_ARTEN.join(', ')}.`);
+    }
+    if (!(raetsel.runden?.length > 0 && raetsel.runden.every((anzahl) => Number.isInteger(anzahl) && anzahl >= 1))) {
+      fehler.push(`${name}: Beim Blumenflüstern steht bei runden, wie viele Blumen in jeder Runde leuchten, zum Beispiel [3, 4, 4, 5].`);
+    }
+  }
+  if (raetsel.art === 'tor') {
+    if (!raetsel.platte || !raetsel.blume) fehler.push(`${name}: Beim Rosentor braucht es eine platte (den Mondstein) und eine blume (den Mondtau).`);
+    if (!(raetsel.ring >= 120)) fehler.push(`${name}: Beim Rosentor muss ring eine Zahl ab 120 sein, zum Beispiel 230.`);
+    if (!SEITEN.includes(raetsel.tor)) fehler.push(`${name}: Beim Rosentor muss tor 'links', 'rechts', 'oben' oder 'unten' sein.`);
   }
   if (raetsel.art === 'frage') {
     if (!(raetsel.fragen?.length > 0)) fehler.push(`${name}: Beim Frage-Rätsel braucht es mindestens eine Frage bei fragen.`);

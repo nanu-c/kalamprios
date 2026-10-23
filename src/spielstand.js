@@ -3,6 +3,7 @@
 // Der Spielstand wird im Browser gespeichert (localStorage). Nach dem
 // Neuladen kann man auf dem Startbildschirm weiterspielen.
 
+import { BEET } from './daten/beet.js';
 import { CHARAKTERE } from './daten/charaktere.js';
 import { KALAMPRIOS } from './daten/kalamprios.js';
 import { ORTE, START_ORT } from './daten/orte.js';
@@ -60,6 +61,7 @@ const anfangsStand = () => ({
   schatzGeoeffnet: false, // true, sobald die Truhe in der Schatzkammer offen ist
   gekochtAm: {}, // Name des Rezepts -> wann man es zuletzt gekocht hat
   beutel: {}, // Kurzname eines Essens -> wie viele davon im Beutel sind (die Fangkristalle zählt fangkristalle)
+  beet: [], // was im Beet im Lila Dorf eingesetzt ist: { art, platz, zeit } (wie es wächst, rechnet welt/beetlogik.js aus)
   hinweisGesehen: false, // der Tipp zur Steuerung wird nur einmal gezeigt
   begruesst: false, // true, sobald man im Kinderzimmer begrüßt wurde
 });
@@ -243,6 +245,9 @@ function gespeichertLesen(speicher) {
     schatzGeoeffnet: alt.schatzGeoeffnet === true,
     gekochtAm: liste(alt.gekochtAm),
     beutel: Object.fromEntries(Object.entries(liste(alt.beutel)).filter(([, anzahl]) => Number.isInteger(anzahl) && anzahl > 0)),
+    beet: (Array.isArray(alt.beet) ? alt.beet : []).filter(
+      (pflanze) => Object.hasOwn(BEET.samen, pflanze?.art) && Number.isInteger(pflanze.platz) && Number.isFinite(pflanze.zeit),
+    ),
     hinweisGesehen: alt.hinweisGesehen === true,
     // Wer schon ein Kalamprio hat, hat das Spiel nicht im Kinderzimmer begonnen.
     begruesst: alt.begruesst === true || team.length > 0,

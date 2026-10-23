@@ -6,7 +6,7 @@ export const LILA_DORF = {
   name: 'Lila Dorf',
   stil: 'dorf',
   breite: 2340,
-  hoehe: 1560,
+  hoehe: 2200,
 
   // Den Weg in den Kristallwald gibt die Rivalin erst frei, wenn sie einem
   // ein Kalamprio geschenkt hat (erstNachGeschenk).
@@ -18,6 +18,14 @@ export const LILA_DORF = {
   rivalinAmAnfang: { x: 2130, y: 905, wuenscht: 'sternenpfannkuchen' },
 
   start: { x: 680, y: 910 },
+
+  // Das Gartenbeet unten auf der Wiese (daten/beet.js): x und y ist die Mitte,
+  // breite und hoehe die Größe. Hier setzt man Saatgut ein, und es wächst langsam.
+  beet: { x: 1170, y: 1860, breite: 600, hoehe: 260 },
+
+  // Das Lagerfeuer: der Treffpunkt, wenn man zu zweit spielt (daten/zusammen.js).
+  // Nur hier gibt es den Knopf „Zu zweit“, um sich mit einem anderen Gerät zu verbinden.
+  lagerfeuer: { x: 1460, y: 1170 },
 
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
   dunklerKristall: { x: 390, y: 940 },
@@ -31,6 +39,16 @@ export const LILA_DORF = {
   tueren: [
     { x: 1790, y: 600, nach: 'kueche', art: 'haustuer' },
     { x: 490, y: 598, nach: 'kinderzimmer', art: 'haustuer' },
+    // Das Freundschaftstor ins Mondblütental. Mit zuZweit: true öffnet es sich
+    // nur, wenn man zu zweit spielt und beide davorstehen (daten/zusammen.js).
+    {
+      x: 1270,
+      y: 1230,
+      nach: 'mondbluetental',
+      art: 'freundschaftstor',
+      zuZweit: true,
+      satz: 'Das Freundschaftstor glitzert golden und rosa. Auf einem alten Schild steht: „Nur wer zu zweit kommt, darf hindurch.“ Dahinter duftet es nach Blumen. Gehen wir zusammen?',
+    },
   ],
 
   haeuser: [
@@ -49,6 +67,10 @@ export const LILA_DORF = {
     { x: 2050, y: 650 },
     { x: 1800, y: 1420 },
     { x: 480, y: 1450 },
+    // unten auf der Wiese beim Beet
+    { x: 300, y: 2000 },
+    { x: 2050, y: 1950 },
+    { x: 1900, y: 1700 },
   ],
 
   // Leuchtkristalle wie Laternen am Weg, und der große Kristall auf dem Platz
@@ -64,6 +86,8 @@ export const LILA_DORF = {
     { art: 'honig', x: 300, y: 1250 },
     { art: 'honig', x: 2050, y: 1150 },
   ],
+
+  saatgut: [{ art: 'nachtkerzensamen', x: 600, y: 1800 }],
 
   fangkristalle: [{ x: 1950, y: 940 }],
 

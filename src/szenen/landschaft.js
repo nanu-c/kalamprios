@@ -7,6 +7,9 @@
 import Phaser from 'phaser';
 import { ORTE } from '../daten/orte.js';
 import { AUSGANG_BREITE, hinterDemAusgang, pilzringPilze, weltGrenzen } from '../welt/weltlogik.js';
+import { umgebung } from '../klang/geraeusche.js';
+import { nachtblumenPflanzen } from './nachtblumen.js';
+import { seeBilderMalen } from './seeBilder.js';
 import { BREITE as BILDSCHIRM_BREITE, HOEHE as BILDSCHIRM_HOEHE, schrift } from './stil.js';
 
 const BILDSCHIRM = { breite: BILDSCHIRM_BREITE, hoehe: BILDSCHIRM_HOEHE };
@@ -85,6 +88,9 @@ const BILDER = {
   'hoehle-hinein': { breite: 300, hoehe: 280, fuss: 272 },
   'hoehle-hinaus': { breite: 300, hoehe: 280, fuss: 272 },
   funkel: { breite: 32, hoehe: 32, fuss: 16 },
+  wolke: { breite: 260, hoehe: 150, fuss: 140 },
+  lagerfeuer: { breite: 170, hoehe: 90, fuss: 62 },
+  sitzstamm: { breite: 130, hoehe: 50, fuss: 40 },
 };
 
 // Farben für Boden und Flecken, je nachdem wie der Ort aussieht.
@@ -97,6 +103,8 @@ const BODEN = {
   haus: { grund: 0x8a6a4a, hell: 0x9a7a58, dunkel: 0x7a5c3e, weg: 0xb09070 },
   wasser: { grund: 0x1d4a8a, hell: 0x2a62a8, dunkel: 0x123266, weg: 0x4a8ad0 },
   regenwald: { grund: 0x2b5a2e, hell: 0x387238, dunkel: 0x1f4423, weg: 0x6b5a3a },
+  himmel: { grund: 0xb3a2e6, hell: 0xc9baf3, dunkel: 0x9d8bd8, weg: 0xf3e9ff },
+  garten: { grund: 0x1f3550, hell: 0x27405e, dunkel: 0x182a42, weg: 0x4a6a8a },
 };
 
 // Unter Wasser: so hoch ist der Sandboden unten.
@@ -194,6 +202,61 @@ function goldMalen(stift) {
 }
 
 // Ein kleiner Stern mit vier Zacken, zum Glitzern.
+// Das Lagerfeuer: ein Kreis aus Steinen und gekreuzte Holzscheite darin.
+// Die Flammen kommen extra (lagerfeuerAnzuenden), damit sie flackern können.
+function lagerfeuerMalen(stift) {
+  stift.fillStyle(0x2a1a2a, 0.5);
+  stift.fillEllipse(85, 62, 150, 40);
+  stift.fillStyle(0x6b3a1e);
+  stift.fillRoundedRect(30, 46, 110, 16, 7);
+  stift.fillStyle(0x8a4f2a);
+  stift.fillRoundedRect(45, 36, 80, 14, 6);
+  stift.fillStyle(0xffb347, 0.9);
+  stift.fillEllipse(85, 50, 60, 16);
+  for (let i = 0; i < 11; i += 1) {
+    const winkel = (i / 11) * Math.PI * 2;
+    const x = 85 + Math.cos(winkel) * 66;
+    const y = 58 + Math.sin(winkel) * 20;
+    stift.fillStyle(i % 2 ? 0x8a8098 : 0xa69cb8);
+    stift.fillEllipse(x, y, 26, 17);
+    stift.fillStyle(0xd8d0e8, 0.6);
+    stift.fillEllipse(x - 4, y - 4, 10, 5);
+  }
+}
+
+// Ein Baumstamm zum Draufsetzen
+function sitzstammMalen(stift) {
+  stift.fillStyle(0x2a1a2a, 0.4);
+  stift.fillEllipse(65, 40, 120, 16);
+  stift.fillStyle(0x7a4524);
+  stift.fillRoundedRect(8, 14, 114, 26, 12);
+  stift.fillStyle(0x9a5f34);
+  stift.fillRoundedRect(14, 16, 100, 8, 4);
+  stift.fillStyle(0xd8a878);
+  stift.fillEllipse(116, 27, 14, 24);
+  stift.lineStyle(2, 0x8a5a34);
+  stift.strokeEllipse(116, 27, 7, 13);
+}
+
+// Eine dicke, weiche Wolke (für den Rand der Sternenwolke)
+function wolkeMalen(stift) {
+  stift.fillStyle(0x9d8bd8, 0.5);
+  stift.fillEllipse(130, 128, 230, 34);
+  for (const [x, y, r, farbe] of [
+    [70, 100, 46, 0xe8e0ff],
+    [190, 100, 50, 0xe8e0ff],
+    [130, 92, 56, 0xf3eeff],
+    [95, 70, 44, 0xffffff],
+    [165, 62, 48, 0xffffff],
+    [130, 50, 40, 0xffffff],
+  ]) {
+    stift.fillStyle(farbe);
+    stift.fillCircle(x, y, r);
+  }
+  stift.fillStyle(0xffffff, 0.8);
+  stift.fillEllipse(115, 40, 40, 16);
+}
+
 function funkelMalen(stift) {
   stift.fillStyle(0xffffff);
   stift.fillTriangle(16, 0, 19, 16, 13, 16);
@@ -343,6 +406,16 @@ function grasMalen(stift, ort, zufall) {
           }
         }
       }
+    } else if (ort.stil === 'himmel') {
+      // Dicke Wolken: viele weiße, runde Wolkenbäusche übereinander
+      stift.fillStyle(0xe2d8fb);
+      stift.fillRoundedRect(gras.links, gras.oben, gras.breite, gras.hoehe, 60);
+      for (let y = gras.oben + 30; y < gras.oben + gras.hoehe - 10; y += 34) {
+        for (let x = gras.links + 30; x < gras.links + gras.breite - 20; x += 44) {
+          stift.fillStyle(zufall() < 0.5 ? 0xffffff : 0xf3ecff, 0.95);
+          stift.fillCircle(x + zufall() * 16, y + zufall() * 12, 22 + zufall() * 12);
+        }
+      }
     } else {
       // Hohes Gras: eine blaugrüne Fläche mit vielen Halmen
       stift.fillStyle(0x245f6b);
@@ -472,6 +545,13 @@ function bodenMalen(stift, ort) {
   if (unterDerErde(ort.stil)) {
     // Glitzernder Kristallstaub
     punkte(stift, ort, [0x8ef0ff, 0xb8c4d9, 0xff9ad5], Math.round(flaeche * 0.8), 1.5, zufall);
+  } else if (ort.stil === 'himmel') {
+    // Weiche Wolkenflecken und Sternenstaub
+    for (let i = 0; i < flaeche * 0.12; i += 1) {
+      stift.fillStyle(0xf6f0ff, 0.25 + zufall() * 0.2);
+      stift.fillEllipse(zufall() * ort.breite, zufall() * ort.hoehe, 120 + zufall() * 220, 50 + zufall() * 70);
+    }
+    punkte(stift, ort, [0xffffff, 0xffe9a8, 0xffc8e8], Math.round(flaeche * 1.2), 2, zufall);
   } else {
     // Blüten
     punkte(stift, ort, [0xc9b8ff, 0x8ef0ff, 0xff9ad5], Math.round(flaeche), 2.5, zufall);
@@ -558,6 +638,8 @@ export function bilderErzeugen(szene) {
   if (szene.textures.exists('baum')) return;
   lichtscheinErzeugen(szene);
   lichtkegelErzeugen(szene);
+  // Die Sachen für die Flaschenpost am Mondsee (das Ölkännchen liegt in der Mine)
+  seeBilderMalen(szene);
   const stift = szene.add.graphics();
   const malen = (name, wie) => {
     wie(stift);
@@ -572,6 +654,9 @@ export function bilderErzeugen(szene) {
   malen('schild', schildMalen);
   malen('gold', goldMalen);
   malen('funkel', funkelMalen);
+  malen('wolke', wolkeMalen);
+  malen('lagerfeuer', lagerfeuerMalen);
+  malen('sitzstamm', sitzstammMalen);
   malen('hoehle-hinein', (s) => hoehleMalen(s, false));
   malen('hoehle-hinaus', (s) => hoehleMalen(s, true));
   stift.destroy();
@@ -679,6 +764,8 @@ export function ortAufbauen(szene, schluessel, offen = () => true) {
   // Der dunkle Kristall: Der Schatten hat ihm sein Licht und seine Farben ausgesaugt.
   if (ort.dunklerKristall) stellen('kristall-ausgesaugt', ort.dunklerKristall.x, ort.dunklerKristall.y, false, DUNKLER_KRISTALL_GROESSE);
   for (const see of ort.seen ?? []) if (see.bild) gemaltenSeeAufstellen(szene, see, licht);
+  if (ort.lagerfeuer) lagerfeuerAnzuenden(szene, ort.lagerfeuer, stellen);
+  nachtblumenPflanzen(szene, ort);
 
   randAufbauen(szene, ort, stellen, baumStellen, licht);
   // Zu jedem Ausgang merken wir uns, was zu ihm gehört: Höhle, Licht und Schild.
@@ -939,6 +1026,35 @@ function tuerenAufstellen(szene, ort, stellen, licht) {
       szene.tweens.add({ targets: mitte, alpha: 0.55, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     } else if (tuer.art === 'portal') {
       portalAufstellen(szene, tuer, licht);
+    } else if (tuer.art === 'stollen') {
+      // Ein alter Stollen: eine dunkle Öffnung im Fels, und ein Schild.
+      stellen('hoehle-hinein', tuer.x, tuer.y + 40).setDepth(tuer.y - 60);
+      szene.add
+        .text(tuer.x, tuer.y - 230, `↓ ${ORTE[tuer.nach].name}`, schrift(20, '#ffffff'))
+        .setOrigin(0.5)
+        .setPadding(10, 6)
+        .setBackgroundColor('#5a3a2a')
+        .setDepth(tuer.y);
+    } else if (tuer.art === 'wolkentreppe') {
+      // Die Wolkentreppe: ein weißblau leuchtender Wirbel aus Wolken.
+      portalAufstellen(szene, tuer, licht, { farben: [0xbfd8ff, 0xffffff, 0xe8f4ff], schein: 0xcfe8ff, mindestens: 0.4 });
+      szene.add
+        .text(tuer.x, tuer.y - 210, `☁ ${ORTE[tuer.nach].name}`, schrift(20, '#ffffff', { fontStyle: '600' }))
+        .setOrigin(0.5)
+        .setPadding(10, 6)
+        .setBackgroundColor('#3a5a9a')
+        .setDepth(tuer.y);
+    } else if (tuer.art === 'freundschaftstor') {
+      // Das Freundschaftstor sieht man immer, es leuchtet golden und rosa.
+      portalAufstellen(szene, tuer, licht, { farben: [0xffd166, 0xff9ad5, 0xfff3c4], schein: 0xffb8e0, mindestens: 0.55 });
+      // Auf dem Schild steht, wohin es geht, und dass es nur zu zweit aufgeht.
+      const zuZweit = tuer.zuZweit ? '\n★ nur zu zweit ★' : '';
+      szene.add
+        .text(tuer.x, tuer.y - 215, `${ORTE[tuer.nach].name}${zuZweit}`, schrift(21, '#ffffff', { fontStyle: '600', align: 'center', lineSpacing: 2 }))
+        .setOrigin(0.5)
+        .setPadding(12, 6)
+        .setBackgroundColor('#7a3a8a')
+        .setDepth(tuer.y);
     } else if (tuer.art === 'tauchplatz') {
       // Ein Tauchplatz am Ufer: Blasen steigen auf, und Ringe breiten sich aus.
       const fleck = lichtschein(szene, tuer.x + 30, tuer.y, 150, 70, 0x9ad8ff).setAlpha(0.4).setDepth(-4);
@@ -968,18 +1084,153 @@ function tuerenAufstellen(szene, ort, stellen, licht) {
   }
 }
 
+// Das Lagerfeuer brennt: Flammen flackern, Funken steigen auf, und der
+// Boden drumherum leuchtet warm. Daneben liegen zwei Stämme zum Sitzen.
+function lagerfeuerAnzuenden(szene, feuer, stellen) {
+  const { x, y } = feuer;
+  const boden = lichtschein(szene, x, y, 420, 200, 0xff9a3d).setAlpha(0.45).setDepth(-2);
+  szene.tweens.add({ targets: boden, alpha: 0.65, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  // Holz, Steine und Stämme hat eine Bild-KI gemalt (werkzeuge/sachen_malen.py),
+  // sonst malt das Spiel sie selbst.
+  const gemalt = (name, breite) => (szene.textures.exists(`${name}-ki`) ? [`${name}-ki`, breite / masse(szene, `${name}-ki`).breite] : [name, 1]);
+  const [stamm, stammGroesse] = gemalt('sitzstamm', 130);
+  stellen(stamm, x - 130, y + 30, false, stammGroesse).setAngle(-12);
+  stellen(stamm, x + 130, y + 30, false, stammGroesse).setAngle(12).setFlipX(true);
+  const [holz, holzGroesse] = gemalt('lagerfeuer', 170);
+  stellen(holz, x, y, false, holzGroesse);
+  // Die Flammen: mehrere gemalte Bilder, die sich schnell abwechseln, so
+  // züngeln sie wie ein echtes Feuer. Dahinter ein leuchtender Schein.
+  const bilder = Array.from({ length: FLAMMEN_BILDER }, (_, nummer) => flammeMalen(szene, nummer));
+  const glut = szene.add.image(x, y - 14, bilder[0]).setOrigin(0.5, 1).setScale(1.25, 1.1).setAlpha(0.45).setBlendMode(Phaser.BlendModes.ADD).setDepth(y + 1);
+  const flamme = szene.add.image(x, y - 14, bilder[0]).setOrigin(0.5, 1).setDepth(y + 2);
+  let bild = 0;
+  szene.time.addEvent({
+    delay: 85,
+    loop: true,
+    callback: () => {
+      bild = (bild + 1 + Math.floor(Math.random() * 2)) % bilder.length;
+      flamme.setTexture(bilder[bild]).setScale(0.92 + Math.random() * 0.16, 0.9 + Math.random() * 0.22);
+      glut.setTexture(bilder[(bild + 2) % bilder.length]);
+    },
+  });
+  // Rauch steigt auf und wird dabei größer und blasser.
+  szene.time.addEvent({
+    delay: 420,
+    loop: true,
+    callback: () => {
+      const rauch = szene.add.circle(x + (Math.random() - 0.5) * 20, y - 120, 12, 0x6a6080, 0.35).setDepth(y + 3);
+      szene.tweens.add({ targets: rauch, y: rauch.y - 140, x: rauch.x + (Math.random() - 0.3) * 60, scale: 3, alpha: 0, duration: 2600, onComplete: () => rauch.destroy() });
+    },
+  });
+  // Es knistert, wenn man in der Nähe ist.
+  szene.time.addEvent({
+    delay: 700,
+    loop: true,
+    callback: () => {
+      const figur = szene.spieler?.ort;
+      if (!figur || szene.wechselt) return;
+      const weit = Math.hypot(figur.x - x, figur.y - y);
+      if (weit < 450) umgebung('haus', { pan: Phaser.Math.Clamp((x - figur.x) / 600, -0.8, 0.8), lautstaerke: 1 - weit / 450 });
+    },
+  });
+  const schein = lichtschein(szene, x, y - 50, 260, 260, 0xffb060).setAlpha(0.5).setDepth(y + 2);
+  szene.tweens.add({ targets: schein, alpha: 0.75, duration: 300, yoyo: true, repeat: -1 });
+  szene.time.addEvent({
+    delay: 160,
+    loop: true,
+    callback: () => {
+      const funke = szene.add.circle(x + (Math.random() - 0.5) * 40, y - 40, 2 + Math.random() * 2, 0xffd166).setBlendMode(Phaser.BlendModes.ADD).setDepth(y + 3);
+      szene.tweens.add({ targets: funke, y: funke.y - 90 - Math.random() * 80, x: funke.x + (Math.random() - 0.5) * 60, alpha: 0, duration: 1100 + Math.random() * 600, onComplete: () => funke.destroy() });
+    },
+  });
+  szene.add
+    .text(x, y + 78, 'Treffpunkt für zwei', schrift(19, '#ffffff', { fontStyle: '600' }))
+    .setOrigin(0.5)
+    .setPadding(10, 6)
+    .setBackgroundColor('#8a4a2a')
+    .setDepth(y);
+}
+
+// So viele Bilder hat das Lagerfeuer, damit die Flammen züngeln.
+const FLAMMEN_BILDER = 6;
+
+// Eine Flamme: außen rot und orange, innen gelb und in der Mitte fast weiß.
+// Jedes Bild hat andere Flammenzungen.
+function flammeMalen(szene, nummer) {
+  const name = `flamme-${nummer}`;
+  if (szene.textures.exists(name)) return name;
+  const breite = 130;
+  const hoehe = 180;
+  const leinwand = szene.textures.createCanvas(name, breite, hoehe);
+  const stift = leinwand.context;
+  let zustand = nummer * 7919 + 17;
+  const zufall = () => {
+    zustand = (zustand * 16807) % 2147483647;
+    return zustand / 2147483647;
+  };
+  const unten = hoehe - 6;
+  // Eine Flammenzunge: unten rund, oben eine Spitze, die sich zur Seite biegt.
+  const zunge = (mitte, dicke, lang, neigung, innen, aussen, strich = false) => {
+    const pfad = () => {
+      stift.beginPath();
+      stift.moveTo(mitte - dicke / 2, unten);
+      stift.bezierCurveTo(mitte - dicke / 2, unten - lang * 0.45, mitte + neigung * 0.3 - dicke * 0.2, unten - lang * 0.72, mitte + neigung, unten - lang);
+      stift.bezierCurveTo(mitte + neigung * 0.3 + dicke * 0.2, unten - lang * 0.72, mitte + dicke / 2, unten - lang * 0.45, mitte + dicke / 2, unten);
+      stift.quadraticCurveTo(mitte, unten + dicke * 0.22, mitte - dicke / 2, unten);
+      stift.closePath();
+    };
+    const verlauf = stift.createLinearGradient(0, unten, 0, unten - lang);
+    verlauf.addColorStop(0, innen);
+    verlauf.addColorStop(0.55, aussen);
+    verlauf.addColorStop(1, 'rgba(255, 80, 30, 0.6)');
+    pfad();
+    stift.fillStyle = verlauf;
+    stift.fill();
+    if (strich) {
+      stift.lineWidth = 3;
+      stift.strokeStyle = 'rgba(80, 20, 20, 0.85)';
+      stift.lineJoin = 'round';
+      stift.stroke();
+    }
+  };
+  const mitte = breite / 2;
+  // Außen: drei rote Zungen, unterschiedlich lang
+  for (const [dx, dicke] of [[-24, 46], [24, 46], [0, 64]]) {
+    zunge(mitte + dx, dicke, 90 + zufall() * 70, (zufall() - 0.5) * 40, '#ff8a2a', '#e8401c', true);
+  }
+  // Mitte: orange-gelb
+  zunge(mitte + (zufall() - 0.5) * 10, 46, 80 + zufall() * 40, (zufall() - 0.5) * 30, '#ffe066', '#ff9a2a');
+  zunge(mitte + (zufall() - 0.5) * 16, 26, 50 + zufall() * 30, (zufall() - 0.5) * 24, '#ffe8a0', '#ffc040');
+  // Innen: ein heller, fast weißer Kern
+  zunge(mitte, 22, 34 + zufall() * 16, (zufall() - 0.5) * 10, '#ffffff', '#fff3b0');
+  // Ein paar Funken, die sich lösen
+  for (let i = 0; i < 3; i += 1) {
+    stift.beginPath();
+    stift.arc(mitte + (zufall() - 0.5) * 70, unten - 110 - zufall() * 60, 2 + zufall() * 2, 0, Math.PI * 2);
+    stift.fillStyle = '#ffd166';
+    stift.fill();
+  }
+  leinwand.refresh();
+  return name;
+}
+
 // Ein geheimes Portal: ein grüner, wirbelnder Ring aus Licht. Von weitem
 // sieht man es kaum, je näher man kommt, desto heller leuchtet es.
-function portalAufstellen(szene, tuer, licht) {
+// aussehen: (für das Freundschaftstor und die Wolkentreppe) andere farben (außen, Mitte, innen), die
+// Farbe vom schein, und wie hell es mindestens leuchtet (0 bis 1).
+const PORTAL_GRUEN = { farben: [0x2fd06a, 0x9af0b0, 0xe8fff0], schein: 0x5af08a, mindestens: 0.12 };
+
+function portalAufstellen(szene, tuer, licht, aussehen = PORTAL_GRUEN) {
   const mitte = { x: tuer.x, y: tuer.y - 70 };
   const teile = [];
-  for (const [breite, farbe, alpha] of [[150, 0x2fd06a, 0.5], [110, 0x9af0b0, 0.6], [70, 0xe8fff0, 0.8]]) {
+  const [aussen, mittel, innen] = aussehen.farben;
+  for (const [breite, farbe, alpha] of [[150, aussen, 0.5], [110, mittel, 0.6], [70, innen, 0.8]]) {
     const ring = szene.add.ellipse(mitte.x, mitte.y, breite, breite * 1.45).setStrokeStyle(6, farbe, alpha).setBlendMode(Phaser.BlendModes.ADD).setDepth(licht ?? tuer.y);
     szene.tweens.add({ targets: ring, angle: breite % 3 ? 360 : -360, duration: 3000 + breite * 20, repeat: -1 });
     szene.tweens.add({ targets: ring, scaleX: 1.12, scaleY: 0.92, duration: 900 + breite * 5, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
     teile.push(ring);
   }
-  const schein = lichtschein(szene, mitte.x, mitte.y, 260, 320, 0x5af08a).setDepth(licht ?? tuer.y - 1);
+  const schein = lichtschein(szene, mitte.x, mitte.y, 260, 320, aussehen.schein).setDepth(licht ?? tuer.y - 1);
   teile.push(schein);
   // Funken und Blätter werden ins Portal gesogen.
   szene.time.addEvent({
@@ -989,7 +1240,7 @@ function portalAufstellen(szene, tuer, licht) {
       const winkel = Math.random() * Math.PI * 2;
       const funke = szene.add
         .image(mitte.x + Math.cos(winkel) * 110, mitte.y + Math.sin(winkel) * 140, 'funkel')
-        .setTint(Phaser.Utils.Array.GetRandom([0x9af0b0, 0xe8fff0, 0x5af08a]))
+        .setTint(Phaser.Utils.Array.GetRandom([mittel, innen, aussehen.schein]))
         .setBlendMode(Phaser.BlendModes.ADD)
         .setDepth(licht ?? tuer.y + 1)
         .setScale(0.5)
@@ -1003,7 +1254,8 @@ function portalAufstellen(szene, tuer, licht) {
     loop: true,
     callback: () => {
       const figur = szene.spieler?.ort;
-      const nah = figur ? Phaser.Math.Clamp(1 - (Math.hypot(figur.x - tuer.x, figur.y - tuer.y) - 150) / 600, 0.12, 1) : 0.12;
+      const { mindestens } = aussehen;
+      const nah = figur ? Phaser.Math.Clamp(1 - (Math.hypot(figur.x - tuer.x, figur.y - tuer.y) - 150) / 600, mindestens, 1) : mindestens;
       for (const teil of teile) teil.setAlpha(teil === schein ? nah * 0.5 : nah);
     },
   });
@@ -1228,6 +1480,27 @@ function randAufbauen(szene, ort, stellen, baumStellen, licht) {
       if (Math.abs(y - 900) > 160) dickicht(20 + zufall() * 30, y + zufall() * 30);
       dickicht(ort.breite - 20 - zufall() * 30, y + zufall() * 30);
     }
+    return;
+  }
+  // Auf der Sternenwolke ist der Rand aus dicken Wolken, und dahinter funkeln Sterne.
+  if (ort.stil === 'himmel') {
+    const wolke = (x, y) => stellen('wolke', x, y, true, 0.9 + zufall() * 0.5).setFlipX(zufall() < 0.5);
+    for (let x = 0; x <= ort.breite; x += 170) {
+      wolke(x + zufall() * 40, 150 + zufall() * 30);
+      wolke(x + zufall() * 40, ort.hoehe + 110 + zufall() * 30);
+    }
+    for (let y = 260; y <= ort.hoehe; y += 150) {
+      wolke(20 + zufall() * 30, y + zufall() * 30);
+      wolke(ort.breite - 20 - zufall() * 30, y + zufall() * 30);
+    }
+    const sterne = Array.from({ length: 30 }, () => ({
+      x: zufall() * ort.breite,
+      y: zufall() * ort.hoehe,
+      breite: 60,
+      hoehe: 60,
+      farben: [0xffffff, 0xffe9a8, 0xffc8e8],
+    }));
+    glitzernLassen(szene, sterne, licht);
     return;
   }
   // Unter Wasser liegen die gemalten Steine mit Kristallen auf dem Sandboden.

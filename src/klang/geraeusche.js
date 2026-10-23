@@ -76,6 +76,16 @@ export function umgebung(stil, ort) {
       const f = zufall(700, 1100);
       ton({ frequenz: f, gleitenZu: f * 1.6, dauer: 0.08, lautstaerke: 0.1, ziel: weg });
     }
+  } else if (stil === 'garten') {
+    // Grillen zirpen in der Nacht.
+    for (let i = 0; i < 2; i += 1) {
+      rauschen({ dauer: 0.5, start: i * 0.7, lautstaerke: 0.03, anschlag: 0.05, filter: { art: 'bandpass', frequenz: zufall(4200, 5200), q: 10 }, zittern: 22, ziel: weg });
+    }
+  } else if (stil === 'himmel') {
+    // Ein Windspiel klingt, wie Sterne, die aneinanderstoßen.
+    for (let i = 0; i < 3; i += 1) {
+      ton({ frequenz: zufall(1500, 2600), start: i * zufall(0.12, 0.3), dauer: 0.7, lautstaerke: 0.05, art: 'triangle', ziel: weg });
+    }
   } else if (stil === 'wasser') {
     // Blasen steigen auf: blubb, blubb
     for (let i = 0; i < 3; i += 1) {
@@ -312,6 +322,25 @@ export function rumpeln() {
 export function wind(sekunden = 0.9, lautstaerke = 0.25) {
   rauschen({ dauer: sekunden, lautstaerke, anschlag: sekunden * 0.3, filter: { art: 'bandpass', frequenz: 500, zu: 2000, q: 2 } });
   rauschen({ dauer: sekunden, lautstaerke: lautstaerke * 0.5, anschlag: sekunden * 0.5, filter: { art: 'bandpass', frequenz: 1800, zu: 700, q: 3 } });
+}
+
+// Ein altes, rostiges Rad quietscht: hoch und kratzig, mal lauter, mal leiser.
+// ort sagt, wie weit weg es ist (siehe raumWeg in klang.js).
+export function quietschen(ort = {}) {
+  const weg = raumWeg(ort);
+  if (!weg) return;
+  const f = zufall(1100, 1500);
+  ton({ frequenz: f, gleitenZu: f * 1.35, dauer: 0.35, lautstaerke: 0.06, art: 'sawtooth', filter: { frequenz: 2600 }, vibrato: { tempo: 22, tiefe: 0.03 }, ziel: weg });
+  ton({ frequenz: f * 1.3, gleitenZu: f * 0.9, start: 0.38, dauer: 0.3, lautstaerke: 0.05, art: 'sawtooth', filter: { frequenz: 2600 }, vibrato: { tempo: 25, tiefe: 0.03 }, ziel: weg });
+}
+
+// Ein Frosch quakt: tief und knarzig, zweimal.
+export function quaken(ort = {}) {
+  const weg = raumWeg(ort);
+  if (!weg) return;
+  for (let i = 0; i < 2; i += 1) {
+    ton({ frequenz: zufall(140, 190), gleitenZu: 100, start: i * 0.22, dauer: 0.14, lautstaerke: 0.14, art: 'square', filter: { frequenz: 800 }, ziel: weg });
+  }
 }
 
 export function plopp(hoehe = 1) {

@@ -5,6 +5,7 @@
 // (WeltSzene). Was es zu essen gibt und was es im Kampf bewirkt, steht bei
 // den Rezepten in daten/orte/haus.js.
 
+import { BEET } from './daten/beet.js';
 import { ORTE } from './daten/orte.js';
 import { spielstand } from './spielstand.js';
 
@@ -55,6 +56,18 @@ export function besondereDinge() {
   );
 }
 
+// Alles Saatgut (daten/beet.js). Eingesetzt wird es im Beet im Lila Dorf.
+// Die Bilder der Tütchen malt szenen/beet.js.
+export function allesSaatgut() {
+  return Object.entries(BEET.samen).map(([kurzname, samen]) => ({
+    kurzname,
+    name: samen.name,
+    bild: `samen-${kurzname}`,
+    info: `Zum Einsetzen im Beet im Lila Dorf. Liegt ${samen.wo}.`,
+    samen: true,
+  }));
+}
+
 // Wie viele man von einer Sache hat. Die Fangkristalle zählt der Spielstand
 // schon immer extra, darum stehen sie nicht in spielstand.beutel.
 export function anzahl(kurzname) {
@@ -66,7 +79,7 @@ export function anzahl(kurzname) {
 // Was im Beutel ist: erst die Fangkristalle, dann jedes Essen und jede
 // Zutat, die man hat. Mit imKampf: true nur das, was man im Kampf benutzen kann.
 export function beutelInhalt(imKampf = false) {
-  return [FANGKRISTALL, ...allesEssen(), ...(imKampf ? [] : [...sammelZutaten(), ...besondereDinge()])]
+  return [FANGKRISTALL, ...allesEssen(), ...(imKampf ? [] : [...sammelZutaten(), ...allesSaatgut(), ...besondereDinge()])]
     .map((sache) => ({ ...sache, anzahl: anzahl(sache.kurzname) }))
     .filter((sache) => sache.anzahl > 0);
 }

@@ -39,6 +39,12 @@ export const REGENWALD = {
   tiereImGras: [],
   hohesGras: [],
 
+  saatgut: [
+    { art: 'orchideensamen', x: 1660, y: 560 },
+    { art: 'passionsblumensamen', x: 2080, y: 1530 },
+    { art: 'kannenpflanzensamen', x: 2170, y: 840 },
+  ],
+
   pflanzen: [
     { art: 'monstera', name: 'Monstera', groesse: 200, x: 760, y: 560, notiz: 'Monstera: Ihre riesigen Blätter haben Löcher. So kommt der Wind durch, und Licht fällt auf die Blätter darunter.' },
     { art: 'bromelie', name: 'Bromelie', groesse: 150, x: 1180, y: 840, notiz: 'Bromelie: In der Mitte sammelt sie Regenwasser. Darin leben manchmal winzige Frösche!' },

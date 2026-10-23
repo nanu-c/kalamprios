@@ -9,7 +9,9 @@
 // name:            so heißt der Ort im Spiel
 // stil:            wie der Ort aussieht: 'dorf', 'wald', 'mine', 'see',
 //                  'gang' (Geheimgang), 'haus' (ein Zimmer), 'wasser'
-//                  (unter Wasser, von der Seite gesehen) oder 'regenwald'
+//                  (unter Wasser, von der Seite gesehen), 'regenwald' oder
+//                  'himmel' (eine Wolkeninsel, wie die Sternenwolke) oder
+//                  'garten' (eine Nachtwiese, wie das Mondblütental)
 // ausgaenge:       Wege zu anderen Orten. nach ist der Kurzname aus orte.js,
 //                  seite ist 'links', 'rechts', 'oben' oder 'unten', und
 //                  mitte sagt, wo an dieser Seite der Weg hinausführt.
@@ -20,13 +22,22 @@
 //                  kommt erst hindurch, wenn man sie besiegt hat.
 // tueren:          (optional) Türen mitten im Ort, die woandershin führen.
 //                  x und y: wo die Tür ist, nach: wohin sie führt, art:
-//                  'haustuer', 'treppe', 'pilzring', 'tauchplatz' oder 'portal'. satz: (optional)
+//                  'haustuer', 'treppe', 'pilzring', 'tauchplatz', 'portal' oder
+//                  'freundschaftstor', 'wolkentreppe' oder 'stollen' (ein
+//                  dunkler Gang tiefer in den Berg). satz: (optional)
 //                  was man beim ersten Mal hört, bevor man hineingeht.
 //                  ankunft: (optional) wo man steht, wenn man zurückkommt.
 //                  zurueckVon: (optional) weitere Orte, von denen man durch
 //                  diese Tür zurückkommt.
 //                  braucht: (optional) ein besonderes Ding (siehe besonderes),
 //                  ohne das man nicht hindurchkann. Dann hört man ohne.
+//                  zuZweit: (optional) true heißt: Hindurch kommt man nur,
+//                  wenn man zu zweit spielt und beide davorstehen.
+//                  erstNachRaetsel: (optional) true heißt: Hindurch kommt
+//                  man erst, wenn das Rätsel dieses Ortes gelöst ist. Vorher
+//                  hört man ohne.
+// lagerfeuer:      (optional) ein Lagerfeuer, der Treffpunkt beim Spielen zu
+//                  zweit. Nur hier gibt es den Knopf „Zu zweit“ zum Verbinden.
 // besonderes:      (optional) Dinge, die man nur einmal findet, zum Beispiel
 //                  das Lungenkraut am Mondsee. art ist das Bild, name und
 //                  info stehen im Beutel, satz hört man beim Finden.
@@ -49,6 +60,9 @@
 //                  Mitte, breite und hoehe die Größe. Mit bild: 'mondsee'
 //                  wird das gemalte Bild des Sees genommen.
 // gold:            (nur in der Mine) glitzerndes Gold, steht im Weg
+// saatgut:         (optional) hier liegt Saatgut für das Beet im Lila Dorf.
+//                  art ist ein Kurzname bei samen in daten/beet.js. Nach einer
+//                  Weile liegt wieder welches da (wie bei den Zutaten).
 // zutaten:         (optional) hier wachsen Zutaten zum Kochen. art ist ein
 //                  Kurzname bei zutaten in haus.js. Nach einer Weile wächst
 //                  wieder eine nach (siehe regeln.js).
@@ -202,6 +216,11 @@ export const KRISTALLWALD = {
     { art: 'pilz', x: 1700, y: 650 },
     { art: 'apfel', x: 2760, y: 1560 },
     { art: 'apfel', x: 2620, y: 1420 },
+  ],
+
+  saatgut: [
+    { art: 'pilzsporen', x: 510, y: 1000 },
+    { art: 'apfelkerne', x: 2860, y: 1520 },
   ],
 
   fangkristalle: [

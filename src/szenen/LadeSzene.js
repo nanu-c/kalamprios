@@ -33,6 +33,13 @@ const WEITERE_BILDER = {
 
 // Die Pflanzen und alles andere, was im Regenwald wächst
 const PFLANZEN = [...new Set(REGENWALD.pflanzen.map((pflanze) => pflanze.art)), 'ceiba', 'wurzeln', 'busch', 'farnbusch', 'liane', 'blaetter'];
+// Später dazugekommen (gemalt mit werkzeuge/sachen_malen.py). Fehlt eins, malt
+// das Spiel die Sache selbst (seeBilder.js, nachtblumen.js, beet.js, statue.js …).
+const NEUE_SACHEN = [
+  'bootshaus', 'wasserrad', 'flaschenpost', 'oelkanne', 'frosch', 'mondfisch', 'seerosenblatt', 'samentuete', 'keimling',
+  'lagerfeuer-ki', 'sitzstamm-ki', 'sockel', 'rosenbusch',
+  'nachtblume-mondwinde', 'nachtblume-nachtkerze', 'nachtblume-sternbluete', 'nachtblume-leuchtglocke', 'nachtblume-mondrose',
+];
 const SACHEN = ['apfel', 'ei', 'mehl', 'milch', 'zucker', 'mondbeeren', 'wasser', 'honig', 'suppe', 'kuchen', 'pfannkuchen', 'kessel', 'truhe-zu', 'truhe-offen', 'kochbuch', 'muschel', 'beutel', 'kamera', 'fotoalbum', 'kristalltorte', 'zauberpunsch', 'festmahl', 'lungenkraut', 'plastikflasche', 'plastiktuete', 'dose', 'joghurtbecher'];
 
 // Macht von einem Bild eine kleine Fassung für den Wald, mit etwas kräftigeren
@@ -58,7 +65,11 @@ export class LadeSzene extends Phaser.Scene {
   preload() {
     this.fehlendeBilder = [];
     this.bildNamen = [];
-    this.load.on('loaderror', (datei) => this.fehlendeBilder.push(datei.url));
+    // Die neuen Sachen sind freiwillig: Fehlt ein Bild, malt das Spiel sie selbst.
+    const freiwillig = new Set(NEUE_SACHEN.map((name) => `bilder/gegenstaende/${name}.png`));
+    this.load.on('loaderror', (datei) => {
+      if (!freiwillig.has(datei.url)) this.fehlendeBilder.push(datei.url);
+    });
 
     // Jedes Kalamprio und jede Figur bringt ihr Bild selbst mit.
     const laden = (name, bild) => {
@@ -75,7 +86,7 @@ export class LadeSzene extends Phaser.Scene {
     // Die Pflanzen im Regenwald (gemalt mit werkzeuge/pflanzen_malen.py)
     for (const art of PFLANZEN) this.load.image(`pflanze-${art}`, `bilder/pflanzen/${art}.png`);
     // Die Sachen für die Küche und den Geheimgang (gemalt mit werkzeuge/kueche_malen.py)
-    for (const name of SACHEN) this.load.image(name, `bilder/gegenstaende/${name}.png`);
+    for (const name of [...SACHEN, ...NEUE_SACHEN]) this.load.image(name, `bilder/gegenstaende/${name}.png`);
   }
 
   create() {

@@ -110,8 +110,8 @@ test('das Lichter-Rätsel kann man immer schaffen', () => {
   }
 });
 
-test('das Spiegel-Rätsel im Geheimgang kann man lösen, aber am Anfang ist es nicht gelöst', () => {
-  const { spalten, reihen, startReihe, zielReihe, spiegel } = ORTE.geheimgangSpiegel.raetsel;
+for (const ort of Object.values(ORTE).filter((anderer) => anderer.raetsel?.art === 'spiegel')) test(`das Spiegel-Rätsel in ${ort.name} kann man lösen, aber am Anfang ist es nicht gelöst`, () => {
+  const { spalten, reihen, startReihe, zielReihe, spiegel } = ort.raetsel;
   const start = { spalte: 0, reihe: startReihe, richtung: 'rechts' };
   const trifft = (stellungen) => {
     const { ende } = strahlVerfolgen(spalten, reihen, start, stellungen);

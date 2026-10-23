@@ -128,6 +128,15 @@ export function angreifen(angreifer, verteidiger, attacke, zufall = Math.random)
   return { ausgang, schaden: attackeAusfuehren(angreifer, verteidiger, attacke, zufall, anteil) };
 }
 
+// Würfelt einen Angriff aus wie angreifen, ändert aber noch nichts: Zurück
+// kommt nur { ausgang, schaden }. So kann ein Gerät beim Spielen zu zweit
+// ausrechnen, was passiert, und es dem anderen schicken (zusammenkampf.js).
+export function angriffWuerfeln(angreifer, verteidiger, attacke, zufall = Math.random) {
+  const probe = { ...attacke };
+  const ziel = { ...verteidiger };
+  return angreifen(angreifer, ziel, probe, zufall);
+}
+
 // Am Ende jeder Runde rückt jede Pause um eine Runde näher ans Ende.
 export function rundeBeenden(alleKaempfer) {
   for (const kaempfer of alleKaempfer) {

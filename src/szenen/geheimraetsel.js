@@ -54,7 +54,7 @@ const LICHTFARBE = 0xffe9a8; // das warme Licht der Pilzlampe
 
 // Eine flache, gemalte Steinplatte in einer Farbe, mit wackeligem dunklem
 // Umriss wie die Klangsteine. Jede Größe und Farbe wird nur einmal gemalt.
-function platteMalen(szene, farbe, breite, hoehe) {
+export function platteMalen(szene, farbe, breite, hoehe) {
   const name = `platte-${farbe.toString(16)}-${breite}x${hoehe}`;
   if (szene.textures.exists(name)) return name;
   const leinwand = szene.textures.createCanvas(name, breite + 8, hoehe + 8);
@@ -185,7 +185,7 @@ function spiegelMalen(szene, groesse) {
 
 // ------------------------------------------------------------ Gemeinsam
 
-class GrundRaetsel {
+export class GrundRaetsel {
   constructor(raetsel) {
     this.raetsel = raetsel;
     this.szene = raetsel.szene;

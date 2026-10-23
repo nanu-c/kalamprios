@@ -8,7 +8,8 @@
 // frage:       Rätselfragen beantworten, jedes Mal andere
 //
 // Die Rätsel im Geheimgang (farben, stimmen, paare, weg, spiegel, lichter)
-// stehen in geheimraetsel.js. Der Rätselstein erklärt auch sie.
+// stehen in geheimraetsel.js, die Rätsel hinter dem Freundschaftstor
+// (zuZweit, fluestern, tor) in zweierraetsel.js. Der Rätselstein erklärt auch sie.
 //
 // Der Rätselstein ist gemalt (Gegenstände/Rätselstein_….jpg), einmal für
 // ungelöst und einmal für gelöst. Er leuchtet und schimmert in seinen Farben.
@@ -24,6 +25,7 @@ import { verstummen, vorlesen } from '../vorlesen.js';
 import { abstand, durcheinander, reihenfolgeTreten, reihenfolgeWuerfeln } from '../welt/weltlogik.js';
 import { belohnungZeigen } from './animationen.js';
 import { GEHEIMGANG_RAETSEL } from './geheimraetsel.js';
+import { ZWEIER_RAETSEL } from './zweierraetsel.js';
 import { LICHT_TIEFE, lichtschein } from './landschaft.js';
 import { schrift } from './stil.js';
 
@@ -204,8 +206,8 @@ export class Raetsel {
 
     this.steinBauen();
     szene.hindernisse.push({ x: this.daten.x, y: this.daten.y - 8, radius: STEIN_RADIUS });
-    // Ein Rätsel aus dem Geheimgang bringt sein eigenes Spiel mit.
-    const GeheimgangRaetsel = GEHEIMGANG_RAETSEL[this.daten.art];
+    // Ein Rätsel aus dem Geheimgang (oder das Rätsel zu zweit) bringt sein eigenes Spiel mit.
+    const GeheimgangRaetsel = GEHEIMGANG_RAETSEL[this.daten.art] ?? ZWEIER_RAETSEL[this.daten.art];
     this.spiel = GeheimgangRaetsel ? new GeheimgangRaetsel(this) : null;
     if (this.daten.art === 'suchen') this.dingeVerstecken();
     if (this.daten.art === 'reihenfolge') this.klangsteineLegen();

@@ -112,6 +112,14 @@ function kristallStelle(x, breite, hoehe) {
   return { x: x - breite / 2, y: HORIZONT - hoehe, breite, hoehe, farben: [0xffffff, 0xd9c9ff, 0x9cc0f2] };
 }
 
+// Eine weiche Wolke aus vielen Kreisen
+function wolke(stift, x, y, breite) {
+  for (const [dx, dy, r] of [[-0.32, 0.05, 0.2], [0.3, 0.06, 0.22], [0, -0.02, 0.27], [-0.14, -0.14, 0.2], [0.16, -0.16, 0.22]]) {
+    stift.fillStyle(0xfff6ff, 0.85);
+    stift.fillCircle(x + dx * breite, y + dy * breite, r * breite);
+  }
+}
+
 function boden(stift, farbe, kante) {
   stift.fillStyle(farbe);
   stift.fillRect(0, HORIZONT, BREITE, HOEHE - HORIZONT);
@@ -218,6 +226,46 @@ export function hintergrundMalen(szene, stil = 'wald') {
       },
     });
     funkeln(szene, [kristallStelle(1240, 60, 160)]);
+    return;
+  }
+
+  if (stil === 'himmel') {
+    // Die Sternenwolke: ein rosa Abendhimmel voller Sterne, der Mond und Wolken.
+    himmel(stift, 0x24145e, 0xf0a8d8);
+    for (let i = 0; i < 60; i += 1) {
+      stift.fillStyle(0xffffff, 0.4 + (i % 3) * 0.2);
+      stift.fillCircle((i * 211) % BREITE, (i * 97) % 300, 1.5 + (i % 2));
+    }
+    stift = mond(szene, stift, 1010, 140);
+    for (const [x, y, breite] of [[160, 300, 300], [520, 250, 220], [860, 330, 340], [1180, 280, 240]]) wolke(stift, x, y, breite);
+    boden(stift, 0xcbbcf2, 0xf3e9ff);
+    funkeln(szene, [{ x: 0, y: 20, breite: BREITE, hoehe: 280, farben: [0xffffff, 0xffe9a8, 0xffc8e8] }]);
+    return;
+  }
+
+  if (stil === 'garten') {
+    // Hinter dem Freundschaftstor: ein tiefblauer Nachthimmel und eine Wiese voller leuchtender Blumen.
+    himmel(stift, 0x0b0a2e, 0x2e3a7a);
+    for (let i = 0; i < 70; i += 1) {
+      stift.fillStyle(0xffffff, 0.3 + (i % 3) * 0.2);
+      stift.fillCircle((i * 193) % BREITE, (i * 71) % 330, 1.2 + (i % 2));
+    }
+    stift = mond(szene, stift, 260, 150);
+    baum(stift, 1080, 250);
+    baum(stift, 160, 230);
+    boden(stift, 0x1f3550, 0x3a5a7a);
+    const farben = [0xf4f0ff, 0xfff0a0, 0x7fb4ff, 0xff9ad5, 0xd8c8ff];
+    const blumen = [];
+    for (let i = 0; i < 40; i += 1) {
+      const x = (i * 97 + 40) % BREITE;
+      const y = HORIZONT + 20 + ((i * 53) % (HOEHE - HORIZONT - 30));
+      stift.fillStyle(0x3f9a72);
+      stift.fillRect(x - 1.5, y, 3, 14);
+      stift.fillStyle(farben[i % farben.length]);
+      stift.fillCircle(x, y, 6);
+      blumen.push({ x: x - 10, y: y - 10, breite: 20, hoehe: 20, farben: [farben[i % farben.length], 0xffffff] });
+    }
+    funkeln(szene, blumen.slice(0, 16));
     return;
   }
 

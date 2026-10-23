@@ -31,6 +31,12 @@ Der Code liegt auf <https://github.com/nanu-c/kalamprios>. Sobald dort eine neue
 | `src/daten/orte/unterwasser.js` | unter Wasser im Mondsee: Kalamprios, Seegras und die Müll-Aufgabe der alten Muschel |
 | `src/daten/orte/regenwald.js` | der Regenwald hinter dem Portal: alle Pflanzen mit Namen und Notiz |
 | `src/daten/orte/haus.js` | die Küche: Zutaten, Rezepte und was jedes Essen im Kampf bewirkt |
+| `src/daten/orte/mondbluetental.js` | das Mondblütental hinter dem Freundschaftstor (nur zu zweit): Nachtblumen, Kalamprios, die Geschichte und das Rätsel „Blumenflüstern“ |
+| `src/daten/orte/mondrosengarten.js` | der Garten der Mondrosen: das Rätsel „Rosentor“ und die Wolkentreppe hinauf zur Sternenwolke |
+| `src/daten/orte/sternenwolke.js` | die Sternenwolke, die zweite Welt hoch oben am Himmel: das Rätsel mit den Sternplatten |
+| `src/daten/orte/verschollenerStollen.js` | der verschollene Stollen tief in der Mine: das Spiegel-Rätsel und die Statue mit „Grüße von Mia“ |
+| `src/daten/beet.js` | das Gartenbeet im Lila Dorf: welches Saatgut es gibt, was daraus wächst, wie langsam es wächst und wie wild es wird |
+| `src/daten/zusammen.js` | zu zweit spielen: aus welchen Kalamprios der Code besteht, wie nah man beieinander sein muss, wie viel stärker wilde Kalamprios zu zweit sind, und was das Spiel dabei sagt |
 | `src/daten/klaenge.js` | wie laut Musik und Geräusche sind, wie weit man Kalamprios rufen hört und wie jedes Kalamprio klingt |
 | `src/daten/regeln.js` | Lauftempo, Erholungszeit, wie oft im Gras etwas auftaucht, wie oft eine Attacke danebengeht, ausgewichen oder abgewehrt wird, wie leicht man Kalamprios fängt, wie viel Erfahrung es für ein Level braucht, wie stark wilde Kalamprios und das geheime Kalamprio sind und wie viele Kalamprios mit in einen Kampf dürfen |
 
@@ -92,6 +98,56 @@ In jeder Datei steht oben erklärt, was die Angaben bedeuten. Wenn du dich verti
 20. Der Knopf unten links schaltet das Vollbild ein. Am Handy spielt man quer.
 21. Der Knopf daneben schaltet den Ton an und aus. Jeder Ort hat seine eigene Musik, auch der Geheimgang und die Küche. Für Kämpfe gibt es vier Kampflieder, bei jedem Kampf kommt ein anderes dran, und im Kampf ist die Musik etwas leiser (`kampflieder` und `musikImKampf` in `klaenge.js`). Jedes Kalamprio hat eine eigene Stimme. Im Kampf ruft es, wenn es auftaucht und wenn es angreift, und quiekt kurz, wenn es getroffen wird. Wilde Kalamprios hört man nur, wenn man in der Nähe ist: Je näher man hingeht, desto lauter rufen sie, so wie das Licht in der Mine nur in der Nähe hell ist. In der dunklen Mine hört man sie, bevor man sie sieht. Auch der dunkle Kristall summt, wenn man näher kommt.
 
+## Die Flaschenpost vom Mondsee
+
+Am Ufer des Mondsees treibt eine Flaschenpost. Darin bittet der letzte Mondfisch um Hilfe: Sein See ist krank, und er traut sich nicht mehr hervor. Drei ganz verschiedene Aufgaben machen den See wieder gesund:
+
+- **Müll einsammeln:** die Aufgabe der alten Muschel unter Wasser.
+- **Frösche heimbringen:** Vier Frösche haben sich rund um den See verirrt. Man hört sie quaken. Wer einen findet, dem hüpft er hinterher, und man bringt ihn zur Froschbucht am Ufer.
+- **Das Wasserrad ölen:** Ein altes Wasserrad quietscht so laut, dass man es schon von Weitem hört. Dafür braucht man ein Ölkännchen. Das liegt in der Prismastahl-Mine.
+
+Zu jeder Aufgabe gibt es einen kleinen Naturtipp. Wer danach zur Flasche zurückkommt, sieht den Mondfisch glitzernd aus dem Wasser springen. Er bedankt sich mit Fangkristallen und schwimmt danach leuchtend im See herum. Die Idee ist von dem alten Spiel „Auf der Suche nach dem Uhps“ inspiriert. Alles steht bei `flaschenpost` in `src/daten/orte/mondsee.js`.
+
+## Das alte Bootshaus am Mondsee
+
+Am Südufer des Mondsees steht das alte Bootshaus eines Fischers. Er hat hier früher Boote repariert und Maschinen für den See erfunden. Auf seiner Werkbank liegen noch die Baupläne für verrückte Maschinen, so wie bei Pettersson und Findus. Jede Maschine ist halbfertig. Unten liegen Bauteile in einer Kiste: Rampe, Wippe, Dominosteine, Sprungfeder, Trichter, und auch ein paar Sachen, die gar nicht passen (Kissen, Löffel). Man tippt ein Bauteil an und dann den leeren Platz in der Maschine. Mit „Los!“ rollt eine Kugel los, und ein Teil stößt das nächste an. Fehlt etwas, plumpst die Kugel herunter.
+
+Es gibt drei Pläne, jeder ein bisschen schwerer: den Mondbeeren-Schüttler (Mondbeeren für die Küche), den Seerosen-Gießer (Seerosensamen fürs Beet) und den Futterautomaten für den Mondfisch (Fangkristalle). Erst wenn eine Maschine läuft, kommt der nächste Plan. Eigene Pläne schreibt man bei `werkbank` in `src/daten/orte/mondsee.js`.
+
+## Der verschollene Stollen
+
+Wer das Rätsel in der Prismastahl-Mine gelöst hat, findet im Licht ganz rechts in der Wand einen alten Stollen (`verschollenerStollen.js`). Darin wartet ein Spiegel-Rätsel: Man dreht die Spiegel, bis der Lichtstrahl der Pilzlampe den dunklen Kristall trifft. Dann rumpelt es, und eine verschollene Statue steigt aus dem Boden: ein Kalamprio aus Stein. Auf dem Sockel steht „Grüße von Mia“. Was auf der Statue steht und welches Kalamprio sie zeigt, steht bei `statue` in `verschollenerStollen.js`.
+
+## Das Gartenbeet
+
+Unten im Lila Dorf liegt eine Wiese mit einem Gartenbeet. An vielen Orten liegt Saatgut in kleinen Tütchen (bei `saatgut` in der Datei des Ortes): Pilzsporen und Apfelkerne im Kristallwald, ein Kristallkeim in der Mine, Seerosensamen am Mondsee, Orchideen-, Passionsblumen- und Kannenpflanzensamen im Regenwald, Nachtkerzensamen im Dorf und Mondwindensamen im Mondblütental (nur zu zweit). Es kommt in den Beutel und liegt nach einer Weile wieder da.
+
+Wer ins Beet läuft, kann Saatgut einsetzen. Dann wächst es in echter Zeit, auch wenn man gerade nicht spielt: Erst ist es ein kleiner Keimling, nach einer Stunde eine große Pflanze. Danach wird sie wild: Sie wird immer größer und streut alle 45 Minuten einen Ableger, auch über den Zaun hinaus. Manchmal wird aus einem Ableger sogar eine andere Pflanze aus dem Beet, und Ranken klettern über den Zaun. Am Anfang kann man noch zupfen („Zähmen“), aber ist das Beet einmal wild, wächst alles sofort nach. Zähmen kann man es dann nicht mehr. Wie schnell alles wächst, steht in `src/daten/beet.js`.
+
+## Zu zweit spielen
+
+Zwei können auf zwei Geräten zusammen spielen, zum Beispiel auf zwei Tablets oder einem Handy und einem Laptop. Jede spielt mit ihrem eigenen Spielstand.
+
+1. Beide gehen im Lila Dorf zum **Lagerfeuer** (gleich neben dem Freundschaftstor). Das ist der Treffpunkt. Nur dort gibt es oben rechts den Knopf **„Zu zweit“**, und beim Hinkommen geht das Fenster dazu von selbst auf.
+2. Auf dem ersten Gerät auf **„Spiel öffnen“** tippen. Das Spiel zeigt einen Code aus vier Kalamprios.
+3. Auf dem zweiten Gerät auf **„Code eingeben“** tippen und dieselben vier Kalamprios der Reihe nach antippen.
+4. Schon seid ihr verbunden. Oben rechts steht dann überall, mit wem du spielst und wo die andere gerade ist. Trennen kann man die Verbindung wieder am Lagerfeuer.
+
+Was man zu zweit machen kann:
+
+- **Zusammen herumlaufen:** Ist die andere am selben Ort, sieht man ihre Figur mit ihrem Namen und einem rosa Ring.
+- **Gegeneinander kämpfen:** Zur anderen Figur gehen und sie antippen, dann „Kämpfen“. Sagt sie Ja, gibt es einen Freundschaftskampf: dein Kampfteam gegen ihres. Jede wählt auf ihrem Gerät. Wer gewinnt, bekommt Erfahrung, und niemand muss sich danach erholen.
+- **Zusammen gegen wilde Kalamprios:** Steht die andere in der Nähe, wenn man ein wildes Kalamprio trifft, kämpft sie mit. Ihr steht dann beide links. Das wilde Kalamprio hat dafür mehr Lebenspunkte (`wildeZuZweit` in `zusammen.js`). Gegen die Rivalin und das geheime Kalamprio kämpft man immer allein.
+- **Tauschen:** Die andere Figur antippen, dann „Tauschen“. Jede sucht ein Kalamprio aus, das die andere noch nicht hat. Wenn beide auf „Tauschen!“ tippen, wird getauscht. Das Kalamprio nimmt seine Erfahrung mit.
+- **Hinter dem Freundschaftstor:** Im Lila Dorf steht ein goldenes Freundschaftstor. Es öffnet sich nur, wenn ihr zu zweit davorsteht. Dahinter liegen zwei Welten mit einer eigenen Geschichte: Der Schatten ist auch hier durchgehuscht und hat den Nachtblumen ihr Leuchten und dem Himmel sein Sternenlicht genommen. Die drei Rätsel dort kann man wirklich nur zu zweit lösen:
+  - **Mondblütental** (erste Welt, voller Nachtblumen): Rätsel „Blumenflüstern“. Nur eine von euch sieht, in welcher Reihenfolge die fünf großen Mondblüten leuchten, und sagt es der anderen. Die andere läuft in dieser Reihenfolge darüber. Jede Runde tauscht ihr.
+  - **Garten der Mondrosen** (auch erste Welt): Rätsel „Rosentor“. Ein Ring aus dornigen Mondrosen sperrt den Mondtau ein. Das Tor geht nur auf, solange jemand auf dem weit entfernten Mondstein steht. Eine hält es offen, die andere holt den Mondtau. Dann wächst die Wolkentreppe.
+  - **Sternenwolke** (zweite Welt, oben am Himmel, Kalamprios mit Level 3): Rätsel „Sternplatten“. Immer zwei Platten leuchten auf, und auf beiden muss gleichzeitig jemand stehen. Danach kehrt das Sternenlicht zurück.
+
+  Reißt die Verbindung ab, trägt einen ein warmer Wind zurück vor das Freundschaftstor.
+
+Die Geräte schicken sich alles direkt (mit PeerJS, das ist kostenlos und braucht kein Konto). Nur zum Finden fragen sie einmal kurz einen Vermittler im Internet, darum braucht es Internet. Am besten klappt es, wenn beide Geräte im selben WLAN sind. In manchen Handynetzen finden sich die Geräte nicht, dann sagt das Spiel Bescheid. Bricht die Verbindung ab, kann man sich mit demselben Code wieder verbinden.
+
 ## Eine neue Zeichnung ins Spiel bringen
 
 1. Das Foto in den Ordner `Kalamprios` oder `Charaktere` legen.
@@ -112,6 +168,8 @@ Zwei weitere Häuser im selben Stil hat eine OpenAI-Bild-KI gemalt: `.venv/bin/p
 Der Mondsee, zwei Bäume (`Landschaft`) und der Fangkristall (`Gegenstände`) werden wie ein Ausmalbild ausgemalt: Jede Fläche zwischen den Strichen bekommt eine passende Farbe. Der Mond (`Landschaft/Mond.jpg`) ist ganz dicht schraffiert, er wird hell wie Mondlicht, und die Schraffur bleibt als Schatten zu sehen. Er steht am Himmel auf dem Startbildschirm, in der Geschichte und am Ende. Auch das geht mit `.venv/bin/python werkzeuge/bilder_vorbereiten.py`, zum Beispiel `.venv/bin/python werkzeuge/bilder_vorbereiten.py mondsee`.
 
 Den Titel-Schriftzug (`Sonstiges/Title.jpg`) hat eine OpenAI-Bild-KI ausgemalt, die Umrisse der Buchstaben sind dabei geblieben. Neu machen: `.venv/bin/python werkzeuge/titel_verschoenern.py`. Das kostet ein bisschen Geld vom OpenAI-Konto. Das ausgemalte Bild wird in `Sonstiges/Titel-ausgemalt.png` aufgehoben. Mit `--ohne-ki` dahinter wird nur der Hintergrund noch einmal entfernt, ohne OpenAI zu fragen.
+
+Die Sachen, die später dazugekommen sind (Bootshaus, Wasserrad, Flaschenpost, Frösche, Mondfisch, Seerosenblätter, Ölkännchen, Nachtblumen, Mondrosen-Busch, Saatgut-Tütchen, Keimling, Lagerfeuer-Holz, Baumstamm und Statuen-Sockel), hat auch eine OpenAI-Bild-KI gemalt: `.venv/bin/python werkzeuge/sachen_malen.py`. Mit Namen dahinter werden nur diese Sachen neu gemalt, zum Beispiel `.venv/bin/python werkzeuge/sachen_malen.py frosch`. Danach färbt das Werkzeug jede Sache im Stil der Welt ein: etwas weniger bunt, ins Lila verschoben und etwas dunkler, wie im Mondlicht. Tiere und Pflanzen nur sanft, damit der Frosch grün bleibt. Wie stark, steht oben in `werkzeuge/sachen_malen.py` bei `WELT_FARBEN` und `SANFT`. Mit `--ohne-ki` wird nur neu eingefärbt, ohne die KI zu fragen. Die Flammen des Lagerfeuers und die Inschrift auf der Statue macht das Spiel selbst.
 
 ## Musik und Geräusche
 

@@ -139,6 +139,47 @@ export const LIEDER = {
     schlagzeug: 'k..k..s.k.k...s.',
   },
 
+  // Hinter dem Freundschaftstor, im Mondblütental und im Garten der Mondrosen:
+  // leise und zart, wie eine Nacht voller Blumen
+  garten: {
+    tempo: 76,
+    klang: 'zupfen',
+    akkorde: ['Am', 'F', 'C', 'G', 'Am', 'Dm', 'E', 'Am'],
+    melodie: [
+      'E5 - A5 - C6 - B5 A5',
+      'A5 - - - F5 - . .',
+      'G5 - E5 - C5 - E5 G5',
+      'D5 - - - B4 - . .',
+      'C5 - E5 - A5 - G5 -',
+      'F5 - - - D5 - . .',
+      'E5 - G#5 - B5 - D6 -',
+      'C6 - B5 - A5 - - -',
+    ],
+    bass: '1.......',
+    begleitung: '1358853113588531',
+    flaeche: true,
+  },
+
+  // Die Sternenwolke: verträumt und glitzernd, wie Sterne, die funkeln
+  himmel: {
+    tempo: 84,
+    klang: 'glocke',
+    akkorde: ['F', 'Dm', 'Bb', 'C', 'F', 'Am', 'Bb C', 'F'],
+    melodie: [
+      'C5 - F5 - A5 - G5 F5',
+      'A5 - - - D5 - . .',
+      'D5 - F5 - Bb5 - A5 G5',
+      'G5 - - - E5 - . .',
+      'F5 - A5 - C6 - A5 -',
+      'E5 - - - C5 - . .',
+      'D5 - F5 - E5 - G5 -',
+      'F5 - - - - - . .',
+    ],
+    bass: '1...5...',
+    begleitung: '1358853113588531',
+    flaeche: true,
+  },
+
   // Unter Wasser: schwebend und langsam, wie Blasen, die aufsteigen
   wasser: {
     tempo: 70,

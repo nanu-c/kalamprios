@@ -15,6 +15,34 @@ export const PRISMASTAHL_MINE = {
     { nach: 'mondsee', seite: 'rechts', mitte: 550, erstNachRaetsel: true },
   ],
 
+  // Besondere Dinge, die man nur einmal findet. Das Ölkännchen braucht man
+  // für das quietschende Wasserrad am Mondsee (flaschenpost in mondsee.js).
+  besonderes: [
+    {
+      art: 'oelkanne',
+      name: 'Ölkännchen',
+      x: 960,
+      y: 1080,
+      info: 'Damit kann man quietschende Dinge ölen.',
+      satz: 'Ein altes Ölkännchen der Bergleute! Damit kann man quietschende Dinge ölen. Wofür du es wohl brauchst?',
+    },
+  ],
+
+  // Ganz rechts in der Wand: der Eingang zum verschollenen Stollen
+  // (verschollenerStollen.js). Man kommt erst hinein, wenn das Rätsel hier
+  // gelöst ist.
+  tueren: [
+    {
+      x: 2680,
+      y: 1060,
+      nach: 'verschollenerStollen',
+      art: 'stollen',
+      erstNachRaetsel: true,
+      ohne: 'Zwischen den Felsen pfeift ein kalter Wind. Dahinter muss ein alter Gang sein. Aber es ist viel zu dunkel, um ihn zu finden …',
+      satz: 'Ein alter Stollen! Er sieht aus, als wäre hier seit vielen, vielen Jahren niemand mehr gewesen. Gehst du hinein?',
+    },
+  ],
+
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
   dunklerKristall: { x: 560, y: 1120 },
 
@@ -77,6 +105,10 @@ export const PRISMASTAHL_MINE = {
     { art: 'zucker', x: 2300, y: 1050 },
   ],
 
+  saatgut: [
+    { art: 'kristallkeim', x: 1290, y: 820 },
+  ],
+
   fangkristalle: [
     { x: 1360, y: 730 },
     { x: 2470, y: 1500 },
@@ -103,7 +135,7 @@ export const PRISMASTAHL_MINE = {
       { x: 1500, y: 580 },
       { x: 2590, y: 340 },
     ],
-    geschafft: '„Du hast alle Glühsteine gefunden! Jetzt leuchtet dein Licht viel weiter. Und hörst du das Rumpeln? Der Weg zum Mondsee ist frei!“',
+    geschafft: '„Du hast alle Glühsteine gefunden! Jetzt leuchtet dein Licht viel weiter. Und hörst du das Rumpeln? Der Weg zum Mondsee ist frei! Und ganz rechts in der Wand ist im Licht ein alter Stollen aufgetaucht …“',
     belohnung: { fangkristalle: 1, mehrLicht: true },
   },
 };

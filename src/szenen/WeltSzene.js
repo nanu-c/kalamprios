@@ -41,6 +41,12 @@ import { MuellQuest } from './muellQuest.js';
 import { scheinwerferAuswahl } from './scheinwerfer.js';
 import { Raetsel } from './raetsel.js';
 import { Schatz } from './schatz.js';
+import { vorDemTor, ZuZweit } from './zuZweit.js';
+import { Beet, Saatgut } from './beet.js';
+import { Statue } from './statue.js';
+import { Flaschenpost } from './flaschenpost.js';
+import { Werkbank } from './erfindung.js';
+import { istVerbunden } from '../zusammen/verbindung.js';
 import { BREITE, FARBEN, HOEHE, farbeAlsText, schrift } from './stil.js';
 
 const SPIELER_RADIUS = 18;
@@ -71,6 +77,12 @@ export class WeltSzene extends Phaser.Scene {
   }
 
   create() {
+    // Hinter dem Freundschaftstor kann man nur zu zweit sein. Wer dort ohne die
+    // andere weiterspielt (zum Beispiel nach dem Neuladen), steht wieder davor.
+    if (ORTE[spielstand.ort].nurZuZweit && !istVerbunden()) {
+      spielstand.ort = ORTE[spielstand.ort].zurueckNach;
+      spielstand.position = vorDemTor(spielstand.ort);
+    }
     this.ortName = spielstand.ort;
     this.ort = ORTE[this.ortName];
     this.grenzen = weltGrenzen(this.ort);
@@ -173,6 +185,15 @@ export class WeltSzene extends Phaser.Scene {
     this.kochen = this.ort.kueche ? new Kochen(this) : null;
     this.schatz = this.ort.schatz ? new Schatz(this) : null;
     this.muellQuest = this.ort.muellQuest ? new MuellQuest(this) : null;
+    // Saatgut zum Aufsammeln, und im Lila Dorf das Beet (beet.js)
+    this.saatgut = new Saatgut(this);
+    this.beet = this.ort.beet ? new Beet(this) : null;
+    // Eine verschollene Statue taucht auf, wenn das Rätsel gelöst ist (statue.js).
+    this.statue = this.ort.statue ? new Statue(this) : null;
+    // Am Mondsee: die Flaschenpost vom letzten Mondfisch (flaschenpost.js)
+    this.flaschenpost = this.ort.flaschenpost ? new Flaschenpost(this) : null;
+    // Das alte Bootshaus mit der Werkbank und den Bauplänen (erfindung.js)
+    this.werkbank = this.ort.werkbank ? new Werkbank(this) : null;
 
     this.zielMarke = this.add.circle(0, 0, 14).setStrokeStyle(3, 0xf6f0ff, 0.8).setDepth(2);
 
@@ -205,6 +226,8 @@ export class WeltSzene extends Phaser.Scene {
     if (this.ort.dunkel) this.dunkelheitBauen();
     this.umgebungPlanen();
     this.anzeigeBauen();
+    // Zu zweit spielen: der Knopf oben rechts und die Figur der anderen (zuZweit.js)
+    this.zuZweit = new ZuZweit(this);
     if (spielstand.ortsnameZeigen) this.ortsnameZeigen();
 
     // Gerade die Rivalin zum ersten Mal besiegt? Dann sagt sie etwas dazu.
@@ -214,6 +237,12 @@ export class WeltSzene extends Phaser.Scene {
 
     // Im Regenwald: Beim ersten Mal ist die Figur verwirrt, und das Pflanzenalbum liegt am Boden.
     if (this.ort.pflanzen) this.regenwaldAufbauen();
+    // Hinter dem Freundschaftstor wird beim ersten Mal erzählt, wo man ist (ankommen beim Ort).
+    else if (this.ort.ankommen && !spielstand.angekommen[this.ortName]) {
+      spielstand.angekommen[this.ortName] = true;
+      const name = CHARAKTERE[spielstand.charakter].name;
+      this.time.delayedCall(900, () => this.saetzeNacheinander(this.ort.ankommen.map((satz) => satz.replace('{name}', name)), null, 'Los geht’s!'));
+    }
 
     // Im Kinderzimmer wird man beim ersten Aufwachen begrüßt.
     if (this.ort.begruessung && !spielstand.begruesst) {
@@ -234,6 +263,11 @@ export class WeltSzene extends Phaser.Scene {
       this.wildeBewegen(dt, zeit);
       this.fangkristalleAufsammeln();
       this.zutatenPfluecken();
+      this.saatgut.pruefen();
+      this.beet?.pruefen();
+      this.statue?.pruefen();
+      this.flaschenpost?.pruefen(dt);
+      this.werkbank?.pruefen();
       this.rezeptbuecherFinden();
       this.besonderesFinden();
       this.muellQuest?.pruefen();
@@ -247,6 +281,7 @@ export class WeltSzene extends Phaser.Scene {
     // Wo die Figur steht, kommt mit in den gespeicherten Spielstand.
     if (!this.wechselt) spielstand.position = { x: this.spieler.ort.x, y: this.spieler.ort.y };
     this.figurZeigen(this.spieler, zeit);
+    this.zuZweit.update(zeit, Math.min(delta, 250) / 1000);
     this.dunkelheit?.setPosition(this.spieler.ort.x, this.spieler.ort.y - FIGUR_HOEHE / 2);
     this.verdeckerLichten();
     this.kristallSummenAnpassen();
@@ -915,7 +950,7 @@ export class WeltSzene extends Phaser.Scene {
     this.schrittStrecke += gelaufen;
     if (this.schrittStrecke >= SCHRITT_WEITE) {
       this.schrittStrecke = 0;
-      const boden = { mine: 'stein', gang: 'stein', haus: 'holz', wasser: 'wasser', regenwald: 'gras' }[this.ort.stil] ?? 'erde';
+      const boden = { mine: 'stein', gang: 'stein', haus: 'holz', wasser: 'wasser', regenwald: 'gras', himmel: 'gras', garten: 'gras' }[this.ort.stil] ?? 'erde';
       schrittGeraeusch(imGras ? 'gras' : boden);
     }
     if (imGras) this.imGrasGelaufen(gelaufen);
@@ -951,6 +986,7 @@ export class WeltSzene extends Phaser.Scene {
   // Das Rätsel ist gelöst: Verschüttete Wege werden frei. Die Kamera schaut
   // kurz hin, damit man sieht, wo es weitergeht.
   raetselGeloest() {
+    this.statue?.auftauchen();
     const wege = this.verschuettet;
     this.verschuettet = [];
     if (wege.length === 0) return;
@@ -980,6 +1016,20 @@ export class WeltSzene extends Phaser.Scene {
   // Durch eine Tür gehen. Hat die Tür einen satz (wie der Pilzring), wird er
   // beim ersten Mal erzählt, und man kann sich noch überlegen, ob man hineingeht.
   durchDieTuer(tuer) {
+    // Manche Türen gehen erst auf, wenn das Rätsel des Ortes gelöst ist
+    // (die Wolkentreppe im Garten der Mondrosen).
+    if (tuer.erstNachRaetsel && !spielstand.raetselGeloest[this.ortName]) {
+      this.saetzeNacheinander([tuer.ohne ?? 'Hier kommst du noch nicht weiter.'], null, 'Okay');
+      return;
+    }
+    // Durch das Freundschaftstor kommt man nur zu zweit (zuZweit.js).
+    if (tuer.zuZweit) {
+      const { geht, satz } = this.zuZweit.durchsTor(tuer);
+      if (!geht) {
+        this.saetzeNacheinander([satz], null, 'Okay');
+        return;
+      }
+    }
     // Manche Türen gehen nur mit einem besonderen Ding (zum Beispiel tauchen
     // nur mit dem Lungenkraut).
     if (tuer.braucht && !spielstand.gefunden[tuer.braucht]) {
@@ -1006,7 +1056,8 @@ export class WeltSzene extends Phaser.Scene {
   }
 
   // Geht durch einen Ausgang zum nächsten Ort.
-  ortWechseln(nach) {
+  // wohin: (optional) wo man ankommt, zum Beispiel am Lagerfeuer (zuZweit.js)
+  ortWechseln(nach, wohin = null) {
     if (this.wechselt) return;
     this.wechselt = true;
     this.spieler.laeuft = false;
@@ -1018,7 +1069,7 @@ export class WeltSzene extends Phaser.Scene {
     kamera.fadeOut(300, 23, 11, 44);
     kamera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       spielstand.ort = nach;
-      spielstand.position = ankunft(ORTE[nach], vonOrt);
+      spielstand.position = wohin ?? ankunft(ORTE[nach], vonOrt);
       spielstand.ortsnameZeigen = true;
       // Kurz durchatmen, bevor im neuen Ort etwas angreift.
       spielstand.ruheBis = Math.max(spielstand.ruheBis, Date.now() + RUHE_NACH_KAMPF);
@@ -1187,6 +1238,7 @@ export class WeltSzene extends Phaser.Scene {
         const { merkname } = wild;
         this.kampfBeginnen({
           gegner: wild.art,
+          merkname,
           beiSieg: () => {
             spielstand.wildeWiederDa[merkname] =
               Date.now() + REGELN.wildeKommenWiederSekunden * 1000;
@@ -1275,16 +1327,60 @@ export class WeltSzene extends Phaser.Scene {
   // Blendet aus und wechselt zum Kampf. beiSieg wird nur nach einem Sieg
   // aufgerufen (auch wenn man das wilde Kalamprio gefangen hat).
   // gegnerLevel: ohne Angabe das Level der wilden Kalamprios an diesem Ort.
-  kampfBeginnen({ gegner, gegnerLevel = this.ort.wildesLevel ?? 1, trainerin = null, beiSieg }) {
+  // merkname: (bei sichtbaren wilden Kalamprios) so merkt sich der Spielstand, wer besiegt ist.
+  // Steht die andere beim Spielen zu zweit in der Nähe, kämpft sie gegen ein
+  // wildes Kalamprio mit (zuZweit.js). Gegen die Rivalin und das geheime
+  // Kalamprio kämpft man immer allein.
+  kampfBeginnen({ gegner, gegnerLevel = this.ort.wildesLevel ?? 1, trainerin = null, merkname = null, beiSieg }) {
     if (this.wechselt) return;
+    const allein = trainerin || KALAMPRIOS[gegner].geheim;
+    const hilfe = allein ? null : this.zuZweit.hilfeHolen({ gegner, gegnerLevel, merkname });
+    const nachKampf = (gewonnen) => {
+      spielstand.ruheBis = Date.now() + RUHE_NACH_KAMPF;
+      if (gewonnen) beiSieg?.();
+    };
+    this.kampfAnfangen().then(async () => {
+      const zuZweit = await hilfe;
+      if (zuZweit) {
+        this.scene.start('ZusammenKampf', { ...zuZweit, nachKampf });
+        return;
+      }
+      this.scene.start('Kampf', {
+        spieler: spielstand.kalamprio,
+        gegner,
+        gegnerLevel,
+        trainerin,
+        // Wer im Kampf nicht mehr konnte, erholt sich schon (das merkt sich der Kampf).
+        nachKampf,
+      });
+    });
+  }
+
+  // Ein Kampf zu zweit, den die andere angefangen hat, oder ein
+  // Freundschaftskampf (zuZweit.js). auswahl steht in ZusammenKampfSzene.js.
+  zuZweitKaempfen(auswahl) {
+    if (this.wechselt) return;
+    this.kampfAnfangen().then(() =>
+      this.scene.start('ZusammenKampf', {
+        ...auswahl,
+        nachKampf: (gewonnen) => {
+          spielstand.ruheBis = Date.now() + RUHE_NACH_KAMPF;
+          auswahl.nachKampf?.(gewonnen);
+        },
+      }),
+    );
+  }
+
+  // Ein Kampf beginnt: Über der Figur springt ein „!“ auf, alles wackelt,
+  // und dann schieben sich Streifen über den Bildschirm. Das Versprechen ist
+  // erfüllt, wenn der Bildschirm zu ist.
+  kampfAnfangen() {
     this.wechselt = true;
     this.gespraechSchliessen();
     this.spieler.laeuft = false;
     this.laufziel = null;
     spielstand.position = { ...this.spieler.ort };
 
-    // Ein Kampf beginnt: Über der Figur springt ein „!“ auf, alles wackelt,
-    // und dann schieben sich Streifen über den Bildschirm.
     kampfBeginnt();
     const kopf = { x: this.spieler.ort.x, y: this.spieler.ort.y - FIGUR_HOEHE - 20 };
     const ausruf = this.add
@@ -1295,19 +1391,7 @@ export class WeltSzene extends Phaser.Scene {
       .setScale(0);
     this.tweens.add({ targets: ausruf, scale: 1, y: kopf.y - 20, duration: 260, ease: 'Back.easeOut' });
     this.cameras.main.shake(380, 0.008);
-    this.time.delayedCall(420, () => streifenZu(this).then(() => {
-      this.scene.start('Kampf', {
-        spieler: spielstand.kalamprio,
-        gegner,
-        gegnerLevel,
-        trainerin,
-        // Wer im Kampf nicht mehr konnte, erholt sich schon (das merkt sich der Kampf).
-        nachKampf: (gewonnen) => {
-          spielstand.ruheBis = Date.now() + RUHE_NACH_KAMPF;
-          if (gewonnen) beiSieg?.();
-        },
-      });
-    }));
+    return new Promise((fertig) => this.time.delayedCall(420, () => streifenZu(this).then(fertig)));
   }
 
   // ------------------------------------------------- Anzeige und Gespräche

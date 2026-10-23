@@ -132,6 +132,7 @@ export function hindernisseAmOrt(ort) {
       .filter((tuer) => tuer.art === 'pilzring')
       .flatMap((tuer) => pilzringPilze(tuer).map((pilz) => ({ x: pilz.x, y: pilz.y - 4, radius: 12 }))),
     ...(ort.schatz ? [{ x: ort.schatz.x, y: ort.schatz.y - 20, radius: 56 }] : []),
+    ...(ort.lagerfeuer ? [{ x: ort.lagerfeuer.x, y: ort.lagerfeuer.y - 6, radius: 44 }] : []),
     // Die riesigen Bäume im Regenwald: ein dicker Stamm
     ...liste('riesenbaeume').map((baum) => ({ x: baum.x, y: baum.y - 30, radius: 70 })),
     ...liste('staemme').map((stamm) => ({ x: stamm.x, y: stamm.y - 6, radius: 20 })),
@@ -168,7 +169,14 @@ export function freierPlatz(ort, zufall = Math.random) {
     ...(ort.ausgaenge ?? []).map((ausgang) => ({ ...hinterDemAusgang(ausgang, grenzen, 0), radius: 230 })),
     ...(ort.tueren ?? []).map((tuer) => ({ x: tuer.x, y: tuer.y, radius: 200 })),
     ...(ort.raetsel ? [{ x: ort.raetsel.x, y: ort.raetsel.y, radius: 140 }] : []),
+    ...(ort.lagerfeuer ? [{ x: ort.lagerfeuer.x, y: ort.lagerfeuer.y, radius: 180 }] : []),
+    ...(ort.beet ? [{ x: ort.beet.x, y: ort.beet.y, radius: ort.beet.breite / 2 + 60 }] : []),
     ...(ort.raetsel?.steine ?? []).map((stein) => ({ x: stein.x, y: stein.y, radius: 90 })),
+    // Die Rätsel hinter dem Freundschaftstor: Blumen, Platten und der Rosenring
+    ...(ort.raetsel?.blumen ?? []).map((blume) => ({ x: blume.x, y: blume.y, radius: 100 })),
+    ...(ort.raetsel?.art === 'zuZweit' ? ort.raetsel.runden.flat().map((platte) => ({ x: platte.x, y: platte.y, radius: 90 })) : []),
+    ...(ort.raetsel?.platte ? [{ x: ort.raetsel.platte.x, y: ort.raetsel.platte.y, radius: 100 }] : []),
+    ...(ort.raetsel?.blume ? [{ x: ort.raetsel.blume.x, y: ort.raetsel.blume.y, radius: (ort.raetsel.ring ?? 0) + 90 }] : []),
   ];
   for (let versuch = 0; versuch < 200; versuch += 1) {
     const punkt = {

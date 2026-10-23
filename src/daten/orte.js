@@ -17,6 +17,10 @@ import { UNTERWASSER } from './orte/unterwasser.js';
 import { LILA_DORF } from './orte/lilaDorf.js';
 import { MONDSEE } from './orte/mondsee.js';
 import { PRISMASTAHL_MINE } from './orte/prismastahlMine.js';
+import { MONDBLUETENTAL } from './orte/mondbluetental.js';
+import { MONDROSENGARTEN } from './orte/mondrosengarten.js';
+import { STERNENWOLKE } from './orte/sternenwolke.js';
+import { VERSCHOLLENER_STOLLEN } from './orte/verschollenerStollen.js';
 
 // Der Kurzname links benutzt man bei den Ausgängen (nach: 'kristallwald').
 export const ORTE = {
@@ -24,6 +28,8 @@ export const ORTE = {
   kristallwald: KRISTALLWALD,
   prismastahlMine: PRISMASTAHL_MINE,
   mondsee: MONDSEE,
+  // Der verschollene Stollen tief in der Mine (erst nach dem Rätsel der Mine)
+  verschollenerStollen: VERSCHOLLENER_STOLLEN,
   // Unter Wasser im Mondsee (Tauchplatz am Ufer, nur mit Lungenkraut)
   unterwasser: UNTERWASSER,
   // Der Regenwald hinter dem geheimen Portal im Kristallwald
@@ -40,6 +46,12 @@ export const ORTE = {
   geheimgangSpiegel: GEHEIMGANG_SPIEGEL,
   geheimgangLichter: GEHEIMGANG_LICHTER,
   schatzkammer: SCHATZKAMMER,
+  // Hinter dem Freundschaftstor im Lila Dorf: Hierher kommt man nur zu zweit.
+  // Erste Welt: das Mondblütental und der Garten der Mondrosen.
+  // Zweite Welt: die Sternenwolke (über die Wolkentreppe im Garten).
+  mondbluetental: MONDBLUETENTAL,
+  mondrosengarten: MONDROSENGARTEN,
+  sternenwolke: STERNENWOLKE,
 };
 
 // Hier beginnt das Spiel: im Kinderzimmer.
