@@ -13,7 +13,7 @@ Starten (im Projektordner):  .venv/bin/python werkzeuge/bilder_vorbereiten.py
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy import ndimage
 
 PROJEKT = Path(__file__).resolve().parent.parent
@@ -32,6 +32,20 @@ ZIEL = PROJEKT / "public" / "bilder"
 #   hoehe:      (optional) so hoch wird das Spielbild höchstens, sonst 640
 #   ein_stueck: (optional, nur bunt) True: Nur das größte Stück bleibt, Flecken
 #               auf dem Papier daneben fallen weg
+#   farbschwelle: (optional, nur bunt) höher als 0.12, wenn Flecken vom Papier
+#               mit ins Bild kommen
+#   eng:        (optional, nur bunt) True: eng am Stift ausschneiden, mit
+#               schmalem Rand. Gut bei Strichen mit viel Papier dazwischen
+#               (Federn, dünne Beine).
+#   toenen:     (optional, nur bunt) (rot, grün, blau): Die Farben werden ein
+#               bisschen in diese Richtung getönt, 1 heißt unverändert
+#   umriss:     (optional, nur bunt) Ecken (x, y) in Pixeln des zugeschnittenen
+#               und gedrehten Bildes: Alles innerhalb gehört zur Zeichnung, auch
+#               Papier ohne Farbe (zum Beispiel Hauswände mit ganz blassen Strichen)
+#   papierfarbe: (optional, nur bunt) (rot, grün, blau) von 0 bis 1: In dieser
+#               Farbe wird das Papier in der Zeichnung ausgemalt
+#   farblos:    (optional, nur bunt) True: Die Farben werden ausgesaugt, übrig
+#               bleibt fast Schwarz
 #   schwelle:   (optional, nur Bleistift) höher als 0.045, wenn graue Flecken
 #               vom Papier mit ins Bild kommen
 ZEICHNUNGEN = [
@@ -188,6 +202,26 @@ ZEICHNUNGEN = [
         "ein_stueck": True,
     },
     {
+        "foto": "Kalamprios/Robossor.jpg",
+        "ziel": "kalamprios/robossor.png",
+        "ausschnitt": (500, 1880, 1540, 3200),
+        "drehen": 0,
+        "bunt": True,
+        "ein_stueck": True,
+        "eng": True,
+        "farbschwelle": 0.18,
+    },
+    {
+        "foto": "Kalamprios/Eulator.jpg",
+        "ziel": "kalamprios/eulator.png",
+        "ausschnitt": (850, 1430, 1980, 2820),
+        "drehen": 0,
+        "bunt": True,
+        "ein_stueck": True,
+        "eng": True,
+        "farbschwelle": 0.18,
+    },
+    {
         "foto": "Charaktere/kala.jpg",
         "ziel": "charaktere/kala.png",
         "ausschnitt": (900, 1080, 1740, 2700),
@@ -237,6 +271,95 @@ ZEICHNUNGEN = [
         "ausschnitt": (1560, 920, 2820, 2120),
         "drehen": 0,
         "ausmalen": "mond",
+        "hoehe": 300,
+    },
+    {
+        "foto": "Landschaft/Pilz.jpg",
+        "ziel": "landschaft/pilz.png",
+        "ausschnitt": (590, 1300, 2230, 3245),
+        "drehen": 0,
+        "bunt": True,
+        "farbschwelle": 0.22,
+        # Ein bisschen lila wie der Kristallwald
+        "toenen": (0.9, 0.8, 1.05),
+        "ein_stueck": True,
+        "hoehe": 300,
+    },
+    {
+        "foto": "Landschaft/Stein.jpg",
+        "ziel": "landschaft/stein.png",
+        "ausschnitt": (440, 1050, 2740, 2700),
+        "drehen": 0,
+        "bunt": True,
+        "ein_stueck": True,
+        "hoehe": 360,
+    },
+    {
+        "foto": "Landschaft/Stein2.jpg",
+        "ziel": "landschaft/stein-schale.png",
+        "ausschnitt": (430, 1030, 2600, 2620),
+        "drehen": 180,
+        "bunt": True,
+        "ein_stueck": True,
+        "hoehe": 360,
+    },
+    {
+        "foto": "Landschaft/Stein3.jpg",
+        "ziel": "landschaft/stein-beine.png",
+        "ausschnitt": (960, 720, 3130, 2830),
+        "drehen": 180,
+        "bunt": True,
+        "ein_stueck": True,
+        "hoehe": 360,
+    },
+    {
+        "foto": "Landschaft/Haus.jpg",
+        "ziel": "landschaft/haus-1.png",
+        "ausschnitt": (470, 640, 2510, 2420),
+        "drehen": -90,
+        "bunt": True,
+        "ein_stueck": True,
+        "umriss": [(317, 49), (1537, 24), (1766, 439), (1732, 463), (1741, 2035), (300, 2035), (300, 2005), (20, 1990), (0, 1720), (50, 1590), (122, 1580), (122, 439), (10, 390)],
+        "papierfarbe": (0.86, 0.8, 0.95),
+        "hoehe": 420,
+    },
+    # Derselbe Kristall zweimal: einmal bunt, einmal ausgesaugt vom Schatten.
+    {
+        "foto": "Landschaft/Kristal.jpg",
+        "ziel": "landschaft/kristall-bunt.png",
+        "ausschnitt": (1240, 600, 2700, 2880),
+        "drehen": 180,
+        "bunt": True,
+        "ein_stueck": True,
+        "hoehe": 340,
+    },
+    {
+        "foto": "Landschaft/Kristal.jpg",
+        "ziel": "landschaft/kristall-ausgesaugt.png",
+        "ausschnitt": (1240, 600, 2700, 2880),
+        "drehen": 180,
+        "bunt": True,
+        "ein_stueck": True,
+        "farblos": True,
+        "hoehe": 340,
+    },
+    {
+        "foto": "Gegenstände/Rätselstein_nicht gelöst.jpg",
+        "ziel": "gegenstaende/raetselstein.png",
+        "ausschnitt": (600, 780, 2330, 3260),
+        "drehen": 90,
+        "bunt": True,
+        "ein_stueck": True,
+        "hoehe": 300,
+    },
+    {
+        "foto": "Gegenstände/Rätselstein_gelöst.jpg",
+        "ziel": "gegenstaende/raetselstein-geloest.png",
+        "ausschnitt": (980, 1260, 2250, 2880),
+        "drehen": 90,
+        "bunt": True,
+        "farbschwelle": 0.18,
+        "ein_stueck": True,
         "hoehe": 300,
     },
 ]
@@ -304,16 +427,22 @@ def bunt_vorbereiten(eintrag):
 
     # Farbe ist dort, wo mindestens ein Kanal deutlich dunkler ist als das Papier.
     farbig = ndimage.gaussian_filter((1.0 - weiss).max(axis=2), 1.2)
-    striche = farbig > 0.12
+    striche = farbig > eintrag.get("farbschwelle", 0.12)
     stuecke, anzahl = ndimage.label(striche)
     if anzahl:
         groessen = ndimage.sum(np.ones_like(stuecke), stuecke, range(1, anzahl + 1))
         striche = np.concatenate(([False], groessen >= 300))[stuecke]
 
     # Die Fläche der Zeichnung: Lücken schließen, innen füllen, ein Rand drumherum.
-    flaeche = ndimage.binary_closing(striche, iterations=8, border_value=0)
+    eng = eintrag.get("eng", False)
+    schliessen = 3 if eng else 8
+    flaeche = ndimage.binary_closing(striche, iterations=schliessen, border_value=0)
     flaeche = ndimage.binary_fill_holes(flaeche)
-    flaeche = ndimage.binary_dilation(flaeche, iterations=9)
+    flaeche = ndimage.binary_dilation(flaeche, iterations=4 if eng else 9)
+    if eintrag.get("umriss"):
+        maske = Image.new("L", bild.size, 0)
+        ImageDraw.Draw(maske).polygon(eintrag["umriss"], fill=255)
+        flaeche = np.asarray(maske) > 0
     if eintrag.get("ein_stueck"):
         stuecke, anzahl = ndimage.label(flaeche)
         groessen = ndimage.sum(np.ones_like(stuecke), stuecke, range(1, anzahl + 1))
@@ -325,7 +454,19 @@ def bunt_vorbereiten(eintrag):
     farbe = np.clip(grau + (weiss - grau) * 1.35, 0.0, 1.0)
     # Wo kein Stift ist, wird das Papier ganz weiß, mit einem Hauch Lila.
     stift = np.clip(farbig / 0.15, 0.0, 1.0)[..., None]
-    farbe = farbe * stift + np.array([0.97, 0.95, 1.0]) * (1 - stift)
+    farbe = farbe * stift + np.array(eintrag.get("papierfarbe", (0.97, 0.95, 1.0))) * (1 - stift)
+    if eintrag.get("toenen"):
+        # Nur der Stift wird getönt, der helle Rand bleibt.
+        farbe = farbe * (1 - stift) + farbe * np.array(eintrag["toenen"]) * stift
+    if eng:
+        # Papier ohne Stift wird durchsichtig, nur ein schmaler heller Rand bleibt.
+        mit_rand = ndimage.gaussian_filter(ndimage.maximum_filter(stift[..., 0], size=5), 1.5)
+        deckkraft = deckkraft * np.clip(mit_rand * 1.5, 0.0, 1.0)
+    if eintrag.get("farblos"):
+        # Ausgesaugt: fast schwarz. Nur die Striche schimmern noch ganz
+        # schwach lila, damit man die Form erkennt.
+        hell = farbe.mean(axis=2, keepdims=True)
+        farbe = (0.05 + (1 - hell) * 0.16) * np.array([0.9, 0.8, 1.15])
 
     rgba = np.dstack([farbe * 255, deckkraft * 255]).round().astype(np.uint8)
     speichern(eintrag, Image.fromarray(rgba, "RGBA"))

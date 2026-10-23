@@ -86,8 +86,38 @@ export function istImGras(ort, grasflaechen) {
 }
 
 // So weit darf man laufen. Am Rand stehen dichte Bäume oder Felsen, davor ist Schluss.
+// Ein Ort kann eigene grenzen haben, zum Beispiel ein Zimmer, in dem oben die Wand ist.
 export function weltGrenzen(ort) {
-  return { links: 90, oben: 180, rechts: ort.breite - 90, unten: ort.hoehe - 50 };
+  return { links: 90, oben: 180, rechts: ort.breite - 90, unten: ort.hoehe - 50, ...ort.grenzen };
+}
+
+// ---------------------------------------------------------------- Türen
+
+// Eine Tür ist ein Punkt mitten im Ort, der woandershin führt: eine Haustür,
+// eine Treppe oder der Pilzring. So nah muss man herankommen.
+export const TUER_ABSTAND = 40;
+
+// Der Pilzring: so viele Pilze stehen so weit um die Mitte herum.
+export const PILZRING = { pilze: 7, radius: 135 };
+
+// Wo die Pilze eines Pilzrings stehen.
+export function pilzringPilze(tuer) {
+  return Array.from({ length: PILZRING.pilze }, (_, nummer) => {
+    const winkel = (nummer / PILZRING.pilze) * Math.PI * 2 - Math.PI / 2;
+    // Der Ring ist etwas flacher als hoch, weil man schräg von oben draufschaut.
+    return { x: tuer.x + Math.cos(winkel) * PILZRING.radius, y: tuer.y + Math.sin(winkel) * PILZRING.radius * 0.6 };
+  });
+}
+
+// Steht man an einer Tür? Dann kommt sie zurück, sonst null.
+export function tuerAmOrt(ort, position) {
+  return (ort.tueren ?? []).find((tuer) => abstand(position, tuer) < TUER_ABSTAND) ?? null;
+}
+
+// Wo man ankommt, wenn man durch eine Tür hierher kommt: ein Stück davor.
+function vorDerTuer(tuer) {
+  if (tuer.ankunft) return tuer.ankunft;
+  return { x: tuer.x, y: tuer.y + (tuer.art === 'pilzring' ? PILZRING.radius * 0.6 + 70 : 90) };
 }
 
 // Macht aus allem, was an einem Ort steht, Kreise, die im Weg sind.
@@ -97,13 +127,25 @@ export function hindernisseAmOrt(ort) {
   return [
     ...liste('baeume').map((baum) => ({ x: baum.x, y: baum.y - 6, radius: 22 })),
     ...liste('kristalle').map((kristall) => ({ x: kristall.x, y: kristall.y - 8, radius: 30 })),
+    ...liste('pilze').map((pilz) => ({ x: pilz.x, y: pilz.y - 4, radius: 14 })),
+    ...liste('tueren')
+      .filter((tuer) => tuer.art === 'pilzring')
+      .flatMap((tuer) => pilzringPilze(tuer).map((pilz) => ({ x: pilz.x, y: pilz.y - 4, radius: 12 }))),
+    ...(ort.schatz ? [{ x: ort.schatz.x, y: ort.schatz.y - 20, radius: 56 }] : []),
+    // Die riesigen Bäume im Regenwald: ein dicker Stamm
+    ...liste('riesenbaeume').map((baum) => ({ x: baum.x, y: baum.y - 30, radius: 70 })),
+    ...liste('staemme').map((stamm) => ({ x: stamm.x, y: stamm.y - 6, radius: 20 })),
+    // Pflanzen im Regenwald: Am Stamm kommt man nicht durch.
+    ...[...liste('pflanzen'), ...liste('deko')].map((pflanze) => ({ x: pflanze.x, y: pflanze.y - 6, radius: Math.round(pflanze.groesse * 0.12) })),
+    // sperren: unsichtbare Kreise, zum Beispiel für den Herd in der Küche
+    ...liste('sperren'),
     ...(ort.dunklerKristall ? [{ x: ort.dunklerKristall.x, y: ort.dunklerKristall.y - 8, radius: 30 }] : []),
     ...liste('prismastahl').map((stahl) => ({ x: stahl.x, y: stahl.y - 8, radius: 30 })),
     ...liste('gold').map((gold) => ({ x: gold.x, y: gold.y - 10, radius: 34 })),
     ...liste('felsen').map((fels) => ({ x: fels.x, y: fels.y - 14, radius: 44 })),
     // Ein Haus ist breit: drei Kreise nebeneinander.
     ...liste('haeuser').flatMap((haus) =>
-      [-80, 0, 80].map((dx) => ({ x: haus.x + dx, y: haus.y - 30, radius: 46 })),
+      [-60, 0, 60].map((dx) => ({ x: haus.x + dx, y: haus.y - 30, radius: 46 })),
     ),
     ...liste('seen').map((see) => ({
       x: see.x,
@@ -112,6 +154,33 @@ export function hindernisseAmOrt(ort) {
       radiusY: see.hoehe / 2,
     })),
   ];
+}
+
+// Würfelt einen freien Platz im Ort, an dem etwas liegen kann (ein
+// Fangkristall oder eine Zutat): nicht in einem Hindernis, nicht vor einem
+// Ausgang oder einer Tür und nicht beim Rätsel. Gibt null zurück, wenn
+// nach vielen Versuchen keiner gefunden wurde.
+export function freierPlatz(ort, zufall = Math.random) {
+  const grenzen = weltGrenzen(ort);
+  const rand = 60;
+  const imWeg = hindernisseAmOrt(ort);
+  const fernhalten = [
+    ...(ort.ausgaenge ?? []).map((ausgang) => ({ ...hinterDemAusgang(ausgang, grenzen, 0), radius: 230 })),
+    ...(ort.tueren ?? []).map((tuer) => ({ x: tuer.x, y: tuer.y, radius: 200 })),
+    ...(ort.raetsel ? [{ x: ort.raetsel.x, y: ort.raetsel.y, radius: 140 }] : []),
+    ...(ort.raetsel?.steine ?? []).map((stein) => ({ x: stein.x, y: stein.y, radius: 90 })),
+  ];
+  for (let versuch = 0; versuch < 200; versuch += 1) {
+    const punkt = {
+      x: grenzen.links + rand + zufall() * (grenzen.rechts - grenzen.links - rand * 2),
+      y: grenzen.oben + rand + zufall() * (grenzen.unten - grenzen.oben - rand * 2),
+    };
+    const frei =
+      imWeg.every((h) => (h.radiusX ? Math.hypot((punkt.x - h.x) / (h.radiusX + 50), (punkt.y - h.y) / (h.radiusY + 50)) >= 1 : abstand(punkt, h) >= h.radius + 50)) &&
+      fernhalten.every((f) => abstand(punkt, f) >= f.radius);
+    if (frei) return { x: Math.round(punkt.x), y: Math.round(punkt.y) };
+  }
+  return null;
 }
 
 // --------------------------------------------------------------- Ausgänge
@@ -166,11 +235,14 @@ export function hinterDemAusgang(ausgang, grenzen, weite = 70) {
 }
 
 // Wo man ankommt, wenn man von vonOrt (Kurzname) nach ort kommt:
-// am Ausgang, der zurück zu vonOrt führt.
+// am Ausgang oder an der Tür, die zurück zu vonOrt führt. Eine Tür kann bei
+// zurueckVon noch weitere Orte haben, von denen man durch sie zurückkommt.
 export function ankunft(ort, vonOrt) {
   const zurueck = (ort.ausgaenge ?? []).find((ausgang) => ausgang.nach === vonOrt);
-  if (!zurueck) return ort.start ?? { x: ort.breite / 2, y: ort.hoehe / 2 };
-  return hinterDemAusgang(zurueck, weltGrenzen(ort));
+  if (zurueck) return hinterDemAusgang(zurueck, weltGrenzen(ort));
+  const tuer = (ort.tueren ?? []).find((t) => t.nach === vonOrt || (t.zurueckVon ?? []).includes(vonOrt));
+  if (tuer) return vorDerTuer(tuer);
+  return ort.start ?? { x: ort.breite / 2, y: ort.hoehe / 2 };
 }
 
 // ----------------------------------------------------------------- Rätsel

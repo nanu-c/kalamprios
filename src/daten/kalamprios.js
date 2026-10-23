@@ -22,7 +22,8 @@
 //
 // Die Werte von Kapapa, Qalutu, Bolo, Mola, Kabon, Simfita, Tak-Tik, Tschank,
 // Blitznara, Pflinia, Schnektata, Kristalta, Totantia, Zeittakel, Elefantia,
-// Zetarata und dem geheimen Kalamprio sind Platzhalter. Ändere sie gern!
+// Zetarata, Robossor, Eulator und dem geheimen Kalamprio sind Platzhalter.
+// Ändere sie gern!
 
 export const KALAMPRIOS = {
   kalampria: {
@@ -252,6 +253,33 @@ export const KALAMPRIOS = {
     verteidigung: 8,
     tempo: 16,
     attacken: ['tentakeltick', 'zeitsprung'],
+  },
+
+  // Ein blauer Roboter mit gelben Augen und bunten Federn. Lebt am Mondsee.
+  robossor: {
+    name: 'Robossor',
+    element: 'wasser',
+    bild: 'bilder/kalamprios/robossor.png',
+    blick: 'vorne',
+    kp: 74,
+    angriff: 11,
+    verteidigung: 11,
+    tempo: 9,
+    attacken: ['wasserkanone', 'roboflut'],
+  },
+
+  // Eine Eule mit blauen Flügeln und spitzen Ohren. Lebt im Kristallwald.
+  eulator: {
+    name: 'Eulator',
+    element: 'luft',
+    bild: 'bilder/kalamprios/eulator.png',
+    blick: 'vorne',
+    kp: 64,
+    angriff: 11,
+    verteidigung: 9,
+    tempo: 16,
+    attacken: ['federsturm', 'nachtflug'],
+    fliegt: true,
   },
 
   // Das geheime Kalamprio. Von ihm weiß man nicht viel ...

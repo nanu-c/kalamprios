@@ -72,6 +72,11 @@ export const PRISMASTAHL_MINE = {
     { x: 2210, y: 1860 },
   ],
 
+  zutaten: [
+    { art: 'zucker', x: 1200, y: 800 },
+    { art: 'zucker', x: 2300, y: 1050 },
+  ],
+
   fangkristalle: [
     { x: 1360, y: 730 },
     { x: 2470, y: 1500 },

@@ -47,39 +47,3 @@ export function textKnopf(szene, x, y, breite, hoehe, text, beimKlick) {
   });
   return [flaeche, beschriftung];
 }
-
-// Eine Karte zum Auswählen, mit Bild, Name und einer kleinen Zeile darunter.
-// beimZeigen wird aufgerufen, wenn die Maus auf die Karte kommt.
-export function karte(szene, { x, y, breite, bild, name, zusatz = '', zusatzFarbe = '#d9c9ff', randFarbe, beimKlick, beimZeigen }) {
-  const hoehe = 400;
-  const flaeche = szene.add
-    .rectangle(x, y, breite, hoehe, FARBEN.feld, 0.9)
-    .setRounded(24)
-    .setStrokeStyle(3, FARBEN.rand)
-    .setInteractive({ useHandCursor: true });
-
-  const figur = szene.add.image(x, y - 50, bild);
-  figur.setScale(Math.min(250 / figur.height, (breite - 40) / figur.width));
-
-  szene.add.text(x, y + 118, name, schrift(Math.min(34, breite / 5))).setOrigin(0.5);
-  szene.add.text(x, y + 160, zusatz, schrift(22, zusatzFarbe)).setOrigin(0.5);
-
-  flaeche.on('pointerover', () => {
-    flaeche.setStrokeStyle(6, randFarbe ?? 0xffffff);
-    beimZeigen?.();
-  });
-  flaeche.on('pointerout', () => flaeche.setStrokeStyle(3, FARBEN.rand));
-  flaeche.on('pointerdown', () => {
-    klick();
-    beimKlick();
-  });
-}
-
-// Verteilt Karten nebeneinander und ruft für jede baueKarte(eintrag, x, breite) auf.
-export function kartenreihe(gesamtbreite, eintraege, baueKarte) {
-  const abstand = Math.min(360, (gesamtbreite - 80) / eintraege.length);
-  eintraege.forEach((eintrag, nummer) => {
-    const x = gesamtbreite / 2 + (nummer - (eintraege.length - 1) / 2) * abstand;
-    baueKarte(eintrag, x, abstand - 40);
-  });
-}

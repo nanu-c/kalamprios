@@ -2,6 +2,7 @@
 // hier wird nur gezeigt, was dort passiert.
 
 import Phaser from 'phaser';
+import { beutelInhalt, herausnehmen, sachenImBeutel } from '../beutel.js';
 import { ELEMENTE } from '../daten/elemente.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { ORTE } from '../daten/orte.js';
@@ -9,6 +10,9 @@ import {
   angreifen,
   erfahrungBisNaechstesLevel,
   erfahrungFuerSieg,
+  essenGeben,
+  essenHilft,
+  teamWecken,
   fangChance,
   fangen,
   gegnerWaehlt,
@@ -16,6 +20,7 @@ import {
   kaempferErstellen,
   levelAusErfahrung,
   levelFortschritt,
+  MAX_LEVEL,
   rundeBeenden,
   werZuerst,
 } from '../kampf/kampflogik.js';
@@ -28,8 +33,10 @@ import {
   erfahrung,
   klick,
   landen,
+  plopp,
   ruf,
   schild,
+  sternchen,
   umfallen,
   wackeln,
   werfen,
@@ -41,6 +48,8 @@ import { erholtSichNoch, levelVon, mitnehmen, spielstand, zuerstKaempfen } from 
 import { attackeAnimieren } from './attackenEffekte.js';
 import { feld, textKnopf } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
+import { streifenAuf } from './animationen.js';
+import { albumVollSatz, fotografieren } from './kamera.js';
 import { BREITE, FARBEN, HOEHE, farbeAlsText, schrift } from './stil.js';
 
 const BODEN = 520; // auf dieser Höhe stehen die Kalamprios
@@ -60,7 +69,7 @@ export class KampfSzene extends Phaser.Scene {
   // auswahl sagt, wer kämpft und was danach passiert:
   //   spieler, gegner: Kurznamen aus kalamprios.js. Die anderen Kalamprios
   //                    aus dem Team, die bereit sind, können eingewechselt werden.
-  //   gegnerLevel:     wie stark der Gegner ist (1 bis 3)
+  //   gegnerLevel:     wie stark der Gegner ist (1 bis 3, das geheime Kalamprio 5)
   //   trainerin:       Name der Rivalin, falls der Gegner ihr gehört. Ohne
   //                    Trainerin ist der Gegner wild und man kann ihn fangen.
   //   nachKampf:       wird am Ende aufgerufen, mit true bei einem Sieg
@@ -71,7 +80,8 @@ export class KampfSzene extends Phaser.Scene {
   create() {
     // Der Hintergrund passt zum Ort, an dem gekämpft wird.
     hintergrundMalen(this, ORTE[spielstand.ort].stil);
-    this.cameras.main.fadeIn(300, 23, 11, 44);
+    // Die Streifen vom Kampfbeginn ziehen sich zurück, und groß steht da: „Kampf!“
+    streifenAuf(this, 'Kampf!');
     // Bei jedem Kampf ein anderes Lied, etwas leiser als draußen (klaenge.js).
     if (KALAMPRIOS[this.auswahl.gegner].geheim) musikSpielen('geheim', KLAENGE.musikImKampf);
     else kampfmusikSpielen();
@@ -80,10 +90,15 @@ export class KampfSzene extends Phaser.Scene {
     const bereit = spielstand.kampfteam.filter((kurzname) => kurzname !== this.auswahl.spieler && erholtSichNoch(kurzname) === 0);
     this.team = [this.auswahl.spieler, ...bereit].map((kurzname) => kaempferErstellen(kurzname, levelVon(kurzname)));
     this.spieler = this.team[0];
-    this.gegner = kaempferErstellen(this.auswahl.gegner, this.auswahl.gegnerLevel ?? 1);
-    // Das geheime Kalamprio ist nur zu besiegen, wenn genug mitkommen (regeln.js).
+    // Wilde Kalamprios mit Level 1 sind ein bisschen schwächer (wildeAufLevel1 in regeln.js).
+    const gegnerLevel = this.auswahl.gegnerLevel ?? 1;
+    const wildUndKlein = !this.auswahl.trainerin && !KALAMPRIOS[this.auswahl.gegner].geheim && gegnerLevel === 1;
+    this.gegner = kaempferErstellen(this.auswahl.gegner, gegnerLevel, wildUndKlein ? REGELN.wildeAufLevel1 : 1);
+    // Das geheime Kalamprio ist nur zu besiegen, wenn genug mitkommen, die
+    // ein hohes Level haben (teamFuerGeheimes und levelFuerGeheimes in regeln.js).
     this.geheim = Boolean(KALAMPRIOS[this.gegner.kurzname].geheim);
-    this.zuStark = this.geheim && spielstand.kampfteam.length < REGELN.teamFuerGeheimes;
+    const starkGenug = this.team.filter((kaempfer) => kaempfer.level >= REGELN.levelFuerGeheimes).length;
+    this.zuStark = this.geheim && starkGenug < REGELN.teamFuerGeheimes;
 
     // Zu jedem Kämpfer merken wir uns, was von ihm auf dem Bildschirm zu sehen ist.
     this.anzeige = new Map();
@@ -100,7 +115,8 @@ export class KampfSzene extends Phaser.Scene {
     );
 
     this.attackenKnoepfeBauen();
-    this.fangKnopf = this.auswahl.trainerin ? null : this.fangKnopfBauen();
+    this.beutelKnopf = this.beutelKnopfBauen();
+    this.fotoKnopfBauen();
     this.tauschKnopf = this.tauschKnopfBauen();
 
     const { trainerin } = this.auswahl;
@@ -295,9 +311,32 @@ export class KampfSzene extends Phaser.Scene {
     return { teile: [flaeche, bild, name, hinweis], flaeche, hinweis, bild };
   }
 
-  // Der Knopf für den Fangkristall, nur im Kampf gegen wilde Kalamprios.
-  fangKnopfBauen() {
-    return this.bildKnopf(620, 'fangkristall', 'Fangkristall', () => this.fangVersuch());
+  // Mit der Kamera kann man den Gegner fotografieren, wenn er noch nicht im
+  // Fotoalbum ist. Das kostet keinen Zug.
+  fotoKnopfBauen() {
+    this.fotoKnopf = [];
+    if (!spielstand.kamera || spielstand.fotos[this.auswahl.gegner]) return;
+    const kreis = this.add.circle(640, 70, 40, FARBEN.knopf).setStrokeStyle(3, FARBEN.rand).setInteractive({ useHandCursor: true }).setDepth(900);
+    const bild = this.add.image(640, 68, 'kamera').setDepth(901);
+    bild.setScale(Math.min(46 / bild.height, 56 / bild.width));
+    const text = this.add.text(640, 124, 'Foto!', schrift(20, '#f6f0ff', { fontStyle: '600' })).setOrigin(0.5).setStroke('#2a1650', 5).setDepth(901);
+    this.fotoKnopf = [kreis, bild, text];
+    this.tweens.add({ targets: kreis, scale: 1.08, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: bild, scale: bild.scale * 1.08, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    kreis.on('pointerdown', () => {
+      klick();
+      for (const teil of this.fotoKnopf) teil.destroy();
+      this.fotoKnopf = [];
+      const { bild: gegnerBild } = this.anzeige.get(this.gegner);
+      fotografieren(this, this.gegner.kurzname, gegnerBild, { x: 640, y: -60 }).then(({ voll }) => {
+        if (voll) this.sagen(albumVollSatz());
+      });
+    });
+  }
+
+  // Der Knopf für den Beutel: Darin sind die Fangkristalle und das Essen aus der Küche.
+  beutelKnopfBauen() {
+    return this.bildKnopf(620, 'beutel', 'Beutel', () => this.beutelAuswahlZeigen());
   }
 
   // Der Knopf zum Tauschen. Sein Bild zeigt das nächste Kalamprio im Team.
@@ -374,14 +413,27 @@ export class KampfSzene extends Phaser.Scene {
       andere > 0 ? `${andere} im Team bereit` : 'Sonst ist niemand bereit',
     );
 
-    if (!this.fangKnopf) return;
-    const schonDa = spielstand.team.includes(this.gegner.kurzname);
-    const anzahl = spielstand.fangkristalle;
-    let hinweis = `Noch ${anzahl} · Chance ${Math.round(fangChance(this.gegner) * 100)} von 100`;
-    if (schonDa) hinweis = 'Schon in deinem Team';
-    else if (this.zuStark) hinweis = `Zu stark! Erst mit ${REGELN.teamFuerGeheimes} im Kampf`;
-    else if (anzahl === 0) hinweis = 'Keine mehr dabei';
-    this.knopfZeigen(this.fangKnopf, spielerIstDran && !schonDa && !this.zuStark && anzahl > 0, hinweis);
+    const sachen = sachenImBeutel(true);
+    this.knopfZeigen(this.beutelKnopf, spielerIstDran && sachen > 0, sachen > 0 ? `${sachen} ${sachen === 1 ? 'Sache' : 'Sachen'} dabei` : 'Der Beutel ist leer');
+  }
+
+  // Kann man diese Sache aus dem Beutel gerade benutzen? Zurück kommt
+  // { geht, hinweis }: hinweis sagt, was sie tut oder warum es nicht geht.
+  sacheGeht(sache) {
+    if (sache.kurzname === 'fangkristall') {
+      if (this.auswahl.trainerin) return { geht: false, hinweis: 'Nur bei wilden Kalamprios' };
+      if (spielstand.team.includes(this.gegner.kurzname)) return { geht: false, hinweis: 'Schon in deinem Team' };
+      if (this.zuStark) return { geht: false, hinweis: `Zu stark! Erst mit ${REGELN.teamFuerGeheimes} auf Level ${REGELN.levelFuerGeheimes}` };
+      return { geht: true, hinweis: `Chance ${Math.round(fangChance(this.gegner) * 100)} von 100` };
+    }
+    if (!essenHilft(this.spieler, sache.imKampf, this.team)) {
+      const { heilen, staerker } = sache.imKampf;
+      let hinweis = 'Alle im Team sind wach';
+      if (heilen) hinweis = `${this.spieler.name} ist ganz gesund`;
+      else if (staerker) hinweis = `${this.spieler.name} ist schon gestärkt`;
+      return { geht: false, hinweis };
+    }
+    return { geht: true, hinweis: sache.info };
   }
 
   schadenZeigen(bild, schaden) {
@@ -471,7 +523,7 @@ export class KampfSzene extends Phaser.Scene {
     this.sagen(`Ein Schild aus Licht schützt ${this.gegner.name}! Die Attacke prallt ab.`);
     await this.warten(1600);
 
-    this.sagen(`${this.gegner.name} ist viel zu stark. Mit ${REGELN.teamFuerGeheimes} Kalamprios im Kampf kannst du es besiegen!`);
+    this.sagen(`${this.gegner.name} ist viel zu stark. Mit ${REGELN.teamFuerGeheimes} Kalamprios auf Level ${REGELN.levelFuerGeheimes} im Kampf kannst du es besiegen!`);
     this.tweens.killTweensOf([bild, schatten]);
     wusch(0.3, true);
     await this.bewegen({ targets: [bild, lichtschild], y: '-=260', alpha: 0, duration: 1200, ease: 'Cubic.easeIn' });
@@ -507,6 +559,122 @@ export class KampfSzene extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------- Tauschen
+
+  // ------------------------------------------------------------ Beutel
+
+  // Zeigt, was im Beutel ist. Wer etwas antippt, benutzt es. Das kostet einen Zug.
+  beutelAuswahlZeigen() {
+    this.knoepfeZeigen(false);
+    const inhalt = beutelInhalt(true);
+    const teile = [
+      this.add.rectangle(0, 0, BREITE, HOEHE, 0x0b0518, 0.55).setOrigin(0).setInteractive().setDepth(2000),
+      feld(this, 130, 130, BREITE - 260, 440).setDepth(2000),
+      this.add.text(BREITE / 2, 170, 'Was nimmst du aus dem Beutel?', schrift(34, '#f6f0ff')).setOrigin(0.5).setDepth(2000),
+    ];
+    const schliessen = () => {
+      for (const teil of teile) teil.destroy();
+    };
+
+    const abstandX = Math.min(240, (BREITE - 320) / Math.max(1, inhalt.length));
+    inhalt.forEach((sache, nummer) => {
+      const x = BREITE / 2 + (nummer - (inhalt.length - 1) / 2) * abstandX;
+      const { geht, hinweis } = this.sacheGeht(sache);
+      const karte = this.add
+        .rectangle(x, 345, abstandX - 20, 250, FARBEN.knopf, geht ? 1 : 0.45)
+        .setRounded(16)
+        .setStrokeStyle(3, FARBEN.rand)
+        .setDepth(2000);
+      if (geht) {
+        karte.setInteractive({ useHandCursor: true });
+        karte.on('pointerover', () => karte.setStrokeStyle(5, 0xffffff));
+        karte.on('pointerout', () => karte.setStrokeStyle(3, FARBEN.rand));
+        karte.on('pointerdown', () => {
+          klick();
+          schliessen();
+          if (sache.kurzname === 'fangkristall') this.fangVersuch();
+          else this.essenBenutzen(sache);
+        });
+      }
+      const bild = this.add.image(x, 330, sache.bild).setOrigin(0.5, 1).setDepth(2000).setAlpha(geht ? 1 : 0.5);
+      bild.setScale(Math.min(100 / bild.height, (abstandX - 60) / bild.width));
+      teile.push(
+        karte,
+        bild,
+        this.add.text(x, 352, `${sache.name}  × ${sache.anzahl}`, schrift(21)).setOrigin(0.5).setDepth(2000),
+        this.add
+          .text(x, 378, hinweis, schrift(15, geht ? '#d9c9ff' : '#ffd166', { wordWrap: { width: abstandX - 44 }, align: 'center' }))
+          .setOrigin(0.5, 0)
+          .setDepth(2000),
+      );
+    });
+
+    const zurueck = textKnopf(this, BREITE / 2 - 110, 496, 220, 56, 'Zurück', () => {
+      schliessen();
+      this.knoepfeZeigen(true);
+    });
+    for (const teil of zurueck) teil.setDepth(2001);
+    teile.push(...zurueck);
+  }
+
+  // Das Kalamprio isst etwas aus dem Beutel: Es wird gesund oder stärker.
+  // Danach ist der Gegner dran.
+  async essenBenutzen(sache) {
+    this.knoepfeZeigen(false);
+    herausnehmen(sache.kurzname);
+    const kaempfer = this.spieler;
+    const { bild } = this.anzeige.get(kaempfer);
+    this.sagen(`${kaempfer.name} isst ${sache.name}!`);
+
+    // Das Essen schwebt über das Kalamprio und wird hineingeschmatzt.
+    const kopf = { x: bild.x, y: bild.y - bild.displayHeight - 40 };
+    const essen = this.add.image(kopf.x, kopf.y - 60, sache.bild).setDepth(1000).setAlpha(0);
+    essen.setScale(90 / essen.height);
+    await this.bewegen({ targets: essen, y: kopf.y, alpha: 1, duration: 400, ease: 'Back.easeOut' });
+    for (let i = 0; i < 3; i += 1) {
+      await this.bewegen({ targets: essen, scale: essen.scale * 0.8, duration: 160, yoyo: true });
+      plopp(1 + i * 0.2);
+    }
+    await this.bewegen({ targets: essen, y: bild.y - bild.displayHeight / 2, scale: 0, alpha: 0, duration: 300, ease: 'Quad.easeIn' });
+    essen.destroy();
+    sternchen();
+    this.blitz(bild.x, bild.y - bild.displayHeight / 2, sache.imKampf.heilen ? 0x7be08a : 0xffd166);
+
+    const kpVorher = kaempfer.kp;
+    const wirdStaerker = Boolean(sache.imKampf.staerker && !kaempfer.gestaerkt);
+    const geheilt = essenGeben(kaempfer, sache.imKampf);
+    if (geheilt > 0) {
+      const zahl = this.add
+        .text(bild.x, bild.y - bild.displayHeight - 10, `+${geheilt}`, schrift(44, '#7be08a', { fontStyle: 'bold' }))
+        .setOrigin(0.5)
+        .setDepth(1001);
+      this.tweens.add({ targets: zahl, y: zahl.y - 60, alpha: 0, duration: 1100, onComplete: () => zahl.destroy() });
+      await this.bewegen({
+        targets: { kp: kpVorher },
+        kp: kaempfer.kp,
+        duration: 600,
+        onUpdate: (tween, zaehler) => this.kpZeigen(kaempfer, zaehler.kp),
+      });
+      this.sagen(`Mmh, lecker! ${kaempfer.name} bekommt ${geheilt} Lebenspunkte zurück.`);
+    }
+    if (wirdStaerker) {
+      this.wortZeigen(bild, 'Stärker!');
+      this.tweens.add({ targets: bild, scale: bild.scale * 1.12, duration: 200, yoyo: true, repeat: 1 });
+      this.sagen(`Mmh, lecker! ${kaempfer.name} greift jetzt viel stärker an.`);
+    }
+    // Wer nicht mehr kämpfen konnte, wacht wieder auf und muss sich nicht mehr erholen.
+    if (sache.imKampf.wecken) {
+      const geweckt = teamWecken(this.team, sache.imKampf.wecken);
+      for (const wach of geweckt) delete spielstand.erschoepftBis[wach.kurzname];
+      if (geweckt.length > 0) {
+        this.blitz(bild.x, bild.y - bild.displayHeight / 2, 0xd9c9ff);
+        const namen = geweckt.map((wach) => wach.name);
+        const wer = namen.length === 1 ? `${namen[0]} ist` : `${namen.slice(0, -1).join(', ')} und ${namen.at(-1)} sind`;
+        this.sagen(`Mmh, lecker! ${wer} wieder wach und kann kämpfen.`);
+      }
+    }
+    await this.warten(1200);
+    await this.gegnerIstDran();
+  }
 
   // Das Kalamprio, das gerade kämpft, geht zurück, und ein anderes kommt.
   async einwechseln(neues) {
@@ -599,7 +767,7 @@ export class KampfSzene extends Phaser.Scene {
     this.sagen(`${angreifer.name} setzt ${attacke.name} ein!`);
     // Wer angreift, ruft. Man hört es von der Seite, auf der es steht.
     ruf(angreifer.kurzname, { ort: { pan: this.seiteImRaum(vonAngreifer.bild) } });
-    await this.warten(300);
+    await this.warten(200);
 
     // Die Animation der Attacke: aufladen, zum Gegner fliegen, treffen
     // (siehe attackenEffekte.js).
@@ -617,7 +785,7 @@ export class KampfSzene extends Phaser.Scene {
     if (ausgang === 'daneben' || ausgang === 'ausgewichen') {
       this.wortZeigen(vonVerteidiger.bild, ausgang === 'daneben' ? 'Daneben!' : 'Ausgewichen!');
       this.sagen(ausgang === 'daneben' ? `${angreifer.name} haut daneben!` : `${verteidiger.name} weicht aus!`);
-      await this.warten(1100);
+      await this.warten(800);
       return;
     }
 
@@ -640,7 +808,7 @@ export class KampfSzene extends Phaser.Scene {
         ? `${verteidiger.name} wehrt ab und verliert nur ${schaden} Lebenspunkte.`
         : `${verteidiger.name} verliert ${schaden} Lebenspunkte.`,
     );
-    await this.warten(900);
+    await this.warten(600);
   }
 
   // Für Töne: -0.5 ganz links, 0.5 ganz rechts.
@@ -751,7 +919,8 @@ export class KampfSzene extends Phaser.Scene {
     spielstand.team.push(this.gegner.kurzname);
     mitnehmen(this.gegner.kurzname); // kommt beim nächsten Kampf mit, wenn noch Platz ist
     // Es behält sein Level: Es bekommt so viel Erfahrung, wie man dafür braucht.
-    spielstand.erfahrung[this.gegner.kurzname] = REGELN.erfahrungFuerLevel[this.gegner.level - 1];
+    // Das geheime Kalamprio kommt dabei auf das höchste Level, das es für eigene gibt.
+    spielstand.erfahrung[this.gegner.kurzname] = REGELN.erfahrungFuerLevel[Math.min(this.gegner.level, MAX_LEVEL) - 1];
     this.sagen(`Juhu! Du hast ${this.gegner.name} gefangen!\n${this.gegner.name} ist jetzt in deinem Team.`);
     this.weiterZeigen(true);
   }
@@ -851,9 +1020,10 @@ export class KampfSzene extends Phaser.Scene {
   // Wer das geheime Kalamprio besiegt oder gefangen hat, kommt zur Party
   // (nur beim ersten Mal, danach spielt man einfach weiter).
   weiterZeigen(gewonnen) {
-    for (const knopf of [...this.knoepfe, this.fangKnopf, this.tauschKnopf].filter(Boolean)) {
+    for (const knopf of [...this.knoepfe, this.beutelKnopf, this.tauschKnopf].filter(Boolean)) {
       for (const teil of knopf.teile) teil.setVisible(false);
     }
+    for (const teil of this.fotoKnopf) teil.setVisible(false);
     const party = gewonnen && this.geheim && !spielstand.festGefeiert;
     textKnopf(this, 620, 570, 620, 62, party ? 'Zur Party!' : 'Weiter', () => {
       this.auswahl.nachKampf?.(gewonnen);

@@ -12,6 +12,32 @@ export const MONDSEE = {
 
   ausgaenge: [{ nach: 'prismastahlMine', seite: 'links', mitte: 650 }],
 
+  // Am Ufer steigen Blasen auf: Hier kann man in den See tauchen. Das geht
+  // nur, wenn man das Lungenkraut gefunden hat (braucht). Ohne hört man ohne.
+  tueren: [
+    {
+      x: 925,
+      y: 1140,
+      nach: 'unterwasser',
+      art: 'tauchplatz',
+      braucht: 'lungenkraut',
+      ankunft: { x: 820, y: 1140 },
+      ohne: 'Das Wasser ist tief und dunkel. Ohne Luft kannst du hier nicht tauchen. Vielleicht wächst irgendwo ein Kraut, mit dem man unter Wasser atmen kann?',
+    },
+  ],
+
+  // Besondere Dinge, die man nur einmal findet. Sie kommen in den Beutel.
+  besonderes: [
+    {
+      art: 'lungenkraut',
+      name: 'Lungenkraut',
+      x: 2560,
+      y: 1900,
+      info: 'Damit kannst du unter Wasser atmen.',
+      satz: 'Du hast ein Lungenkraut gefunden! Seine Blätter sind voller kleiner Luftbläschen. Damit kannst du unter Wasser atmen. Am Ufer des Sees steigen Blasen auf: Dort kannst du tauchen!',
+    },
+  ],
+
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
   dunklerKristall: { x: 620, y: 830 },
 
@@ -24,12 +50,13 @@ export const MONDSEE = {
     { art: 'blitznara', x: 2250, y: 560 },
     { art: 'elefantia', x: 2500, y: 1500 },
     { art: 'zetarata', x: 900, y: 350 },
+    { art: 'robossor', x: 2380, y: 1960 },
   ],
 
   // Am Mondsee sind die wilden Kalamprios stärker.
   wildesLevel: 3,
 
-  tiereImGras: ['bolo', 'mola', 'taktik', 'blitznara', 'elefantia', 'zetarata'],
+  tiereImGras: ['bolo', 'mola', 'taktik', 'blitznara', 'elefantia', 'zetarata', 'robossor'],
   hohesGras: [
     { links: 230, oben: 1460, breite: 570, hoehe: 390 },
     { links: 2440, oben: 310, breite: 520, hoehe: 360 },
@@ -44,6 +71,9 @@ export const MONDSEE = {
 
   // Das gemalte Bild ist 1300 mal 1086 Pixel groß. Damit es nicht verzerrt
   // wird, sollte breite geteilt durch hoehe ungefähr 1.2 sein.
+  // Über dem See liegt leichter Nebel.
+  nebel: 0.5,
+
   seen: [{ x: 1620, y: 1140, breite: 1350, hoehe: 1120, bild: 'mondsee' }],
 
   baeume: [
@@ -63,6 +93,11 @@ export const MONDSEE = {
     { x: 2910, y: 730 },
     { x: 1300, y: 1900 },
     { x: 910, y: 1920 },
+  ],
+
+  zutaten: [
+    { art: 'mondbeeren', x: 520, y: 560 },
+    { art: 'mondbeeren', x: 2700, y: 600 },
   ],
 
   fangkristalle: [

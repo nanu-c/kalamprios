@@ -7,12 +7,14 @@ import {
   abstand,
   ankunft,
   ausgangAmRand,
+  freierPlatz,
   grasBegegnung,
   hinterDemAusgang,
   hindernisseAmOrt,
   istImGras,
   richtungZu,
   schritt,
+  tuerAmOrt,
   wegSperre,
   weltGrenzen,
 } from '../src/welt/weltlogik.js';
@@ -118,7 +120,7 @@ for (const [kurzname, ort] of Object.entries(ORTE)) {
     for (const a of kreise) {
       for (const b of kreise) {
         // Die drei Kreise eines Hauses dürfen sich berühren.
-        if (a === b || (a.y === b.y && abstand(a, b) <= 80)) continue;
+        if (a === b || (a.y === b.y && abstand(a, b) <= 120)) continue;
         assert.ok(
           abstand(a, b) - a.radius - b.radius > 2 * 18 + 10,
           `zu eng zwischen (${a.x}, ${a.y}) und (${b.x}, ${b.y})`,
@@ -137,12 +139,29 @@ for (const [kurzname, ort] of Object.entries(ORTE)) {
   test(`${ort.name}: jeder Ausgang führt hin und wieder zurück`, () => {
     for (const ausgang of ort.ausgaenge) {
       const dort = ankunft(ORTE[ausgang.nach], kurzname);
-      const zurueck = ORTE[ausgang.nach].ausgaenge.find((a) => a.nach === kurzname);
+      const ziel = ORTE[ausgang.nach];
+      const zurueck = [...ziel.ausgaenge, ...(ziel.tueren ?? [])].find((a) => a.nach === kurzname || (a.zurueckVon ?? []).includes(kurzname));
       assert.ok(zurueck, `${ausgang.nach} hat keinen Weg zurück`);
       // Wer ankommt, steht nicht gleich wieder im Ausgang.
       assert.equal(ausgangAmRand(ORTE[ausgang.nach], dort, weltGrenzen(ORTE[ausgang.nach])), null);
     }
   });
+}
+
+for (const [kurzname, ort] of Object.entries(ORTE)) {
+  for (const tuer of ort.tueren ?? []) {
+    test(`${ort.name}: Wer durch die Tür nach ${tuer.nach} zurückkommt, steht davor im Ort`, () => {
+      const dort = ankunft(ort, tuer.nach);
+      const grenzen = weltGrenzen(ort);
+      assert.ok(dort.x >= grenzen.links && dort.x <= grenzen.rechts && dort.y >= grenzen.oben && dort.y <= grenzen.unten);
+      // nicht gleich wieder in der Tür
+      assert.equal(tuerAmOrt(ort, dort), null);
+      // und nicht in einem Hindernis
+      for (const hindernis of hindernisseAmOrt(ort).filter((h) => !h.radiusX)) {
+        assert.ok(abstand(dort, hindernis) > hindernis.radius, `steht in (${hindernis.x}, ${hindernis.y})`);
+      }
+    });
+  }
 }
 
 test('im Schilf kommt das geheime Kalamprio spätestens nach ein paar anderen', () => {
@@ -180,3 +199,20 @@ test('an einem Weg, den die Rivalin bewacht, kommt niemand vorbei', () => {
     }
   }
 });
+
+for (const [, ort] of Object.entries(ORTE)) {
+  if (!(ort.fangkristalle?.length || ort.zutaten?.length)) continue;
+  test(`${ort.name}: Fangkristalle und Zutaten finden immer einen neuen freien Platz`, () => {
+    const grenzen = weltGrenzen(ort);
+    for (let versuch = 0; versuch < 60; versuch += 1) {
+      const platz = freierPlatz(ort);
+      assert.ok(platz, 'kein freier Platz gefunden');
+      assert.ok(platz.x > grenzen.links && platz.x < grenzen.rechts && platz.y > grenzen.oben && platz.y < grenzen.unten);
+      for (const h of hindernisseAmOrt(ort)) {
+        if (h.radiusX) assert.ok(Math.hypot((platz.x - h.x) / h.radiusX, (platz.y - h.y) / h.radiusY) >= 1, 'im See');
+        else assert.ok(abstand(platz, h) >= h.radius + 18, `zu nah an (${h.x}, ${h.y})`);
+      }
+      for (const ausgang of ort.ausgaenge) assert.equal(ausgangAmRand(ort, platz, grenzen), null);
+    }
+  });
+}

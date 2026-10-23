@@ -12,7 +12,7 @@ function schwankung(staerke, zufall) {
   return 1 + (zufall() * 2 - 1) * staerke;
 }
 
-// Das höchste Level, das es gibt.
+// Das höchste Level, das ein eigenes Kalamprio erreichen kann.
 export const MAX_LEVEL = REGELN.erfahrungFuerLevel.length;
 
 // Welches Level ein Kalamprio mit so viel Erfahrung hat (siehe regeln.js).
@@ -48,12 +48,14 @@ export function erfahrungFuerSieg(gegner) {
 
 // Macht aus einem Eintrag in kalamprios.js einen Kämpfer für einen Kampf:
 // mit vollen Lebenspunkten und allen Attacken bereit. Mit jedem Level wird
-// er stärker (staerkeJeLevel in regeln.js).
-export function kaempferErstellen(kurzname, level = 1) {
+// er stärker (staerkeJeLevel in regeln.js). Höher als MAX_LEVEL kommt nur das
+// geheime Kalamprio. schwaecher: Lebenspunkte und Angriff noch einmal mal
+// diese Zahl (für wilde Kalamprios mit Level 1, siehe wildeAufLevel1).
+export function kaempferErstellen(kurzname, level = 1, schwaecher = 1) {
   const tier = KALAMPRIOS[kurzname];
-  const stufe = Math.min(Math.max(level, 1), MAX_LEVEL);
+  const stufe = Math.min(Math.max(level, 1), REGELN.staerkeJeLevel.length);
   const staerke = REGELN.staerkeJeLevel[stufe - 1] ?? 1;
-  const mal = (wert) => Math.round(wert * staerke);
+  const mal = (wert, extra = 1) => Math.round(wert * staerke * extra);
   // Das Tempo wächst nur halb so viel, sonst ist ein hohes Level immer zuerst dran.
   const tempo = Math.round(tier.tempo * (1 + (staerke - 1) / 2));
   return {
@@ -62,9 +64,9 @@ export function kaempferErstellen(kurzname, level = 1) {
     element: tier.element,
     blick: tier.blick,
     level: stufe,
-    maxKp: mal(tier.kp),
-    kp: mal(tier.kp),
-    angriff: mal(tier.angriff),
+    maxKp: mal(tier.kp, schwaecher),
+    kp: mal(tier.kp, schwaecher),
+    angriff: mal(tier.angriff, schwaecher),
     verteidigung: mal(tier.verteidigung),
     tempo,
     attacken: tier.attacken.map((attacke) => ({
@@ -79,11 +81,11 @@ export function istBereit(attacke) {
   return attacke.bereitIn === 0;
 }
 
-// Schaden = Stärke der Attacke, mal Angriff, geteilt durch Verteidigung.
-// Dazu kommt Zufall, damit nicht jeder Treffer gleich ist. Wie viel Zufall,
-// steht in regeln.js bei schadenZufall.
+// Schaden = Stärke der Attacke, mal Angriff, geteilt durch Verteidigung,
+// und das noch mal schadenMal aus regeln.js. Dazu kommt Zufall, damit nicht
+// jeder Treffer gleich ist. Wie viel Zufall, steht bei schadenZufall.
 export function schadenBerechnen(angreifer, verteidiger, attacke, zufall = Math.random) {
-  const grundschaden = (attacke.staerke * angreifer.angriff) / verteidiger.verteidigung;
+  const grundschaden = ((attacke.staerke * angreifer.angriff) / verteidiger.verteidigung) * (REGELN.schadenMal ?? 1);
   return Math.max(1, Math.round(grundschaden * schwankung(REGELN.schadenZufall, zufall)));
 }
 
@@ -152,6 +154,40 @@ export function fangChance(gegner) {
   const schwach = 1 - gegner.kp / gegner.maxKp;
   const chance = REGELN.fangChanceGesund + (REGELN.fangChanceSchwach - REGELN.fangChanceGesund) * schwach;
   return KALAMPRIOS[gegner.kurzname].geheim ? chance / 2 : chance;
+}
+
+// Essen aus dem Beutel im Kampf. imKampf steht beim Rezept in orte/haus.js:
+//   heilen:   so viel von den Lebenspunkten kommt zurück (1 ist alles)
+//   staerker: der Angriff wird so viel mal stärker, bis der Kampf vorbei ist
+// Zurück kommt, wie viele Lebenspunkte dazugekommen sind.
+export function essenGeben(kaempfer, imKampf) {
+  const vorher = kaempfer.kp;
+  if (imKampf.heilen) kaempfer.kp = Math.min(kaempfer.maxKp, kaempfer.kp + Math.round(kaempfer.maxKp * imKampf.heilen));
+  if (imKampf.staerker && !kaempfer.gestaerkt) {
+    kaempfer.angriff = Math.round(kaempfer.angriff * imKampf.staerker);
+    kaempfer.gestaerkt = true;
+  }
+  return kaempfer.kp - vorher;
+}
+
+// Weckt alle aus dem Team auf, die nicht mehr kämpfen konnten: Sie bekommen
+// so viel von ihren Lebenspunkten zurück (wecken beim Rezept, 0.5 ist die
+// Hälfte). Zurück kommen die, die aufgewacht sind.
+export function teamWecken(team, anteil) {
+  const geweckt = team.filter((kaempfer) => kaempfer.kp <= 0);
+  for (const kaempfer of geweckt) kaempfer.kp = Math.max(1, Math.round(kaempfer.maxKp * anteil));
+  return geweckt;
+}
+
+// Hilft das Essen gerade? Wer alle Lebenspunkte hat, braucht kein Heilen,
+// stärker wird man in einem Kampf nur einmal, und wecken kann man nur, wenn
+// jemand im Team (team) nicht mehr kämpfen kann.
+export function essenHilft(kaempfer, imKampf, team = []) {
+  return Boolean(
+    (imKampf.heilen && kaempfer.kp < kaempfer.maxKp) ||
+      (imKampf.staerker && !kaempfer.gestaerkt) ||
+      (imKampf.wecken && team.some((anderer) => anderer.kp <= 0)),
+  );
 }
 
 // Wirft einen Fangkristall. true heißt: gefangen!

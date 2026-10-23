@@ -13,11 +13,14 @@ import { REGELN } from './regeln.js';
 
 const ZAHLEN = ['kp', 'angriff', 'verteidigung', 'tempo'];
 const BLICKE = ['vorne', 'links', 'rechts'];
-const STILE = ['dorf', 'wald', 'mine', 'see'];
+const STILE = ['dorf', 'wald', 'mine', 'see', 'gang', 'haus', 'wasser', 'regenwald'];
+const TUER_ARTEN = ['haustuer', 'treppe', 'pilzring', 'tauchplatz', 'portal'];
 const SEITEN = ['links', 'rechts', 'oben', 'unten'];
 // Wie Attacken außer den Elementen noch aussehen können (siehe attacken.js).
 const AUSSEHEN = ['herz', 'strahl', 'traum', 'krallen', 'blitzschlag', 'biss', 'wirbel', 'faden', 'bombe', 'hieb', 'krone'];
-const RAETSEL_ARTEN = ['suchen', 'reihenfolge', 'frage'];
+const RAETSEL_ARTEN = ['suchen', 'reihenfolge', 'frage', 'farben', 'stimmen', 'paare', 'weg', 'spiegel', 'lichter'];
+const GRUNDFARBEN = ['rot', 'gelb', 'blau'];
+const MISCHFARBEN = ['orange', 'gruen', 'lila'];
 // Die Farben aus szenen/raetsel.js
 const RAETSEL_FARBEN = ['rot', 'gelb', 'blau', 'gruen', 'lila', 'weiss'];
 
@@ -81,10 +84,21 @@ export function datenPruefen() {
     fehler.push('regeln.js: erfahrungFuerLevel muss mit 0 anfangen und dann immer größer werden, zum Beispiel [0, 5, 15].');
   }
   const staerken = REGELN.staerkeJeLevel;
-  if (!(Array.isArray(staerken) && staerken.length === stufen?.length && staerken.every((staerke) => staerke > 0))) {
-    fehler.push('regeln.js: staerkeJeLevel braucht für jedes Level eine Zahl größer als 0, so viele wie bei erfahrungFuerLevel, zum Beispiel [1, 1.35, 1.75].');
+  if (!(Array.isArray(staerken) && staerken.length >= (stufen?.length ?? 0) && staerken.every((staerke) => staerke > 0))) {
+    fehler.push('regeln.js: staerkeJeLevel braucht für jedes Level eine Zahl größer als 0, mindestens so viele wie bei erfahrungFuerLevel, zum Beispiel [1, 1.35, 1.75, 2, 2.3].');
+  } else if (!(Number.isInteger(REGELN.geheimesLevel) && REGELN.geheimesLevel >= 1 && REGELN.geheimesLevel <= staerken.length)) {
+    fehler.push(`regeln.js: geheimesLevel muss eine ganze Zahl von 1 bis ${staerken.length} sein. Für jedes Level braucht es eine Zahl bei staerkeJeLevel.`);
+  }
+  if (!(Number.isInteger(REGELN.levelFuerGeheimes) && REGELN.levelFuerGeheimes >= 1 && REGELN.levelFuerGeheimes <= (stufen?.length ?? 1))) {
+    fehler.push(`regeln.js: levelFuerGeheimes muss eine ganze Zahl von 1 bis ${stufen?.length ?? 1} sein, sonst kann man das geheime Kalamprio nie besiegen.`);
   }
 
+  if (!(REGELN.schadenMal > 0)) {
+    fehler.push('regeln.js: schadenMal muss eine Zahl größer als 0 sein, zum Beispiel 1.6.');
+  }
+  if (!(REGELN.wildeAufLevel1 > 0 && REGELN.wildeAufLevel1 <= 2)) {
+    fehler.push('regeln.js: wildeAufLevel1 muss eine Zahl größer als 0 sein, zum Beispiel 0.9.');
+  }
   for (const name of ['danebenChance', 'ausweichChance', 'abwehrChance', 'abgewehrtSchaden']) {
     if (!(REGELN[name] >= 0 && REGELN[name] <= 1)) {
       fehler.push(`regeln.js: ${name} muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.1.`);
@@ -183,7 +197,7 @@ function ortPruefen(kurzname, ort) {
   const liste = (feld) => ort[feld] ?? [];
   const name = ort.name ?? kurzname;
   if (!STILE.includes(ort.stil)) {
-    fehler.push(`${name}: stil muss 'dorf', 'wald', 'mine' oder 'see' sein.`);
+    fehler.push(`${name}: stil muss 'dorf', 'wald', 'mine', 'see', 'gang', 'haus', 'wasser' oder 'regenwald' sein.`);
   }
 
   const geheimes = ort.geheimesImGras;
@@ -209,6 +223,9 @@ function ortPruefen(kurzname, ort) {
   }
   if (ort.dunkel !== undefined && !(ort.dunkel >= 0 && ort.dunkel <= 1)) {
     fehler.push(`${name}: dunkel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.8.`);
+  }
+  if (ort.nebel !== undefined && !(ort.nebel >= 0 && ort.nebel <= 1)) {
+    fehler.push(`${name}: nebel muss eine Zahl von 0 bis 1 sein, zum Beispiel 0.5.`);
   }
   if (ort.licht !== undefined && !(ort.licht > 0)) {
     fehler.push(`${name}: licht muss eine Zahl größer als 0 sein, zum Beispiel 0.7.`);
@@ -241,8 +258,77 @@ function ortPruefen(kurzname, ort) {
     if (ausgang.erstNachRaetsel && !ort.raetsel) {
       fehler.push(`${name}: Der Ausgang nach ${ziel.name} soll erst nach dem Rätsel frei werden, aber hier gibt es kein Rätsel.`);
     }
-    if (!(ziel.ausgaenge ?? []).some((zurueck) => zurueck.nach === kurzname)) {
-      fehler.push(`${ziel.name} braucht einen Ausgang zurück nach "${kurzname}".`);
+    const zurueck = [...(ziel.ausgaenge ?? []), ...(ziel.tueren ?? [])].some(
+      (weg) => weg.nach === kurzname || (weg.zurueckVon ?? []).includes(kurzname),
+    );
+    if (!zurueck) fehler.push(`${ziel.name} braucht einen Ausgang oder eine Tür zurück nach "${kurzname}".`);
+  }
+
+  if (ort.rivalinAmAnfang) {
+    const essen = Object.values(ORTE).flatMap((anderer) => anderer.kueche?.rezepte ?? []);
+    if (!essen.some((rezept) => rezept.kurzname === ort.rivalinAmAnfang.wuenscht)) {
+      fehler.push(`${name}: Bei rivalinAmAnfang wünscht sie sich "${ort.rivalinAmAnfang.wuenscht}", aber so ein Rezept gibt es nicht in haus.js.`);
+    }
+  }
+  for (const tuer of ort.tueren ?? []) {
+    const ziel = ORTE[tuer.nach];
+    if (!ziel) {
+      fehler.push(`${name}: Eine Tür führt nach "${tuer.nach}", aber diesen Ort gibt es nicht in orte.js.`);
+      continue;
+    }
+    if (!TUER_ARTEN.includes(tuer.art)) {
+      fehler.push(`${name}: Bei der Tür nach ${ziel.name} muss art 'haustuer', 'treppe', 'pilzring', 'tauchplatz' oder 'portal' sein.`);
+    }
+    const besondere = Object.values(ORTE).flatMap((anderer) => (anderer.besonderes ?? []).map((ding) => ding.art));
+    if (tuer.braucht && !besondere.includes(tuer.braucht)) {
+      fehler.push(`${name}: Die Tür nach ${ziel.name} braucht "${tuer.braucht}", aber so ein besonderes Ding gibt es nirgends (besonderes).`);
+    }
+    const zurueck = [...(ziel.ausgaenge ?? []), ...(ziel.tueren ?? [])].some(
+      (weg) => weg.nach === kurzname || (weg.zurueckVon ?? []).includes(kurzname),
+    );
+    if (!zurueck) fehler.push(`${ziel.name} braucht einen Ausgang oder eine Tür zurück nach "${kurzname}".`);
+  }
+  for (const [art, zutat] of Object.entries(ort.kueche?.zutaten ?? {})) {
+    if (!(zutat.name && zutat.bild)) fehler.push(`${name}: Die Zutat "${art}" braucht einen name und ein bild.`);
+    if (zutat.wo === undefined && !(Number.isFinite(zutat.x) && Number.isFinite(zutat.y))) {
+      fehler.push(`${name}: Die Zutat "${art}" braucht x und y (dann liegt sie in der Küche) oder wo (dann wächst sie draußen).`);
+    }
+  }
+  const draussen = Object.values(ORTE).flatMap((anderer) => Object.entries(anderer.kueche?.zutaten ?? {}).filter(([, zutat]) => zutat.wo).map(([art]) => art));
+  for (const punkt of liste('zutaten')) {
+    if (!draussen.includes(punkt.art)) {
+      fehler.push(`${name}: Die Zutat "${punkt.art}" gibt es nicht. Nimm eine aus haus.js, die draußen wächst: ${draussen.join(', ')}.`);
+    }
+  }
+  const rezepte = ort.kueche?.rezepte ?? [];
+  const rezeptMit = (kurzname) => rezepte.find((anderes) => anderes.kurzname === kurzname);
+  // Braucht ein Rezept (über andere Rezepte) am Ende sich selbst? Dann kann man es nie kochen.
+  const imKreis = (rezept, unterwegs = []) =>
+    unterwegs.includes(rezept.kurzname) ||
+    rezept.zutaten.some((art) => rezeptMit(art) && imKreis(rezeptMit(art), [...unterwegs, rezept.kurzname]));
+  for (const rezept of rezepte) {
+    for (const art of rezept.zutaten ?? []) {
+      if (!ort.kueche.zutaten?.[art] && !rezeptMit(art)) {
+        fehler.push(`${name}: Für ${rezept.name} braucht es "${art}", aber das steht weder bei zutaten noch bei den Rezepten.`);
+      }
+    }
+    if (rezept.zutaten?.length > 0 && imKreis(rezept)) {
+      fehler.push(`${name}: ${rezept.name} braucht am Ende sich selbst als Zutat. So kann man es nie kochen.`);
+    }
+    if (rezept.fundort) {
+      const fundort = ORTE[rezept.fundort.ort];
+      if (!fundort) fehler.push(`${name}: Das Rezept ${rezept.name} liegt bei fundort in "${rezept.fundort.ort}", aber diesen Ort gibt es nicht.`);
+      else if (!(rezept.fundort.x >= 0 && rezept.fundort.x <= fundort.breite && rezept.fundort.y >= 0 && rezept.fundort.y <= fundort.hoehe)) {
+        fehler.push(`${name}: Das Rezept ${rezept.name} liegt außerhalb von ${fundort.name}.`);
+      }
+    }
+    if (!(rezept.zutaten?.length > 0)) fehler.push(`${name}: Das Rezept ${rezept.name} braucht mindestens eine Zutat.`);
+    if (!/^[a-z]+$/.test(rezept.kurzname ?? '')) fehler.push(`${name}: Das Rezept ${rezept.name} braucht einen kurznamen aus Kleinbuchstaben, zum Beispiel 'mondsuppe'.`);
+    const { heilen, staerker, wecken } = rezept.imKampf ?? {};
+    if (!((heilen > 0 && heilen <= 1) || staerker > 1 || (wecken > 0 && wecken <= 1))) {
+      fehler.push(
+        `${name}: Beim Rezept ${rezept.name} braucht imKampf heilen (von 0 bis 1, zum Beispiel 0.5), staerker (größer als 1, zum Beispiel 1.5) oder wecken (von 0 bis 1).`,
+      );
     }
   }
 
@@ -254,11 +340,21 @@ function ortPruefen(kurzname, ort) {
     ...ort.wildeKalamprios.map((wild) => [`das wilde Kalamprio "${wild.art}"`, wild]),
     ...liste('baeume').map((punkt) => ['ein Baum', punkt]),
     ...liste('kristalle').map((punkt) => ['ein Kristall', punkt]),
+    ...liste('pilze').map((punkt) => ['ein Pilz', punkt]),
     ...liste('felsen').map((punkt) => ['ein Felsen', punkt]),
     ...liste('prismastahl').map((punkt) => ['ein Prismastahl', punkt]),
     ...liste('haeuser').map((punkt) => ['ein Haus', punkt]),
     ...liste('gold').map((punkt) => ['ein Gold', punkt]),
     ...liste('fangkristalle').map((punkt) => ['ein Fangkristall', punkt]),
+    ...liste('tueren').map((punkt) => [`die Tür nach "${punkt.nach}"`, punkt]),
+    ...liste('besonderes').map((punkt) => [`das besondere Ding "${punkt.art}"`, punkt]),
+    ...liste('pflanzen').map((punkt) => [`die Pflanze "${punkt.name}"`, punkt]),
+    ...(ort.album ? [['das Pflanzenalbum', ort.album]] : []),
+    ...(ort.muellQuest ? [['die Muschel', ort.muellQuest.muschel], ...ort.muellQuest.muell.map((punkt) => [`der Müll "${punkt.art}"`, punkt])] : []),
+    ...Object.values(ort.kueche?.zutaten ?? {}).filter((punkt) => punkt.wo === undefined).map((punkt) => [`die Zutat ${punkt.name}`, punkt]),
+    ...liste('zutaten').map((punkt) => [`die Zutat "${punkt.art}"`, punkt]),
+    ...(ort.kueche ? [['der Herd', ort.kueche.herd]] : []),
+    ...(ort.schatz ? [['die Schatztruhe', ort.schatz]] : []),
     ...liste('seen').map((punkt) => ['ein See', punkt]),
     ...(ort.raetsel ? [['der Rätselstein', ort.raetsel]] : []),
     ...(ort.raetsel?.dinge ?? []).map((punkt) => ['ein Ding beim Rätsel', punkt]),
@@ -308,6 +404,49 @@ function raetselPruefen(name, raetsel) {
       if (!RAETSEL_FARBEN.includes(stein.farbe)) {
         fehler.push(`${name}: Die Farbe "${stein.farbe}" bei einem Klangstein gibt es nicht. Nimm ${RAETSEL_FARBEN.join(', ')}.`);
       }
+    }
+  }
+  if (raetsel.art === 'farben') {
+    if (!raetsel.kessel) fehler.push(`${name}: Beim Farben-Rätsel braucht es einen kessel.`);
+    if (!(raetsel.toepfe?.length > 0 && raetsel.toepfe.every((topf) => GRUNDFARBEN.includes(topf.farbe)))) {
+      fehler.push(`${name}: Beim Farben-Rätsel braucht jeder Farbtopf bei toepfe eine farbe: 'rot', 'gelb' oder 'blau'.`);
+    }
+    if (!(raetsel.runden?.length > 0 && raetsel.runden.every((farbe) => MISCHFARBEN.includes(farbe)))) {
+      fehler.push(`${name}: Beim Farben-Rätsel stehen bei runden Mischfarben: 'orange', 'gruen' oder 'lila'.`);
+    }
+  }
+  if (raetsel.art === 'stimmen') {
+    if (!raetsel.muschel) fehler.push(`${name}: Beim Rufe-Rätsel braucht es eine muschel.`);
+    if (!(raetsel.platten?.length >= 2)) fehler.push(`${name}: Beim Rufe-Rätsel braucht es mindestens zwei platten.`);
+    if (!(Number.isInteger(raetsel.runden) && raetsel.runden >= 1)) fehler.push(`${name}: Beim Rufe-Rätsel muss runden eine ganze Zahl ab 1 sein.`);
+  }
+  if (raetsel.art === 'paare') {
+    const anzahl = raetsel.spalten * raetsel.reihen;
+    const tiere = Object.values(KALAMPRIOS).filter((tier) => !tier.geheim).length;
+    if (!(Number.isInteger(anzahl) && anzahl >= 2 && anzahl % 2 === 0 && anzahl / 2 <= tiere)) {
+      fehler.push(`${name}: Beim Bilderpaare-Rätsel muss spalten mal reihen eine gerade Zahl sein, höchstens ${tiere * 2}.`);
+    }
+  }
+  if (raetsel.art === 'weg' || raetsel.art === 'spiegel') {
+    if (!(raetsel.spalten >= 2 && raetsel.reihen >= 2 && raetsel.groesse > 0)) {
+      fehler.push(`${name}: Beim Rätsel braucht es spalten, reihen (jeweils mindestens 2) und eine groesse.`);
+    }
+  }
+  if (raetsel.art === 'spiegel') {
+    for (const spiegel of raetsel.spiegel ?? []) {
+      if (!['/', '\\'].includes(spiegel.stellung)) fehler.push(`${name}: Ein Spiegel braucht bei stellung '/' oder '\\\\'.`);
+      if (!(spiegel.spalte >= 0 && spiegel.spalte < raetsel.spalten && spiegel.reihe >= 0 && spiegel.reihe < raetsel.reihen)) {
+        fehler.push(`${name}: Ein Spiegel steht bei spalte ${spiegel.spalte}, reihe ${spiegel.reihe}, das ist außerhalb des Rasters.`);
+      }
+    }
+    for (const reihe of [raetsel.startReihe, raetsel.zielReihe]) {
+      if (!(Number.isInteger(reihe) && reihe >= 0 && reihe < raetsel.reihen)) fehler.push(`${name}: startReihe und zielReihe müssen Reihen im Raster sein.`);
+    }
+  }
+  if (raetsel.art === 'lichter') {
+    if (!raetsel.neustart) fehler.push(`${name}: Beim Lichter-Rätsel braucht es einen neustart-Stein.`);
+    if (!(raetsel.runden?.length > 0 && raetsel.runden.every((tritte) => Number.isInteger(tritte) && tritte >= 1 && tritte <= 9))) {
+      fehler.push(`${name}: Beim Lichter-Rätsel muss runden eine Liste mit Zahlen von 1 bis 9 sein, zum Beispiel [3, 5].`);
     }
   }
   if (raetsel.art === 'frage') {

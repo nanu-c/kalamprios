@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
+import { START_ORT } from '../src/daten/orte.js';
 import { gespeichertesSpiel, laden, neuesSpiel, speichern, spielstand } from '../src/spielstand.js';
 
 // Ein Speicher wie im Browser, nur zum Ausprobieren.
@@ -77,13 +78,14 @@ test('Was es im Spiel nicht mehr gibt, fällt beim Laden weg', () => {
   assert.deepEqual(spielstand.team, ['bolo', 'mola', 'qalutu', 'kapapa']);
   assert.equal(spielstand.kalamprio, 'bolo');
   assert.deepEqual(spielstand.kampfteam, ['bolo', 'mola', 'qalutu']); // höchstens 3, das erste kämpft
-  assert.equal(spielstand.ort, 'lilaDorf');
+  assert.equal(spielstand.ort, START_ORT);
   assert.equal(spielstand.position, null);
   assert.equal(spielstand.fangkristalle, 3);
 });
 
 test('Kaputter oder unpassender Spielstand wird nicht geladen', () => {
-  for (const kaputt of ['{nicht json', 'null', JSON.stringify({ charakter: 'niemand', team: ['bolo'] }), JSON.stringify({ charakter: 'kala', team: [] })]) {
+  // (Ohne Kalamprio ist ein Spielstand in Ordnung: Am Anfang hat man noch keins.)
+  for (const kaputt of ['{nicht json', 'null', JSON.stringify({ charakter: 'niemand', team: ['bolo'] }), JSON.stringify({ team: ['bolo'] })]) {
     const speicher = testSpeicher({ 'kalamprios-spielstand': kaputt });
     assert.equal(gespeichertesSpiel(speicher), false);
     assert.equal(laden(speicher), false);
@@ -95,4 +97,28 @@ test('Neues Spiel löscht den Spielstand', () => {
   assert.equal(gespeichertesSpiel(speicher), true);
   neuesSpiel(speicher);
   assert.equal(gespeichertesSpiel(speicher), false);
+});
+
+test('Wer die Rivalin schon besiegt hat, hat nach dem Laden auch die Kamera', () => {
+  const speicher = testSpeicher({
+    'kalamprios-spielstand': JSON.stringify({ charakter: 'kala', kalamprio: 'kalampria', team: ['kalampria'], rivalinBesiegt: true, fotos: { kalampria: 'kristallwald', gibtsNicht: 'mondsee' } }),
+  });
+  neuesSpiel(testSpeicher());
+  assert.equal(laden(speicher), true);
+  assert.equal(spielstand.kamera, true);
+  assert.deepEqual(spielstand.fotos, { kalampria: 'kristallwald' });
+});
+
+test('Auch ohne Kalamprio (am Anfang im Kinderzimmer) wird gespeichert und geladen', () => {
+  const speicher = testSpeicher();
+  neuesSpiel(speicher);
+  Object.assign(spielstand, { charakter: 'kala', rivalin: 'pflanstaria', ort: 'kinderzimmer', position: { x: 700, y: 820 } });
+  speichern(speicher);
+  assert.equal(gespeichertesSpiel(speicher), true);
+  neuesSpiel(testSpeicher());
+  assert.equal(laden(speicher), true);
+  assert.equal(spielstand.kalamprio, null);
+  assert.deepEqual(spielstand.team, []);
+  assert.deepEqual(spielstand.kampfteam, []);
+  assert.equal(spielstand.ort, 'kinderzimmer');
 });

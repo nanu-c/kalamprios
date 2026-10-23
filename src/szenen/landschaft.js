@@ -1,11 +1,15 @@
 // Malt die Orte: Boden, hohes Gras, Bäume, Häuser, Felsen, Kristalle, Gold,
-// Seen und Höhleneingänge. Der Mondsee und zwei der Bäume sind gemalt (die
-// Bilder liegen in public/bilder/landschaft), der Rest ist noch Platzhalter.
+// Seen und Höhleneingänge. Der Mondsee, zwei der Bäume, die Häuser, die Pilze,
+// der dunkle Kristall und die Steine am Rand der Mine sind gemalt (die Bilder
+// liegen in public/bilder/landschaft), der Rest ist noch Platzhalter. Zwei der
+// Häuser hat eine Bild-KI im Stil des gemalten Hauses gemalt.
 
 import Phaser from 'phaser';
 import { ORTE } from '../daten/orte.js';
-import { AUSGANG_BREITE, hinterDemAusgang, weltGrenzen } from '../welt/weltlogik.js';
-import { schrift } from './stil.js';
+import { AUSGANG_BREITE, hinterDemAusgang, pilzringPilze, weltGrenzen } from '../welt/weltlogik.js';
+import { BREITE as BILDSCHIRM_BREITE, HOEHE as BILDSCHIRM_HOEHE, schrift } from './stil.js';
+
+const BILDSCHIRM = { breite: BILDSCHIRM_BREITE, hoehe: BILDSCHIRM_HOEHE };
 
 // Tiefe für Licht, das auch durch die Dunkelheit in der Höhle scheint.
 // Die Dunkelheit selbst liegt bei DUNKEL_TIEFE, darunter.
@@ -20,6 +24,51 @@ const BAUM_ARTEN = [
   { name: 'baum-schief', groesse: 0.58 },
 ];
 
+// Die gemalten Steine mit Kristallen, die rund um die Mine am Rand liegen.
+const RANDSTEINE = ['stein', 'stein-schale', 'stein-beine'];
+const RANDSTEIN_BREITE = 190;
+// Die Farben, in denen die Kristalle auf den Steinen leuchten
+const RANDSTEIN_LICHT = [0x6fe8ff, 0xff6fb8, 0x8ab8ff];
+
+// Die gemalten Häuser kommen reihum dran, alle gleich hoch.
+const HAUS_BILDER = ['haus-1', 'haus-2', 'haus-3'];
+const HAUS_HOEHE = 300;
+// Was in jedem Haus leuchtet (Anteil von Breite und Höhe des Bildes, von oben
+// links gezählt): Lampen leuchten warm und flackern ein bisschen, Fenster
+// leuchten sanft. groesse ist der Anteil der Hausbreite.
+const HAUS_LICHTER = {
+  'haus-1': {
+    lampen: [{ x: 0.755, y: 0.61, groesse: 0.5 }],
+    fenster: [{ x: 0.53, y: 0.17, groesse: 0.35 }, { x: 0.68, y: 0.54, groesse: 0.4 }],
+    // Die Lichterkette quer durchs Haus: von links nach rechts, in der Mitte hängt sie durch.
+    kette: { von: { x: 0.25, y: 0.44 }, bis: { x: 0.87, y: 0.415 }, durchhaengen: 0.035, lichter: 7 },
+  },
+  'haus-2': {
+    lampen: [],
+    fenster: [{ x: 0.36, y: 0.505, groesse: 0.45 }, { x: 0.86, y: 0.58, groesse: 0.25 }],
+  },
+  'haus-3': {
+    lampen: [{ x: 0.317, y: 0.6, groesse: 0.22 }],
+    fenster: [{ x: 0.178, y: 0.64, groesse: 0.25 }, { x: 0.792, y: 0.64, groesse: 0.25 }],
+  },
+};
+const LAMPEN_LICHT = 0xffc861;
+const FENSTER_LICHT = 0xffe9a8;
+
+// So groß stehen der gemalte dunkle Kristall und ein Pilz da (Anteil vom Bild).
+const DUNKLER_KRISTALL_GROESSE = 0.55;
+const PILZ_GROESSE = 0.5;
+
+// Der Pilzkopf ist eine Lampe: Er strahlt nach unten, und aus den weißen
+// Punkten steigt Licht nach oben. Wo die Punkte und der Rand des Kopfes im
+// Bild liegen (Anteil von Breite und Höhe, von oben links gezählt):
+const PILZ_PUNKTE = [
+  [0.67, 0.09], [0.58, 0.1], [0.42, 0.11], [0.51, 0.16],
+  [0.82, 0.18], [0.64, 0.2], [0.22, 0.2], [0.34, 0.21],
+];
+const PILZ_KOPF_UNTEN = 0.3;
+const PILZ_LICHT = 0xffd6b8;
+
 // Wo im gemalten Mondsee der Mond liegt (Anteil von Breite und Höhe des Bildes).
 const MOND_IM_SEE = { x: 0.44, y: 0.49, breite: 0.14, hoehe: 0.22 };
 
@@ -29,10 +78,8 @@ const BILDER = {
   baum: { breite: 220, hoehe: 270, fuss: 255 },
   'kristall-lila': { breite: 110, hoehe: 170, fuss: 160 },
   'kristall-blau': { breite: 110, hoehe: 170, fuss: 160 },
-  'kristall-dunkel': { breite: 110, hoehe: 170, fuss: 160 },
   prismastahl: { breite: 120, hoehe: 180, fuss: 168 },
   felsen: { breite: 170, hoehe: 140, fuss: 126 },
-  haus: { breite: 280, hoehe: 270, fuss: 256 },
   schild: { breite: 40, hoehe: 90, fuss: 86 },
   gold: { breite: 120, hoehe: 96, fuss: 86 },
   'hoehle-hinein': { breite: 300, hoehe: 280, fuss: 272 },
@@ -46,7 +93,20 @@ const BODEN = {
   wald: { grund: 0x3b2170, hell: 0x46288a, dunkel: 0x331b62, weg: 0x6c55a0 },
   mine: { grund: 0x2b2340, hell: 0x372d52, dunkel: 0x211a33, weg: 0x5a4f6e },
   see: { grund: 0x2f2a6a, hell: 0x3a3580, dunkel: 0x28235a, weg: 0x7a6cb0 },
+  gang: { grund: 0x29234f, hell: 0x342d64, dunkel: 0x201b40, weg: 0x5d5490 },
+  haus: { grund: 0x8a6a4a, hell: 0x9a7a58, dunkel: 0x7a5c3e, weg: 0xb09070 },
+  wasser: { grund: 0x1d4a8a, hell: 0x2a62a8, dunkel: 0x123266, weg: 0x4a8ad0 },
+  regenwald: { grund: 0x2b5a2e, hell: 0x387238, dunkel: 0x1f4423, weg: 0x6b5a3a },
 };
+
+// Unter Wasser: so hoch ist der Sandboden unten.
+const SANDBODEN = 150;
+
+// In der Mine und im Geheimgang ist man unter der Erde: oben eine Felswand,
+// am Rand Steine mit Kristallen, und Ausgänge sind Höhlenöffnungen.
+function unterDerErde(stil) {
+  return stil === 'mine' || stil === 'gang';
+}
 
 // Ein Würfel, der bei jedem Spielstart dieselben Zahlen liefert.
 // So sieht der Boden immer gleich aus.
@@ -109,25 +169,6 @@ function felsenMalen(stift) {
   stift.fillCircle(108, 62, 24);
   stift.fillStyle(0x7a6e9c);
   stift.fillCircle(56, 44, 13);
-}
-
-// Ein rundes Dorfhaus mit spitzem Dach, Tür und leuchtenden Fenstern.
-function hausMalen(stift) {
-  stift.fillStyle(0xd8c8f0);
-  stift.fillRect(45, 130, 190, 126);
-  stift.fillStyle(0xbfa9e3);
-  stift.fillRect(45, 130, 190, 14);
-  stift.fillStyle(0x5a2c9a);
-  stift.fillTriangle(20, 140, 140, 18, 260, 140);
-  stift.fillStyle(0x7a44c4);
-  stift.fillTriangle(140, 18, 260, 140, 140, 140);
-  stift.fillStyle(0x3b1e66);
-  stift.fillRoundedRect(118, 176, 44, 80, { tl: 22, tr: 22, bl: 0, br: 0 });
-  stift.fillStyle(0xffe9a8);
-  stift.fillCircle(80, 190, 18);
-  stift.fillCircle(200, 190, 18);
-  stift.fillStyle(0x8ef0ff);
-  stift.fillTriangle(130, 30, 140, 0, 150, 30);
 }
 
 function schildMalen(stift) {
@@ -275,6 +316,17 @@ function grasMalen(stift, ort, zufall) {
           stift.fillEllipse(x + zufall() * 10, y + zufall() * 8, 12 + zufall() * 10, 8 + zufall() * 6);
         }
       }
+    } else if (ort.stil === 'wasser') {
+      // Seegras: lange, wellige Halme, die vom Boden nach oben wachsen
+      for (let x = gras.links + 10; x < gras.links + gras.breite; x += 14) {
+        const unten = gras.oben + gras.hoehe + 30;
+        const lang = gras.hoehe * (0.6 + zufall() * 0.5);
+        stift.lineStyle(5 + zufall() * 4, zufall() < 0.5 ? 0x2f9e78 : 0x4fc49a, 0.9);
+        stift.beginPath();
+        stift.moveTo(x, unten);
+        for (let t = 1; t <= 8; t += 1) stift.lineTo(x + Math.sin(t * 0.9 + x) * 12, unten - (lang * t) / 8);
+        stift.strokePath();
+      }
     } else if (ort.stil === 'see') {
       // Schilf: dünne Halme mit braunen Kolben
       stift.fillStyle(0x24505a);
@@ -369,15 +421,55 @@ function felswandMalen(stift, ort, zufall) {
   }
 }
 
+// Unter Wasser, von der Seite gesehen: oben hell, wo das Licht hereinkommt,
+// nach unten immer dunkler. Lichtstrahlen fallen schräg herab, und unten ist
+// der Sandboden mit Kieseln.
+function wasserMalen(stift, ort, zufall) {
+  const { breite, hoehe } = ort;
+  // Viele schmale Streifen von hell nach dunkel (ein Farbverlauf geht beim
+  // Malen in ein Bild nicht)
+  const streifen = 48;
+  for (let i = 0; i < streifen; i += 1) {
+    stift.fillStyle(mischen(0x5aa8e0, 0x0b2350, i / (streifen - 1)));
+    stift.fillRect(0, (i * hoehe) / streifen, breite, hoehe / streifen + 1);
+  }
+  // Die Wasseroberfläche oben mit kleinen Wellen
+  stift.fillStyle(0x9ad8ff, 0.55);
+  stift.fillRect(0, 0, breite, 70);
+  for (let x = 0; x < breite; x += 46) stift.fillCircle(x + 23, 70, 24);
+  // Lichtstrahlen
+  for (let i = 0; i < 9; i += 1) {
+    const x = (i + 0.3 + zufall() * 0.4) * (breite / 9);
+    stift.fillStyle(0xcfeeff, 0.06 + zufall() * 0.05);
+    stift.fillTriangle(x - 40, 0, x + 40, 0, x + 180 + zufall() * 120, hoehe - SANDBODEN);
+  }
+  // Der Sandboden mit welliger Kante und Kieseln
+  const sand = hoehe - SANDBODEN;
+  stift.fillStyle(0xb79a78);
+  stift.fillRect(0, sand + 20, breite, SANDBODEN);
+  for (let x = 0; x < breite; x += 60) stift.fillEllipse(x + 30, sand + 22, 90, 30 + zufall() * 16);
+  stift.fillStyle(0xcdb391);
+  for (let x = 0; x < breite; x += 80) stift.fillEllipse(x + zufall() * 60, sand + 30 + zufall() * 30, 70, 10);
+  for (let i = 0; i < breite / 20; i += 1) {
+    stift.fillStyle([0x8a6e98, 0x9c8acb, 0x6e5a80][i % 3], 0.9);
+    stift.fillEllipse(zufall() * breite, sand + 40 + zufall() * (SANDBODEN - 50), 8 + zufall() * 10, 5 + zufall() * 5);
+  }
+}
+
 function bodenMalen(stift, ort) {
   const zufall = wuerfel(ort.breite + ort.hoehe + ort.stil.length);
   const farben = BODEN[ort.stil];
+  if (ort.stil === 'wasser') {
+    wasserMalen(stift, ort, zufall);
+    grasMalen(stift, ort, zufall);
+    return;
+  }
   stift.fillStyle(farben.grund);
   stift.fillRect(0, 0, ort.breite, ort.hoehe);
   flecken(stift, ort, farben, zufall);
 
   const flaeche = (ort.breite * ort.hoehe) / 15000;
-  if (ort.stil === 'mine') {
+  if (unterDerErde(ort.stil)) {
     // Glitzernder Kristallstaub
     punkte(stift, ort, [0x8ef0ff, 0xb8c4d9, 0xff9ad5], Math.round(flaeche * 0.8), 1.5, zufall);
   } else {
@@ -394,7 +486,7 @@ function bodenMalen(stift, ort) {
     stift.fillStyle(0xb9a8de, 0.5);
     stift.fillCircle(platz.x, platz.y - 20, 150);
   }
-  if (ort.stil === 'mine') felswandMalen(stift, ort, zufall);
+  if (unterDerErde(ort.stil)) felswandMalen(stift, ort, zufall);
   // Schatten am Ufer des gemalten Sees
   for (const see of ort.seen ?? []) {
     if (see.bild) {
@@ -409,6 +501,9 @@ function bodenMalen(stift, ort) {
   stift.fillStyle(0x170b2c, 0.4);
   for (const baum of ort.baeume ?? []) stift.fillEllipse(baum.x, baum.y, 120, 36);
   for (const kristall of ort.kristalle ?? []) stift.fillEllipse(kristall.x, kristall.y, 96, 26);
+  for (const pilz of ort.pilze ?? []) stift.fillEllipse(pilz.x, pilz.y, 70, 20);
+  for (const pflanze of [...(ort.pflanzen ?? []), ...(ort.deko ?? [])]) stift.fillEllipse(pflanze.x, pflanze.y, pflanze.groesse * 0.55, pflanze.groesse * 0.14);
+  if (ort.stil === 'regenwald') regenwaldBodenMalen(stift, ort, zufall);
   if (ort.dunklerKristall) stift.fillEllipse(ort.dunklerKristall.x, ort.dunklerKristall.y, 96, 26);
   for (const stahl of ort.prismastahl ?? []) stift.fillEllipse(stahl.x, stahl.y, 100, 28);
   for (const gold of ort.gold ?? []) stift.fillEllipse(gold.x, gold.y, 110, 30);
@@ -424,6 +519,25 @@ export function lichtschein(szene, x, y, breite, hoehe, farbe) {
     .setDisplaySize(breite, hoehe)
     .setTint(farbe)
     .setBlendMode(Phaser.BlendModes.ADD);
+}
+
+// Ein Lichtkegel: oben schmal und hell, nach unten breiter und blasser.
+function lichtkegelErzeugen(szene) {
+  const groesse = 128;
+  const leinwand = szene.textures.createCanvas('lichtkegel', groesse, groesse);
+  const stift = leinwand.context;
+  const verlauf = stift.createLinearGradient(0, 0, 0, groesse);
+  verlauf.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+  verlauf.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  stift.fillStyle = verlauf;
+  stift.beginPath();
+  stift.moveTo(groesse * 0.2, 0);
+  stift.lineTo(groesse * 0.8, 0);
+  stift.lineTo(groesse, groesse);
+  stift.lineTo(0, groesse);
+  stift.closePath();
+  stift.fill();
+  leinwand.refresh();
 }
 
 function lichtscheinErzeugen(szene) {
@@ -443,6 +557,7 @@ function lichtscheinErzeugen(szene) {
 export function bilderErzeugen(szene) {
   if (szene.textures.exists('baum')) return;
   lichtscheinErzeugen(szene);
+  lichtkegelErzeugen(szene);
   const stift = szene.add.graphics();
   const malen = (name, wie) => {
     wie(stift);
@@ -452,10 +567,8 @@ export function bilderErzeugen(szene) {
   malen('baum', baumMalen);
   malen('kristall-lila', (s) => kristallMalen(s, 0x8a5be0, 0xb99cf0));
   malen('kristall-blau', (s) => kristallMalen(s, 0x5b8fe0, 0x9cc0f2));
-  malen('kristall-dunkel', (s) => kristallMalen(s, 0x2a2238, 0x4a4060));
   malen('prismastahl', prismastahlMalen);
   malen('felsen', felsenMalen);
-  malen('haus', hausMalen);
   malen('schild', schildMalen);
   malen('gold', goldMalen);
   malen('funkel', funkelMalen);
@@ -495,7 +608,10 @@ function masse(szene, name) {
 export function ortAufbauen(szene, schluessel, offen = () => true) {
   const ort = ORTE[schluessel];
   bilderErzeugen(szene);
-  szene.add.image(0, 0, bodenErzeugen(szene, schluessel, ort)).setOrigin(0).setDepth(-10);
+  // Ein Zimmer hat ein gemaltes Bild als Boden und Wand (bild beim Ort),
+  // sonst wird der Boden gemalt.
+  if (ort.bild) szene.add.image(0, 0, ort.bild).setOrigin(0).setDisplaySize(ort.breite, ort.hoehe).setDepth(-10);
+  else szene.add.image(0, 0, bodenErzeugen(szene, schluessel, ort)).setOrigin(0).setDepth(-10);
 
   const verdecker = [];
   const stellen = (name, x, y, verdeckt = false, groesse = 1) => {
@@ -519,7 +635,11 @@ export function ortAufbauen(szene, schluessel, offen = () => true) {
   const licht = ort.dunkel ? LICHT_TIEFE : null;
 
   for (const baum of ort.baeume ?? []) baumStellen(baum.x, baum.y);
-  for (const haus of ort.haeuser ?? []) stellen('haus', haus.x, haus.y, true);
+  (ort.haeuser ?? []).forEach((haus, nummer) => {
+    const name = HAUS_BILDER[nummer % HAUS_BILDER.length];
+    const bild = stellen(name, haus.x, haus.y, true, HAUS_HOEHE / masse(szene, name).hoehe);
+    hausLeuchten(szene, bild, HAUS_LICHTER[name]);
+  });
   (ort.kristalle ?? []).forEach((punkt, nummer) => {
     const farbe = nummer % 2 === 0 ? 'lila' : 'blau';
     // Im Dorf ist der mittlere Kristall auf dem Platz besonders groß.
@@ -542,12 +662,28 @@ export function ortAufbauen(szene, schluessel, offen = () => true) {
     }
   }
   for (const fels of ort.felsen ?? []) stellen('felsen', fels.x, fels.y);
-  if (ort.dunklerKristall) stellen('kristall-dunkel', ort.dunklerKristall.x, ort.dunklerKristall.y);
+  // Pflanzen im Regenwald (gemalt mit werkzeuge/pflanzen_malen.py)
+  for (const pflanze of [...(ort.pflanzen ?? []), ...(ort.deko ?? [])]) {
+    const bild = stellen(`pflanze-${pflanze.art}`, pflanze.x, pflanze.y, true, pflanze.groesse / masse(szene, `pflanze-${pflanze.art}`).hoehe);
+    bild.setFlipX(pflanze.x % 3 === 0);
+    // Die Pflanzen wiegen sich ein kleines bisschen im Wind.
+    szene.tweens.add({ targets: bild, angle: { from: -1.5, to: 1.5 }, duration: 2400 + (pflanze.x % 7) * 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+  if (ort.stil === 'regenwald') {
+    dschungelAufstellen(szene, ort, stellen);
+    regenwaldWetter(szene, ort);
+  }
+  if (ort.nebel) nebelZiehen(szene, ort, ort.nebel);
+  const pilze = (ort.pilze ?? []).map((pilz) => stellen('pilz', pilz.x, pilz.y, false, PILZ_GROESSE));
+  pilzeLeuchtenLassen(szene, pilze, licht);
+  // Der dunkle Kristall: Der Schatten hat ihm sein Licht und seine Farben ausgesaugt.
+  if (ort.dunklerKristall) stellen('kristall-ausgesaugt', ort.dunklerKristall.x, ort.dunklerKristall.y, false, DUNKLER_KRISTALL_GROESSE);
   for (const see of ort.seen ?? []) if (see.bild) gemaltenSeeAufstellen(szene, see, licht);
 
-  randAufbauen(ort, stellen, baumStellen);
+  randAufbauen(szene, ort, stellen, baumStellen, licht);
   // Zu jedem Ausgang merken wir uns, was zu ihm gehört: Höhle, Licht und Schild.
   const zumAusgang = new Map(ort.ausgaenge.map((ausgang) => [ausgang, []]));
+  tuerenAufstellen(szene, ort, stellen, licht);
   hoehlenAufstellen(szene, ort, stellen, licht, zumAusgang);
   schilderAufstellen(szene, ort, stellen, zumAusgang);
   glitzernLassen(szene, glitzernde, licht);
@@ -615,6 +751,50 @@ function lichthof(szene, punkt, groesse, farbe, licht) {
     yoyo: true,
     repeat: -1,
     ease: 'Sine.easeInOut',
+  });
+}
+
+// Die Pilze leuchten: Unter dem Kopf strahlt ein Lichtkegel auf den Boden,
+// und aus den weißen Punkten steigen immer wieder kleine Lichtstrahlen auf.
+function pilzeLeuchtenLassen(szene, pilze, licht) {
+  if (pilze.length === 0) return;
+  for (const pilz of pilze) {
+    const kopfUnten = pilz.y - (pilz.originY - PILZ_KOPF_UNTEN) * pilz.displayHeight;
+    const kegel = szene.add
+      .image(pilz.x, kopfUnten, 'lichtkegel')
+      .setOrigin(0.5, 0)
+      .setDisplaySize(pilz.displayWidth * 1.1, pilz.y - kopfUnten + 30)
+      .setTint(PILZ_LICHT)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(0.35)
+      .setDepth(licht ?? pilz.y + 1);
+    const boden = lichtschein(szene, pilz.x, pilz.y, pilz.displayWidth * 1.8, 50, PILZ_LICHT).setAlpha(0.4).setDepth(-2);
+    const dauer = 1300 + Math.random() * 600;
+    szene.tweens.add({ targets: [kegel, boden], alpha: 0.6, duration: dauer, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+  szene.time.addEvent({
+    delay: Math.max(60, 500 / pilze.length),
+    loop: true,
+    callback: () => {
+      const pilz = Phaser.Utils.Array.GetRandom(pilze);
+      const [anteilX, anteilY] = Phaser.Utils.Array.GetRandom(PILZ_PUNKTE);
+      const x = pilz.x + (anteilX - pilz.originX) * pilz.displayWidth;
+      const y = pilz.y + (anteilY - pilz.originY) * pilz.displayHeight;
+      const strahl = szene.add
+        .ellipse(x, y, 3, 16, 0xfff6e8)
+        .setOrigin(0.5, 1)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(licht ?? pilz.y + 2);
+      szene.tweens.add({
+        targets: strahl,
+        y: y - 40 - Math.random() * 30,
+        scaleY: 1.8,
+        alpha: 0,
+        duration: 900 + Math.random() * 500,
+        ease: 'Sine.easeOut',
+        onComplete: () => strahl.destroy(),
+      });
+    },
   });
 }
 
@@ -719,7 +899,7 @@ function gemaltenSeeAufstellen(szene, see, licht) {
 
 // Führt dieser Weg in die Mine hinein oder aus ihr hinaus?
 function istHoehle(ort, ausgang) {
-  return ort.stil === 'mine' || ORTE[ausgang.nach].stil === 'mine';
+  return unterDerErde(ort.stil) || unterDerErde(ORTE[ausgang.nach].stil);
 }
 
 // Führt ein Weg in die Mine oder aus ihr hinaus, steht dort ein Höhleneingang.
@@ -728,7 +908,7 @@ function hoehlenAufstellen(szene, ort, stellen, licht, zumAusgang) {
   const grenzen = weltGrenzen(ort);
   for (const ausgang of ort.ausgaenge) {
     if (!istHoehle(ort, ausgang)) continue;
-    const hinaus = ort.stil === 'mine';
+    const hinaus = unterDerErde(ort.stil);
     const punkt = hinterDemAusgang(ausgang, grenzen, -5);
     // Der Fuß liegt etwas unter dem Weg, die Figur läuft also genau in die Öffnung.
     const tor = stellen(hinaus ? 'hoehle-hinaus' : 'hoehle-hinein', punkt.x, punkt.y + 40);
@@ -744,21 +924,341 @@ function hoehlenAufstellen(szene, ort, stellen, licht, zumAusgang) {
   }
 }
 
-// Der Rand: dichte Bäume rund um den Ort, in der Mine Felsen.
-// Wo ein Weg hinausführt, bleibt eine Lücke.
-function randAufbauen(ort, stellen, baumStellen) {
+// Die Türen mitten im Ort (tueren beim Ort):
+//   pilzring: ein Ring aus kleinen leuchtenden Pilzen, in der Mitte schimmert der Boden
+//   treppe:   eine Treppe nach oben, aus der Licht hereinfällt
+//   haustuer: vor der Haustür leuchtet der Boden warm, damit man sie findet
+function tuerenAufstellen(szene, ort, stellen, licht) {
+  for (const tuer of ort.tueren ?? []) {
+    if (tuer.art === 'pilzring') {
+      const pilze = pilzringPilze(tuer).map((pilz, nummer) =>
+        stellen('pilz', pilz.x, pilz.y, false, PILZ_GROESSE * (0.5 + (nummer % 3) * 0.08)).setFlipX(nummer % 2 === 1),
+      );
+      pilzeLeuchtenLassen(szene, pilze, licht);
+      const mitte = lichtschein(szene, tuer.x, tuer.y, 150, 70, 0xc9b8ff).setAlpha(0.25).setDepth(-2);
+      szene.tweens.add({ targets: mitte, alpha: 0.55, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    } else if (tuer.art === 'portal') {
+      portalAufstellen(szene, tuer, licht);
+    } else if (tuer.art === 'tauchplatz') {
+      // Ein Tauchplatz am Ufer: Blasen steigen auf, und Ringe breiten sich aus.
+      const fleck = lichtschein(szene, tuer.x + 30, tuer.y, 150, 70, 0x9ad8ff).setAlpha(0.4).setDepth(-4);
+      szene.tweens.add({ targets: fleck, alpha: 0.75, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      szene.time.addEvent({
+        delay: 380,
+        loop: true,
+        callback: () => {
+          const blase = szene.add.circle(tuer.x + 20 + Math.random() * 40, tuer.y + 10, 3 + Math.random() * 4).setStrokeStyle(2, 0xe8f6ff, 0.9).setDepth(-3);
+          szene.tweens.add({ targets: blase, y: blase.y - 30, alpha: 0, scale: 1.6, duration: 900, onComplete: () => blase.destroy() });
+        },
+      });
+    } else if (tuer.art === 'treppe') {
+      stellen('hoehle-hinaus', tuer.x, tuer.y + 40).setDepth(tuer.y - 60);
+      const strahl = lichtschein(szene, tuer.x, tuer.y - 60, 420, 420, 0xe8e0ff).setAlpha(0.5).setDepth(licht ?? tuer.y);
+      szene.tweens.add({ targets: strahl, alpha: 0.75, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      szene.add
+        .text(tuer.x, tuer.y - 230, `↑ ${ORTE[tuer.nach].name}`, schrift(20, '#ffffff'))
+        .setOrigin(0.5)
+        .setPadding(10, 6)
+        .setBackgroundColor('#5a3a2a')
+        .setDepth(tuer.y);
+    } else {
+      const matte = lichtschein(szene, tuer.x, tuer.y, 120, 46, 0xffd6a0).setAlpha(0.35).setDepth(-2);
+      szene.tweens.add({ targets: matte, alpha: 0.7, duration: 1300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+  }
+}
+
+// Ein geheimes Portal: ein grüner, wirbelnder Ring aus Licht. Von weitem
+// sieht man es kaum, je näher man kommt, desto heller leuchtet es.
+function portalAufstellen(szene, tuer, licht) {
+  const mitte = { x: tuer.x, y: tuer.y - 70 };
+  const teile = [];
+  for (const [breite, farbe, alpha] of [[150, 0x2fd06a, 0.5], [110, 0x9af0b0, 0.6], [70, 0xe8fff0, 0.8]]) {
+    const ring = szene.add.ellipse(mitte.x, mitte.y, breite, breite * 1.45).setStrokeStyle(6, farbe, alpha).setBlendMode(Phaser.BlendModes.ADD).setDepth(licht ?? tuer.y);
+    szene.tweens.add({ targets: ring, angle: breite % 3 ? 360 : -360, duration: 3000 + breite * 20, repeat: -1 });
+    szene.tweens.add({ targets: ring, scaleX: 1.12, scaleY: 0.92, duration: 900 + breite * 5, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    teile.push(ring);
+  }
+  const schein = lichtschein(szene, mitte.x, mitte.y, 260, 320, 0x5af08a).setDepth(licht ?? tuer.y - 1);
+  teile.push(schein);
+  // Funken und Blätter werden ins Portal gesogen.
+  szene.time.addEvent({
+    delay: 200,
+    loop: true,
+    callback: () => {
+      const winkel = Math.random() * Math.PI * 2;
+      const funke = szene.add
+        .image(mitte.x + Math.cos(winkel) * 110, mitte.y + Math.sin(winkel) * 140, 'funkel')
+        .setTint(Phaser.Utils.Array.GetRandom([0x9af0b0, 0xe8fff0, 0x5af08a]))
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setDepth(licht ?? tuer.y + 1)
+        .setScale(0.5)
+        .setAlpha(teile[0].alpha);
+      szene.tweens.add({ targets: funke, x: mitte.x, y: mitte.y, scale: 0.1, angle: 180, duration: 900, onComplete: () => funke.destroy() });
+    },
+  });
+  // Wie hell es leuchtet, hängt davon ab, wie nah die Figur ist.
+  szene.time.addEvent({
+    delay: 100,
+    loop: true,
+    callback: () => {
+      const figur = szene.spieler?.ort;
+      const nah = figur ? Phaser.Math.Clamp(1 - (Math.hypot(figur.x - tuer.x, figur.y - tuer.y) - 150) / 600, 0.12, 1) : 0.12;
+      for (const teil of teile) teil.setAlpha(teil === schein ? nah * 0.5 : nah);
+    },
+  });
+}
+
+// Der Waldboden im Regenwald: Moos, Laub, kleine Farne und Pfützen.
+function regenwaldBodenMalen(stift, ort, zufall) {
+  for (let i = 0; i < (ort.breite * ort.hoehe) / 9000; i += 1) {
+    const x = zufall() * ort.breite;
+    const y = zufall() * ort.hoehe;
+    stift.fillStyle([0x4f8a3a, 0x5aa04a, 0x3a6e2e, 0x7a5a32][Math.floor(zufall() * 4)], 0.8);
+    stift.fillEllipse(x, y, 10 + zufall() * 18, 5 + zufall() * 8);
+  }
+  for (let i = 0; i < 14; i += 1) {
+    stift.fillStyle(0x5a8ab0, 0.45);
+    stift.fillEllipse(zufall() * ort.breite, 300 + zufall() * (ort.hoehe - 400), 80 + zufall() * 90, 24 + zufall() * 20);
+  }
+}
+
+// Der Dschungel: riesige Ceiba-Bäume, die oben aus dem Bild wachsen, Wurzeln
+// und Laub am Boden, Büsche und Lianen. Alles gemalt mit werkzeuge/pflanzen_malen.py.
+function dschungelAufstellen(szene, ort, stellen) {
+  const zufall = wuerfel(17 + ort.breite);
+  const masseVon = (name) => masse(szene, name);
+  // Laub und Wurzeln liegen flach auf dem Boden, unter allem anderen.
+  for (let i = 0; i < (ort.laub ?? 0); i += 1) {
+    const laub = szene.add.image(zufall() * ort.breite, 200 + zufall() * (ort.hoehe - 200), 'pflanze-blaetter').setDepth(-3).setAngle(zufall() * 360).setAlpha(0.9);
+    laub.setScale((40 + zufall() * 40) / masseVon('pflanze-blaetter').breite);
+  }
+  for (const wurzel of ort.wurzeln ?? []) {
+    const bild = szene.add.image(wurzel.x, wurzel.y, 'pflanze-wurzeln').setDepth(-3).setFlipX(zufall() < 0.5);
+    bild.setScale((220 + zufall() * 120) / masseVon('pflanze-wurzeln').breite);
+  }
+  // Viele schlanke Stämme, mit Moos bewachsen und von Ranken umwickelt.
+  // Auch sie wachsen oben aus dem Bild hinaus.
+  stammMalen(szene);
+  for (const stamm of ort.staemme ?? []) {
+    const hoch = 900 + zufall() * 500;
+    const bild = szene.add.image(stamm.x, stamm.y + 4, 'regenwald-stamm').setOrigin(0.5, 1).setDepth(stamm.y);
+    bild.setScale((0.6 + zufall() * 0.6) * 1, hoch / bild.height).setFlipX(zufall() < 0.5);
+    // Hellere Stämme stehen weiter hinten im Dunst.
+    bild.setTint(zufall() < 0.4 ? 0xc8d8c0 : 0xffffff);
+    szene.add.ellipse(stamm.x, stamm.y, 70, 20, 0x10260f, 0.4).setDepth(-2);
+  }
+  // Die Riesenbäume: Der Stamm geht weit nach oben aus dem Bild hinaus.
+  for (const baum of ort.riesenbaeume ?? []) {
+    szene.add.ellipse(baum.x, baum.y, 360, 90, 0x10260f, 0.4).setDepth(-2);
+    // Der gemalte Baum ist breit: Er wird in die Höhe gestreckt, damit er weit nach oben ragt.
+    const { breite, hoehe } = masseVon('pflanze-ceiba');
+    stellen('pflanze-ceiba', baum.x, baum.y + 20, true, 1).setScale(440 / breite, baum.groesse / hoehe).setFlipX(zufall() < 0.5);
+  }
+  // Büsche: Steht man dahinter, werden sie durchsichtig.
+  for (const busch of ort.buesche ?? []) {
+    const name = zufall() < 0.5 ? 'pflanze-busch' : 'pflanze-farnbusch';
+    const bild = stellen(name, busch.x, busch.y, true, (120 + zufall() * 70) / masseVon(name).hoehe).setFlipX(zufall() < 0.5);
+    szene.tweens.add({ targets: bild, scaleX: bild.scaleX * 1.03, duration: 1800 + zufall() * 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+  // Lianen hängen von oben herab und schaukeln ein bisschen.
+  for (const liane of ort.lianen ?? []) {
+    const lang = 500 + zufall() * 300;
+    const bild = szene.add
+      .image(liane.x, liane.y, 'pflanze-liane')
+      .setOrigin(0.5, 1)
+      .setDepth(liane.y + 400)
+      .setAlpha(0.95);
+    bild.setScale(lang / masseVon('pflanze-liane').hoehe);
+    szene.tweens.add({ targets: bild, angle: { from: -2, to: 2 }, duration: 2600 + zufall() * 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+  // Große Blätter ganz vorne am Bildrand, wie wenn man durch den Dschungel
+  // schaut. Sie bleiben am Bildschirm kleben und wiegen sich.
+  const vorne = [
+    { name: 'pflanze-bananenstaude', x: BILDSCHIRM.breite + 30, y: BILDSCHIRM.hoehe + 60, hoch: 560, winkel: -18 },
+    { name: 'pflanze-monstera', x: BILDSCHIRM.breite - 20, y: 260, hoch: 360, winkel: 200 },
+    { name: 'pflanze-farnbusch', x: 120, y: BILDSCHIRM.hoehe + 70, hoch: 300, winkel: 8 },
+    { name: 'pflanze-monstera', x: 560, y: BILDSCHIRM.hoehe + 130, hoch: 260, winkel: -6 },
+  ];
+  for (const blatt of vorne) {
+    const bild = szene.add
+      .image(blatt.x, blatt.y, blatt.name)
+      .setOrigin(0.5, 1)
+      .setScrollFactor(0)
+      .setAngle(blatt.winkel)
+      .setTint(0x5a8a50)
+      .setAlpha(0.96)
+      .setDepth(99000);
+    bild.setScale(blatt.hoch / masseVon(blatt.name).hoehe);
+    szene.tweens.add({ targets: bild, angle: blatt.winkel + 3, duration: 2600 + zufall() * 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+  // Heller Dunst oben, wo das Licht durch das Blätterdach kommt
+  szene.add.image(BILDSCHIRM.breite / 2, -60, 'lichtschein').setScrollFactor(0).setDisplaySize(BILDSCHIRM.breite * 1.6, 520).setTint(0xf2fff0).setAlpha(0.45).setDepth(98900);
+
+  // Sonnenstrahlen fallen schräg durch das Blätterdach.
+  for (let i = 0; i < 7; i += 1) {
+    const strahl = szene.add
+      .image(200 + zufall() * (ort.breite - 400), 0, 'lichtkegel')
+      .setOrigin(0.5, 0)
+      .setDisplaySize(160 + zufall() * 120, ort.hoehe * 0.9)
+      .setAngle(-18)
+      .setTint(0xf6ffd0)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(0.12)
+      .setDepth(90000 - 30);
+    szene.tweens.add({ targets: strahl, alpha: 0.22, duration: 3000 + zufall() * 2000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+}
+
+// Ein schlanker Baumstamm, einmal gemalt: graubraun mit wackeligem Rand,
+// grünen Moosflecken und einer Ranke, die sich hinaufwindet.
+function stammMalen(szene) {
+  if (szene.textures.exists('regenwald-stamm')) return;
+  const breite = 64;
+  const hoehe = 900;
+  const leinwand = szene.textures.createCanvas('regenwald-stamm', breite, hoehe);
+  const stift = leinwand.context;
+  const zufall = wuerfel(99);
+  const rand = (y) => 6 + Math.sin(y / 70) * 3 + zufall() * 2;
+  stift.beginPath();
+  stift.moveTo(rand(0) + 4, 0);
+  for (let y = 0; y <= hoehe; y += 30) stift.lineTo(rand(y) + (y / hoehe) * -4, y);
+  for (let y = hoehe; y >= 0; y -= 30) stift.lineTo(breite - rand(y) + (y / hoehe) * 4, y);
+  stift.closePath();
+  const licht = stift.createLinearGradient(0, 0, breite, 0);
+  licht.addColorStop(0, '#9a9a82');
+  licht.addColorStop(0.4, '#7a7a64');
+  licht.addColorStop(1, '#4e4e3e');
+  stift.fillStyle = licht;
+  stift.fill();
+  stift.strokeStyle = '#2e3a22';
+  stift.lineWidth = 3;
+  stift.stroke();
+  // Moos
+  for (let i = 0; i < 40; i += 1) {
+    stift.fillStyle = ['rgba(90, 150, 60, 0.75)', 'rgba(120, 180, 70, 0.7)', 'rgba(60, 110, 50, 0.8)'][i % 3];
+    stift.beginPath();
+    stift.ellipse(10 + zufall() * (breite - 20), zufall() * hoehe, 6 + zufall() * 10, 10 + zufall() * 26, 0, 0, Math.PI * 2);
+    stift.fill();
+  }
+  // Eine Ranke windet sich hinauf, mit kleinen Blättern.
+  stift.strokeStyle = '#3f7a32';
+  stift.lineWidth = 4;
+  stift.beginPath();
+  for (let y = hoehe; y >= 0; y -= 6) {
+    const x = breite / 2 + Math.sin(y / 38) * (breite / 2 - 6);
+    if (y === hoehe) stift.moveTo(x, y);
+    else stift.lineTo(x, y);
+  }
+  stift.stroke();
+  stift.fillStyle = '#5aa04a';
+  for (let y = hoehe - 20; y > 0; y -= 46) {
+    const x = breite / 2 + Math.sin(y / 38) * (breite / 2 - 6);
+    stift.beginPath();
+    stift.ellipse(x + 8, y, 10, 5, 0.6, 0, Math.PI * 2);
+    stift.fill();
+  }
+  leinwand.refresh();
+}
+
+// Im Regenwald nieselt es, und Nebelschwaden ziehen langsam vorbei.
+function regenwaldWetter(szene, ort) {
+  szene.time.addEvent({
+    delay: 30,
+    loop: true,
+    callback: () => {
+      const kamera = szene.cameras.main;
+      const x = kamera.scrollX + Math.random() * kamera.width;
+      const y = kamera.scrollY + Math.random() * kamera.height * 0.6;
+      const tropfen = szene.add.rectangle(x, y, 2, 16, 0xcfe8ff, 0.5).setAngle(12).setDepth(90000 - 10);
+      szene.tweens.add({ targets: tropfen, x: x + 60, y: y + 260, alpha: 0, duration: 700, onComplete: () => tropfen.destroy() });
+    },
+  });
+  for (let i = 0; i < 6; i += 1) {
+    const nebel = lichtschein(szene, Math.random() * ort.breite, 200 + Math.random() * (ort.hoehe - 300), 700, 220, 0xe8fff0)
+      .setAlpha(0.18)
+      .setBlendMode(Phaser.BlendModes.NORMAL)
+      .setDepth(90000 - 20);
+    szene.tweens.add({ targets: nebel, x: nebel.x + 400, alpha: 0.08, duration: 14000 + i * 2000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+}
+
+// Nebel (nebel beim Ort, von 0 bis 1): Weiche Schwaden ziehen langsam hin und
+// her, und über allem liegt ein leichter Dunst.
+function nebelZiehen(szene, ort, staerke) {
+  const zufall = wuerfel(5 + ort.hoehe);
+  const anzahl = Math.round((ort.breite * ort.hoehe) / 260000);
+  for (let i = 0; i < anzahl; i += 1) {
+    const schwade = lichtschein(szene, zufall() * ort.breite, 150 + zufall() * (ort.hoehe - 200), 600 + zufall() * 500, 180 + zufall() * 140, 0xe6e2ff)
+      .setBlendMode(Phaser.BlendModes.NORMAL)
+      .setAlpha(staerke * (0.35 + zufall() * 0.3))
+      .setDepth(90000 - 20);
+    szene.tweens.add({
+      targets: schwade,
+      x: schwade.x + (zufall() < 0.5 ? -1 : 1) * (300 + zufall() * 300),
+      alpha: staerke * 0.15,
+      duration: 12000 + zufall() * 10000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+  }
+  // Ein leichter Dunst über dem ganzen Bildschirm
+  szene.add.rectangle(0, 0, BILDSCHIRM.breite, BILDSCHIRM.hoehe, 0xd8d4f0, staerke * 0.18).setOrigin(0).setScrollFactor(0).setDepth(90000 - 19);
+}
+
+// Der Rand: dichte Bäume rund um den Ort, in der Mine gemalte Steine mit
+// Kristallen, auch oben vor der Felswand. Wo ein Weg hinausführt, bleibt eine Lücke.
+function randAufbauen(szene, ort, stellen, baumStellen, licht) {
+  // Ein Zimmer hat Wände, die sind schon im Bild.
+  if (ort.stil === 'haus') return;
   const zufall = wuerfel(3 + ort.breite);
-  const randStellen = (x, y) => (ort.stil === 'mine' ? stellen('felsen', x, y, true) : baumStellen(x, y));
+  // Im Regenwald ist der Rand ein Dickicht aus großen Pflanzen.
+  if (ort.stil === 'regenwald') {
+    const arten = ['monstera', 'bananenstaude', 'baumfarn', 'helikonie'];
+    const dickicht = (x, y) => {
+      const name = `pflanze-${arten[Math.floor(zufall() * arten.length)]}`;
+      stellen(name, x, y, true, ((260 + zufall() * 120) / masse(szene, name).hoehe)).setFlipX(zufall() < 0.5);
+    };
+    for (let x = 0; x <= ort.breite; x += 140) {
+      dickicht(x + zufall() * 40, 150 + zufall() * 30);
+      dickicht(x + zufall() * 40, ort.hoehe + 120 + zufall() * 30);
+    }
+    for (let y = 260; y <= ort.hoehe; y += 150) {
+      if (Math.abs(y - 900) > 160) dickicht(20 + zufall() * 30, y + zufall() * 30);
+      dickicht(ort.breite - 20 - zufall() * 30, y + zufall() * 30);
+    }
+    return;
+  }
+  // Unter Wasser liegen die gemalten Steine mit Kristallen auf dem Sandboden.
+  if (ort.stil === 'wasser') {
+    const steine = [];
+    for (let x = 120; x < ort.breite; x += 340 + zufall() * 120) {
+      const name = RANDSTEINE[Math.floor(zufall() * RANDSTEINE.length)];
+      const groesse = (150 / masse(szene, name).breite) * (0.8 + zufall() * 0.4);
+      steine.push(stellen(name, x, ort.hoehe - 8, false, groesse).setFlipX(zufall() < 0.5));
+    }
+    randKristalleLeuchten(szene, steine, licht, zufall);
+    return;
+  }
+  const steinig = unterDerErde(ort.stil);
+  const steine = [];
+  const steinStellen = (x, y) => {
+    const name = RANDSTEINE[Math.floor(zufall() * RANDSTEINE.length)];
+    const groesse = (RANDSTEIN_BREITE / masse(szene, name).breite) * (0.85 + zufall() * 0.3);
+    steine.push(stellen(name, x, y, true, groesse).setFlipX(zufall() < 0.5));
+  };
+  const randStellen = (x, y) => (steinig ? steinStellen(x, y) : baumStellen(x, y));
   const frei = (seite, wert) =>
     ort.ausgaenge.some(
       (ausgang) => ausgang.seite === seite && Math.abs(wert - ausgang.mitte) < AUSGANG_BREITE / 2 + 50,
     );
 
-  const schritt = ort.stil === 'mine' ? 130 : 115;
+  const schritt = steinig ? 130 : 115;
   for (let x = 0; x <= ort.breite; x += schritt) {
-    if (ort.stil !== 'mine' && !frei('oben', x)) randStellen(x + zufall() * 30, 105 + zufall() * 35);
+    if (!frei('oben', x)) randStellen(x + zufall() * 30, (steinig ? 160 : 105) + zufall() * 35);
     if (!frei('unten', x)) {
-      randStellen(x + zufall() * 30, ort.hoehe + (ort.stil === 'mine' ? 70 : 180) + zufall() * 30);
+      randStellen(x + zufall() * 30, ort.hoehe + (steinig ? 70 : 180) + zufall() * 30);
     }
   }
   for (let y = 260; y <= ort.hoehe; y += 130) {
@@ -767,6 +1267,81 @@ function randAufbauen(ort, stellen, baumStellen) {
     const dort = y + zufall() * 30;
     if (!frei('rechts', dort)) randStellen(ort.breite - 10 - zufall() * 30, dort);
   }
+  randKristalleLeuchten(szene, steine, licht, zufall);
+}
+
+// Im Haus leuchten die Lampen und die Fenster. Lampen flackern warm,
+// Fenster werden langsam heller und dunkler, die Lichterkette blinkt.
+function hausLeuchten(szene, haus, lichter) {
+  if (!lichter) return;
+  const punkt = ({ x, y }) => ({
+    x: haus.x + (x - haus.originX) * haus.displayWidth,
+    y: haus.y + (y - haus.originY) * haus.displayHeight,
+  });
+  const tiefe = haus.depth + 1;
+  for (const fenster of lichter.fenster) {
+    const { x, y } = punkt(fenster);
+    const weit = fenster.groesse * haus.displayWidth;
+    const schein = lichtschein(szene, x, y, weit, weit, FENSTER_LICHT).setAlpha(0.45).setDepth(tiefe);
+    szene.tweens.add({ targets: schein, alpha: 0.7, duration: 2200 + Math.random() * 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
+  for (const lampe of lichter.lampen) {
+    const { x, y } = punkt(lampe);
+    const weit = lampe.groesse * haus.displayWidth;
+    const kern = lichtschein(szene, x, y, weit, weit, LAMPEN_LICHT).setAlpha(0.8).setDepth(tiefe);
+    const hof = lichtschein(szene, x, y, weit * 2.6, weit * 2.6, LAMPEN_LICHT).setAlpha(0.3).setDepth(tiefe);
+    // Flackern wie eine echte Flamme: immer wieder ein bisschen anders.
+    const flackern = () => {
+      szene.tweens.add({
+        targets: [kern, hof],
+        alpha: (ziel) => (ziel === kern ? 0.6 + Math.random() * 0.35 : 0.2 + Math.random() * 0.2),
+        duration: 120 + Math.random() * 260,
+        onComplete: flackern,
+      });
+    };
+    flackern();
+  }
+  const kette = lichter.kette;
+  if (!kette) return;
+  for (let i = 0; i < kette.lichter; i += 1) {
+    const anteil = i / (kette.lichter - 1);
+    const { x, y } = punkt({
+      x: kette.von.x + (kette.bis.x - kette.von.x) * anteil,
+      y: kette.von.y + (kette.bis.y - kette.von.y) * anteil + Math.sin(anteil * Math.PI) * kette.durchhaengen,
+    });
+    const licht = lichtschein(szene, x, y, 22, 22, i % 2 ? 0xffe066 : 0xff9ad5).setAlpha(0.3).setDepth(tiefe);
+    szene.tweens.add({ targets: licht, alpha: 1, duration: 500, delay: i * 180, yoyo: true, repeat: -1, repeatDelay: 400, ease: 'Sine.easeInOut' });
+  }
+}
+
+// Die Kristalle auf den Steinen am Rand der Mine leuchten in ihren Farben,
+// auch durch die Dunkelheit hindurch, und funkeln immer wieder auf.
+function randKristalleLeuchten(szene, steine, licht, zufall) {
+  if (steine.length === 0) return;
+  const funkelnde = [];
+  for (const stein of steine) {
+    const breite = stein.displayWidth;
+    const hoehe = stein.displayHeight;
+    for (let i = 0; i < 2; i += 1) {
+      const x = stein.x + (zufall() - 0.5) * breite * 0.6;
+      const y = stein.y - hoehe * (0.35 + zufall() * 0.45);
+      const farbe = RANDSTEIN_LICHT[Math.floor(zufall() * RANDSTEIN_LICHT.length)];
+      const schein = lichtschein(szene, x, y, breite * 0.7, hoehe * 0.7, farbe)
+        .setAlpha(0.25)
+        .setDepth(licht ?? stein.depth + 1);
+      szene.tweens.add({
+        targets: schein,
+        alpha: 0.6,
+        duration: 1000 + zufall() * 1200,
+        delay: zufall() * 1500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+      funkelnde.push({ x, y: y + hoehe * 0.2, breite: breite * 0.4, hoehe: hoehe * 0.4, farben: [0xffffff, farbe] });
+    }
+  }
+  glitzernLassen(szene, funkelnde, licht);
 }
 
 // An jedem Ausgang steht ein Schild mit dem Namen des nächsten Ortes.

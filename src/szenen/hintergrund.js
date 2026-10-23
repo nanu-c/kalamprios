@@ -155,6 +155,37 @@ export function hintergrundMalen(szene, stil = 'wald') {
     return;
   }
 
+  if (stil === 'wasser') {
+    // Unter Wasser: oben hell, unten dunkel, Lichtstrahlen, Sandboden mit
+    // Seegras und Kristallen, und Blasen steigen auf.
+    himmel(stift, 0x5aa8e0, 0x0f3070);
+    for (let i = 0; i < 6; i += 1) {
+      stift.fillStyle(0xcfeeff, 0.08);
+      stift.fillTriangle(i * 230 + 60, 0, i * 230 + 140, 0, i * 230 + 260, HORIZONT);
+    }
+    for (const x of [120, 260, 980, 1120, 1200]) {
+      stift.lineStyle(7, x % 2 ? 0x2f9e78 : 0x4fc49a, 0.9);
+      stift.beginPath();
+      stift.moveTo(x, HORIZONT + 10);
+      for (let t = 1; t <= 8; t += 1) stift.lineTo(x + Math.sin(t + x) * 14, HORIZONT + 10 - t * 26);
+      stift.strokePath();
+    }
+    kristall(stift, 330, 60, 130, 0x8ef0ff);
+    kristall(stift, 1050, 70, 160, 0xff9ad5);
+    boden(stift, 0xb79a78, 0xcdb391);
+    szene.time.addEvent({
+      delay: 160,
+      loop: true,
+      callback: () => {
+        const x = Math.random() * BREITE;
+        const blase = szene.add.circle(x, HOEHE - 40, 3 + Math.random() * 6).setStrokeStyle(2, 0xe8f6ff, 0.8);
+        szene.tweens.add({ targets: blase, y: -20, x: x + (Math.random() - 0.5) * 80, alpha: 0.2, duration: 3000 + Math.random() * 2000, onComplete: () => blase.destroy() });
+      },
+    });
+    funkeln(szene, [kristallStelle(330, 60, 130), kristallStelle(1050, 70, 160)]);
+    return;
+  }
+
   if (stil === 'see') {
     // Der Mondsee: Der Mond spiegelt sich im Wasser.
     himmel(stift, 0x0f0b33, 0x4a4aa8);

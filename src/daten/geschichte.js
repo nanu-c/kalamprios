@@ -44,7 +44,7 @@ export const GESCHICHTE = {
       'Am Ufer steht der letzte dunkle Kristall. Er zittert ein wenig.',
       '„Hier am Mondsee ist der Schatten verschwunden. Niemand weiß, wohin.“',
       '„Manche sagen, im Schilf versteckt sich etwas Geheimnisvolles … Ob es mit dem Schatten zu tun hat?“',
-      '„Aber pass auf: Es ist sehr stark. Nur mit drei Kalamprios im Team kannst du es besiegen.“',
+      '„Aber pass auf: Es ist sehr stark. Nur mit drei Kalamprios auf Level drei kannst du es besiegen.“',
     ],
   },
 
@@ -67,5 +67,14 @@ export const GESCHICHTE = {
     rundeGeschafft: 'Super! Die nächste Runde wird länger.',
     nochEinRaetsel: '„Schön, dass du wieder da bist! Möchtest du noch ein Rätsel hören?“',
     richtig: '„Richtig! Das hast du toll gemacht.“',
+
+    // Was die Rätselsteine im Geheimgang zwischendurch sagen
+    naechsteRunde: 'Super! Auf zur nächsten Runde.',
+    farbeFalsch: '„Hmm, das ist nicht die richtige Farbe. Probier es noch einmal!“',
+    falschesKalamprio: '„Nein, so klingt es nicht. Hör noch einmal gut hin!“',
+    paarGefunden: 'Ein Paar!',
+    runtergefallen: '„Huch! Die Platte hat nicht gehalten. Schau dir den Weg noch einmal an!“',
+    erstFragen: '„Halt! Frag zuerst den Rätselstein.“',
+    allesNeu: 'Alles wieder wie am Anfang.',
   },
 };

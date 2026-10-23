@@ -34,6 +34,14 @@ export function schritt(boden) {
   const laut = zufall(0.8, 1.1);
   if (boden === 'gras') {
     rauschen({ dauer: 0.16, lautstaerke: 0.1 * laut, anschlag: 0.02, filter: { art: 'bandpass', frequenz: zufall(2500, 4000), q: 0.7 }, zittern: 40 });
+  } else if (boden === 'wasser') {
+    // Ein Schwimmzug: ein weiches Rauschen und ein paar Blubberblasen
+    rauschen({ dauer: 0.25, lautstaerke: 0.06 * laut, anschlag: 0.08, filter: { art: 'lowpass', frequenz: zufall(500, 800) } });
+    ton({ frequenz: zufall(500, 800), gleitenZu: zufall(900, 1300), dauer: 0.06, lautstaerke: 0.04 * laut });
+  } else if (boden === 'holz') {
+    // Holzdielen: ein kurzes, hohles Klopfen
+    ton({ frequenz: zufall(140, 170), gleitenZu: 110, dauer: 0.07, lautstaerke: 0.12 * laut, art: 'triangle' });
+    rauschen({ dauer: 0.04, lautstaerke: 0.06 * laut, filter: { art: 'bandpass', frequenz: zufall(900, 1300), q: 3 } });
   } else if (boden === 'stein') {
     rauschen({ dauer: 0.07, lautstaerke: 0.14 * laut, filter: { art: 'bandpass', frequenz: zufall(1800, 2600), q: 2 } });
     ton({ frequenz: zufall(180, 230), dauer: 0.05, lautstaerke: 0.08 * laut, art: 'triangle' });
@@ -47,7 +55,39 @@ export function schritt(boden) {
 export function umgebung(stil, ort) {
   const weg = raumWeg({ ...ort, sekunden: 3 });
   if (!weg) return;
-  if (stil === 'mine') {
+  if (stil === 'regenwald') {
+    // Der Regenwald: ein bunter Vogel, ein Frosch, Zikaden oder ein Tropfen
+    const was = Math.random();
+    if (was < 0.35) {
+      // Ein tropischer Vogel ruft: hoch und runter, zweimal
+      const f = zufall(1400, 2400);
+      for (let i = 0; i < 2; i += 1) {
+        ton({ frequenz: f, gleitenZu: f * 1.6, start: i * 0.28, dauer: 0.12, lautstaerke: 0.07, ziel: weg });
+        ton({ frequenz: f * 1.6, gleitenZu: f * 0.9, start: i * 0.28 + 0.12, dauer: 0.12, lautstaerke: 0.06, ziel: weg });
+      }
+    } else if (was < 0.6) {
+      // Ein Frosch quakt: tief und knarzig
+      for (let i = 0; i < 3; i += 1) ton({ frequenz: zufall(110, 160), gleitenZu: 90, start: i * 0.16, dauer: 0.1, lautstaerke: 0.1, art: 'square', filter: { frequenz: 700 }, ziel: weg });
+    } else if (was < 0.85) {
+      // Zikaden zirpen: ein schnelles, hohes Schnarren
+      rauschen({ dauer: 1.1, lautstaerke: 0.04, anschlag: 0.2, filter: { art: 'bandpass', frequenz: zufall(5000, 7000), q: 8 }, zittern: 28, ziel: weg });
+    } else {
+      // Ein dicker Regentropfen fällt auf ein Blatt.
+      const f = zufall(700, 1100);
+      ton({ frequenz: f, gleitenZu: f * 1.6, dauer: 0.08, lautstaerke: 0.1, ziel: weg });
+    }
+  } else if (stil === 'wasser') {
+    // Blasen steigen auf: blubb, blubb
+    for (let i = 0; i < 3; i += 1) {
+      const f = zufall(400, 900);
+      ton({ frequenz: f, gleitenZu: f * 1.9, start: i * zufall(0.08, 0.2), dauer: 0.07, lautstaerke: 0.08, ziel: weg });
+    }
+  } else if (stil === 'haus') {
+    // Das Feuer im Herd knistert.
+    for (let i = 0; i < 4; i += 1) {
+      rauschen({ dauer: 0.03, start: i * zufall(0.05, 0.2), lautstaerke: 0.05, filter: { art: 'bandpass', frequenz: zufall(2000, 4000), q: 2 }, ziel: weg });
+    }
+  } else if (stil === 'mine' || stil === 'gang') {
     // Ein Wassertropfen in der Höhle
     const f = zufall(900, 1500);
     ton({ frequenz: f, gleitenZu: f * 1.8, dauer: 0.12, lautstaerke: 0.12, ziel: weg });
@@ -110,7 +150,7 @@ export function funkeln(ort) {
 export function ruf(art, { ort = {}, traurig = false, hoechstens = 6 } = {}) {
   const { stimme = 'piepsen', hoehe = 'mittel', silben: alleSilben = 2 } = KLAENGE.rufe[art] ?? {};
   const silben = Math.min(alleSilben, hoechstens);
-  const weg = raumWeg({ ...ort, sekunden: 3 });
+  const weg = raumWeg({ ...ort, lautstaerke: (ort.lautstaerke ?? 1) * KLAENGE.rufLautstaerke, sekunden: 3 });
   if (!weg) return;
   const f = 520 * (HOEHEN[hoehe] ?? 1) * (traurig ? 0.7 : 1);
   const langsam = traurig ? 1.6 : 1;
@@ -135,14 +175,14 @@ const STIMMEN = {
   glitzern(f, silben, langsam, ziel) {
     for (let i = 0; i < silben; i += 1) {
       const h = f * 2 * 2 ** (Math.floor(zufall(0, 8)) / 12);
-      ton({ frequenz: h, start: i * 0.06 * langsam, dauer: 0.45, lautstaerke: 0.12, ziel });
+      ton({ frequenz: h, start: i * 0.06 * langsam, dauer: 0.45, lautstaerke: 0.17, ziel });
     }
   },
   miauen(f, silben, langsam, ziel, traurig) {
     for (let i = 0; i < silben; i += 1) {
       const start = i * 0.42 * langsam;
       const h = f * (i % 2 ? 0.9 : 1);
-      ton({ frequenz: h * 0.8, gleitenZu: traurig ? h * 0.6 : h * 1.25, gleitDauer: 0.18 * langsam, start, dauer: 0.34 * langsam, lautstaerke: 0.12, anschlag: 0.03, ausklang: 0.12, art: 'sawtooth', filter: { art: 'bandpass', frequenz: 1400, zu: 900, q: 2 }, ziel });
+      ton({ frequenz: h * 0.8, gleitenZu: traurig ? h * 0.6 : h * 1.25, gleitDauer: 0.18 * langsam, start, dauer: 0.34 * langsam, lautstaerke: 0.22, anschlag: 0.03, ausklang: 0.12, art: 'sawtooth', filter: { art: 'bandpass', frequenz: 1400, zu: 900, q: 2 }, ziel });
     }
   },
   brummen(f, silben, langsam, ziel) {
@@ -160,7 +200,7 @@ const STIMMEN = {
   pfeifen(f, silben, langsam, ziel, traurig) {
     for (let i = 0; i < silben; i += 1) {
       const h = f * 2 * (i % 2 ? 1.2 : 1);
-      ton({ frequenz: h, gleitenZu: traurig ? h * 0.75 : h * 1.15, start: i * 0.3 * langsam, dauer: 0.24 * langsam, lautstaerke: 0.12, anschlag: 0.03, ausklang: 0.08, vibrato: { tempo: 12, tiefe: 0.02 }, ziel });
+      ton({ frequenz: h, gleitenZu: traurig ? h * 0.75 : h * 1.15, start: i * 0.3 * langsam, dauer: 0.24 * langsam, lautstaerke: 0.17, anschlag: 0.03, ausklang: 0.08, vibrato: { tempo: 12, tiefe: 0.02 }, ziel });
     }
   },
   gurren(f, silben, langsam, ziel) {
@@ -172,7 +212,7 @@ const STIMMEN = {
   zirpen(f, silben, langsam, ziel) {
     for (let i = 0; i < silben; i += 1) {
       for (let j = 0; j < 4; j += 1) {
-        ton({ frequenz: f * 2, start: (i * 0.24 + j * 0.035) * langsam, dauer: 0.025, lautstaerke: 0.07, art: 'square', filter: { frequenz: 5000 }, ziel });
+        ton({ frequenz: f * 2, start: (i * 0.24 + j * 0.035) * langsam, dauer: 0.025, lautstaerke: 0.12, art: 'square', filter: { frequenz: 5000 }, ziel });
       }
     }
   },
@@ -416,6 +456,28 @@ export function erfahrung() {
 
 // Jeder Klangstein singt seinen eigenen Ton (Töne wie auf einem Glockenspiel).
 const KLANGSTEIN_NOTEN = [72, 74, 76, 79, 81, 84];
+// Ein Kampf beginnt: ein Ton, der schnell nach oben saust, dann ein Trommelschlag
+export function kampfBeginnt() {
+  ton({ frequenz: 220, gleitenZu: 1400, dauer: 0.35, lautstaerke: 0.14, art: 'sawtooth', filter: { frequenz: 2500 } });
+  rauschen({ dauer: 0.35, lautstaerke: 0.12, anschlag: 0.25, filter: { art: 'bandpass', frequenz: 800, zu: 4000, q: 1 } });
+  ton({ frequenz: 110, gleitenZu: 45, start: 0.36, dauer: 0.4, lautstaerke: 0.5 });
+  rauschen({ start: 0.36, dauer: 0.3, lautstaerke: 0.25, filter: { frequenz: 3000, zu: 200 } });
+}
+
+// Eine Belohnung: ein funkelnder Akkord, der nach oben läuft, mit Glitzern
+export function belohnung() {
+  [72, 76, 79, 84, 88, 91].forEach((note, i) => ton({ frequenz: hertz(note), start: i * 0.07, dauer: 0.9 - i * 0.06, lautstaerke: 0.1, art: 'triangle' }));
+  ton({ frequenz: hertz(96), start: 0.45, dauer: 1.2, lautstaerke: 0.05, vibrato: { tempo: 7, tiefe: 0.012 } });
+  glitzern(8, 1.3);
+}
+
+// Der Auslöser der Kamera: ein kurzes Klicken und Surren
+export function ausloeser() {
+  rauschen({ dauer: 0.04, lautstaerke: 0.25, filter: { art: 'bandpass', frequenz: 3500, q: 2 } });
+  ton({ frequenz: 1800, gleitenZu: 900, start: 0.05, dauer: 0.05, lautstaerke: 0.08, art: 'square', filter: { frequenz: 2500 } });
+  rauschen({ start: 0.12, dauer: 0.25, lautstaerke: 0.06, filter: { art: 'bandpass', frequenz: 1200, zu: 2200, q: 4 } });
+}
+
 export function klangstein(nummer) {
   const note = KLANGSTEIN_NOTEN[nummer % KLANGSTEIN_NOTEN.length];
   ton({ frequenz: hertz(note), dauer: 0.9, lautstaerke: 0.16, art: 'triangle' });

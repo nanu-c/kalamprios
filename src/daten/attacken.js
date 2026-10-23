@@ -104,6 +104,14 @@ export const ATTACKEN = {
   tentakeltick: { name: 'Tentakel-Tick', staerke: 10, pause: 0, effekt: 'faden' },
   zeitsprung: { name: 'Zeitsprung', staerke: 19, pause: 2 },
 
+  // Robossor
+  wasserkanone: { name: 'Wasserkanone', staerke: 10, pause: 0, effekt: 'strahl' },
+  roboflut: { name: 'Robo-Flut', staerke: 19, pause: 2, effekt: 'wirbel' },
+
+  // Eulator
+  federsturm: { name: 'Federsturm', staerke: 10, pause: 0 },
+  nachtflug: { name: 'Nachtflug', staerke: 19, pause: 2, effekt: 'krallen' },
+
   // Das geheime Kalamprio
   kronenblitz: { name: 'Kronenblitz', staerke: 11, pause: 0, effekt: 'krone' },
   geheimsturm: { name: '???', staerke: 20, pause: 2 },

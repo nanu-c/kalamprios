@@ -98,6 +98,87 @@ export const LIEDER = {
     flaeche: true,
   },
 
+  // Geheimgang: geheimnisvoll, als ob man auf Zehenspitzen schleicht
+  gang: {
+    tempo: 76,
+    klang: 'zupfen',
+    akkorde: ['Em', 'C', 'Am', 'B', 'Em', 'G', 'C', 'B'],
+    melodie: [
+      'E5 - G5 - B5 - A5 G5',
+      'E5 - - - C5 - . .',
+      'A4 - C5 - E5 - D5 C5',
+      'B4 - - - D#5 - . .',
+      'G5 - F#5 E5 B4 - E5 -',
+      'D5 - B4 - G4 - B4 D5',
+      'E5 - C5 - A4 - C5 E5',
+      'D#5 - - - B4 - - -',
+    ],
+    bass: '1...5...',
+    begleitung: '1358853113588531',
+    flaeche: true,
+    schlagzeug: '..h...h...h...h.',
+  },
+
+  // Regenwald: warm, mit Trommeln und einer Flöte, ein bisschen geheimnisvoll
+  regenwald: {
+    tempo: 92,
+    klang: 'floete',
+    akkorde: ['Dm', 'Dm', 'Bb', 'C', 'Dm', 'F', 'Gm', 'A'],
+    melodie: [
+      'A4 - D5 - F5 E5 D5 -',
+      'C5 - D5 - A4 - . .',
+      'Bb4 - D5 - F5 - G5 F5',
+      'E5 - - - C5 - . .',
+      'A5 - G5 F5 E5 - D5 -',
+      'C5 - F5 - A5 - G5 F5',
+      'G5 - F5 - D5 - Bb4 -',
+      'A4 - C#5 - E5 - - -',
+    ],
+    bass: '1..5.1..',
+    begleitung: '1.3.5.3.',
+    schlagzeug: 'k..k..s.k.k...s.',
+  },
+
+  // Unter Wasser: schwebend und langsam, wie Blasen, die aufsteigen
+  wasser: {
+    tempo: 70,
+    klang: 'glocke',
+    akkorde: ['C', 'Am', 'F', 'G', 'C', 'Em', 'F', 'G'],
+    melodie: [
+      'E5 - G5 - C6 - - -',
+      'A5 - - - E5 - . .',
+      'F5 - A5 - C6 - A5 -',
+      'G5 - - - D5 - . .',
+      'E5 - G5 - E5 - C5 -',
+      'B4 - - - G4 - . .',
+      'A4 - C5 - F5 - E5 D5',
+      'D5 - - - - - . .',
+    ],
+    bass: '1.......',
+    begleitung: '1358853113588531',
+    flaeche: true,
+  },
+
+  // Küche: gemütlich und fröhlich, wie wenn etwas Leckeres im Ofen ist
+  haus: {
+    tempo: 104,
+    klang: 'floete',
+    akkorde: ['G', 'Em', 'C', 'D', 'G', 'C', 'D', 'G'],
+    melodie: [
+      'B4 - D5 - G5 - D5 -',
+      'E5 - G5 - E5 - B4 -',
+      'C5 - E5 - G5 - E5 C5',
+      'D5 - - - A4 - . .',
+      'B4 D5 G5 - F#5 - E5 D5',
+      'E5 - C5 - E5 - G5 -',
+      'F#5 - A5 - F#5 - D5 -',
+      'G5 - - - - - . .',
+    ],
+    bass: '1.5.1.5.',
+    begleitung: '.3.5.3.5',
+    schlagzeug: 'k...s...k.k.s...',
+  },
+
   // Die Geschichte am Anfang: leise, damit man die Stimme gut hört
   geschichte: {
     tempo: 64,

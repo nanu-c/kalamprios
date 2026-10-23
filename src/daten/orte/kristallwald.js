@@ -7,7 +7,9 @@
 // Der Ort ist breite mal hoehe groß, also größer als der Bildschirm.
 //
 // name:            so heißt der Ort im Spiel
-// stil:            wie der Ort aussieht: 'dorf', 'wald', 'mine' oder 'see'
+// stil:            wie der Ort aussieht: 'dorf', 'wald', 'mine', 'see',
+//                  'gang' (Geheimgang), 'haus' (ein Zimmer), 'wasser'
+//                  (unter Wasser, von der Seite gesehen) oder 'regenwald'
 // ausgaenge:       Wege zu anderen Orten. nach ist der Kurzname aus orte.js,
 //                  seite ist 'links', 'rechts', 'oben' oder 'unten', und
 //                  mitte sagt, wo an dieser Seite der Weg hinausführt.
@@ -16,6 +18,18 @@
 //                  das Rätsel dieses Ortes gelöst ist. Man findet ihn vorher nicht.
 //                  Mit erstNachRivalin: true bewacht die Rivalin den Weg. Man
 //                  kommt erst hindurch, wenn man sie besiegt hat.
+// tueren:          (optional) Türen mitten im Ort, die woandershin führen.
+//                  x und y: wo die Tür ist, nach: wohin sie führt, art:
+//                  'haustuer', 'treppe', 'pilzring', 'tauchplatz' oder 'portal'. satz: (optional)
+//                  was man beim ersten Mal hört, bevor man hineingeht.
+//                  ankunft: (optional) wo man steht, wenn man zurückkommt.
+//                  zurueckVon: (optional) weitere Orte, von denen man durch
+//                  diese Tür zurückkommt.
+//                  braucht: (optional) ein besonderes Ding (siehe besonderes),
+//                  ohne das man nicht hindurchkann. Dann hört man ohne.
+// besonderes:      (optional) Dinge, die man nur einmal findet, zum Beispiel
+//                  das Lungenkraut am Mondsee. art ist das Bild, name und
+//                  info stehen im Beutel, satz hört man beim Finden.
 // start:           (nur im Startort) hier beginnt die Figur
 // rivalin:         (nur im Wald) hier wartet die Figur, die man nicht gewählt hat.
 //                  Bewacht sie einen Weg (erstNachRivalin), steht sie mitten
@@ -28,14 +42,19 @@
 //                  1, 2 oder 3. Ohne Angabe ist es 1.
 // hohesGras:       Rechtecke mit hohem Gras (in der Mine ist es Geröll, am See
 //                  Schilf). Darin verstecken sich die Tiere aus tiereImGras.
-// baeume, kristalle, felsen, prismastahl, haeuser: stehen im Weg.
+// pilze:          (nur im Wald) leuchtende Pilze. Ihr Kopf ist eine Lampe.
+// baeume, kristalle, felsen, prismastahl, haeuser, pilze: stehen im Weg.
 //                  Man kann um sie herumlaufen.
 // seen:            Wasser, durch das man nicht laufen kann: x und y sind die
 //                  Mitte, breite und hoehe die Größe. Mit bild: 'mondsee'
 //                  wird das gemalte Bild des Sees genommen.
 // gold:            (nur in der Mine) glitzerndes Gold, steht im Weg
+// zutaten:         (optional) hier wachsen Zutaten zum Kochen. art ist ein
+//                  Kurzname bei zutaten in haus.js. Nach einer Weile wächst
+//                  wieder eine nach (siehe regeln.js).
 // fangkristalle:   hier liegen Fangkristalle zum Aufsammeln. Nach einer Weile
 //                  liegt wieder einer da (siehe regeln.js).
+// nebel:           (optional) wie neblig es ist, von 0 (klar) bis 1 (dicker Nebel)
 // dunkel:          (optional) wie dunkel es ist, von 0 (hell) bis 1 (ganz
 //                  schwarz). Nur rund um die Figur ist es hell.
 // licht:           (optional, nur wenn es dunkel ist) wie weit das Licht um
@@ -83,6 +102,30 @@ export const KRISTALLWALD = {
   rivalin: { x: 2940, y: 1870 },
   rivalinNachSieg: { x: 2600, y: 1880 },
 
+  // Gut versteckt: ein Ring aus leuchtenden Pilzen. Darunter liegt der
+  // Geheimgang (geheimgang.js). Aus der Schatzkammer kommt man hier wieder heraus.
+  tueren: [
+    {
+      x: 2060,
+      y: 1920,
+      nach: 'geheimgangFarben',
+      art: 'pilzring',
+      ankunft: { x: 1860, y: 1960 },
+      zurueckVon: ['schatzkammer'],
+      satz: 'Die Pilze fangen an zu leuchten, einer nach dem anderen. In der Mitte öffnet sich der Boden: Eine geheime Treppe führt hinunter in die Tiefe!',
+    },
+    // Ganz versteckt oben rechts in der Ecke: ein grün schimmerndes Portal.
+    // Von weitem sieht man es kaum. Es führt in den Regenwald (regenwald.js).
+    {
+      x: 2960,
+      y: 280,
+      nach: 'regenwald',
+      art: 'portal',
+      ankunft: { x: 2820, y: 360 },
+      satz: 'Ein grünes Leuchten wirbelt zwischen den Bäumen. Es riecht nach Regen und nach Blumen. Ein Portal! Wohin es wohl führt?',
+    },
+  ],
+
   // Hier flüstert der dunkle Kristall die Geschichte (Sätze in geschichte.js)
   dunklerKristall: { x: 520, y: 910 },
 
@@ -95,9 +138,10 @@ export const KRISTALLWALD = {
     { art: 'tschank', x: 2900, y: 1450 },
     { art: 'pflinia', x: 1320, y: 1820 },
     { art: 'schnektata', x: 2650, y: 600 },
+    { art: 'eulator', x: 2000, y: 330 },
   ],
 
-  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon', 'tschank', 'pflinia', 'schnektata'],
+  tiereImGras: ['kalampria', 'bisakatze', 'qalutu', 'kabon', 'tschank', 'pflinia', 'schnektata', 'eulator'],
   hohesGras: [
     { links: 730, oben: 1250, breite: 680, hoehe: 440 },
     { links: 1660, oben: 290, breite: 600, hoehe: 390 },
@@ -123,7 +167,6 @@ export const KRISTALLWALD = {
     { x: 1600, y: 1550 },
     { x: 2130, y: 1680 },
     { x: 1900, y: 1740 },
-    { x: 2050, y: 1950 },
     { x: 600, y: 1150 },
     { x: 2900, y: 1000 },
   ],
@@ -142,6 +185,23 @@ export const KRISTALLWALD = {
     { x: 1160, y: 1850 },
     { x: 900, y: 1870 },
     { x: 2950, y: 1650 },
+  ],
+
+  pilze: [
+    { x: 1070, y: 800 },
+    { x: 1780, y: 1000 },
+    { x: 2520, y: 470 },
+    { x: 380, y: 1600 },
+    { x: 1250, y: 1560 },
+    { x: 2700, y: 1720 },
+    { x: 2050, y: 1250 },
+  ],
+
+  zutaten: [
+    { art: 'pilz', x: 420, y: 980 },
+    { art: 'pilz', x: 1700, y: 650 },
+    { art: 'apfel', x: 2760, y: 1560 },
+    { art: 'apfel', x: 2620, y: 1420 },
   ],
 
   fangkristalle: [

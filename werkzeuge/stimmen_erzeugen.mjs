@@ -11,6 +11,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { GESCHICHTE } from '../src/daten/geschichte.js';
+import { CHARAKTERE } from '../src/daten/charaktere.js';
 import { ORTE } from '../src/daten/orte.js';
 
 const MODELL = 'gpt-4o-mini-tts';
@@ -69,6 +70,38 @@ const saetze = [
     .map((ort) => ort.raetsel)
     .filter(Boolean)
     .flatMap((raetsel) => [...raetsel.aufgabe, raetsel.geschafft, ...(raetsel.fragen ?? []).map((frage) => frage.frage)])
+    .map((text) => [text, RAETSELSTEIN]),
+  // Was man an Türen, in der Küche und in der Schatzkammer hört
+  ...Object.values(ORTE)
+    .flatMap((ort) => [
+      ...(ort.tueren ?? []).flatMap((tuer) => [tuer.satz, tuer.ohne]),
+      ...(ort.besonderes ?? []).map((ding) => ding.satz),
+      ...(ort.kueche?.rezepte ?? []).map((rezept) => rezept.satz),
+      ort.schatz?.satz,
+    ])
+    .filter(Boolean)
+    .map((text) => [text, ERZAEHLERIN]),
+  // Was man im Regenwald hört: die Figur wundert sich ({name} ist Kala oder
+  // Pflanstaria), das Album und die Notizen der Biologin zu jeder Pflanze
+  ...Object.values(ORTE)
+    .filter((ort) => ort.pflanzen)
+    .flatMap((ort) => [
+      ...Object.values(CHARAKTERE).flatMap((figur) => [...ort.ankommen, ort.ohneKamera].map((satz) => satz.replace('{name}', figur.name))),
+      ort.albumGefunden,
+      ort.albumVoll.replace('{anzahl}', ort.pflanzen.length).replace('{belohnung}', ort.belohnung?.fangkristalle ?? 0),
+      ...ort.pflanzen.map((pflanze) => `Notiz: ${pflanze.notiz}`),
+    ])
+    .map((text) => [text, ERZAEHLERIN]),
+  // Was die alte Muschel unter Wasser sagt ({anzahl} kann jede Zahl sein)
+  ...Object.values(ORTE)
+    .map((ort) => ort.muellQuest)
+    .filter(Boolean)
+    .flatMap((quest) => [
+      ...quest.auftrag,
+      quest.geschafft,
+      quest.danke,
+      ...Array.from({ length: quest.muell.length - 1 }, (_, i) => quest.weiter.replace('{anzahl}', i + 1).replace('{alle}', quest.muell.length)),
+    ])
     .map((text) => [text, RAETSELSTEIN]),
   // Was die Rätselsteine zwischendurch sagen. {fehlen} kann jede Zahl sein,
   // die beim Suchen noch fehlen kann.

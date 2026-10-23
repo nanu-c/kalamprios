@@ -16,8 +16,16 @@ export const KLAENGE = {
   // ein anderes dran, nie zweimal hintereinander dasselbe.
   kampflieder: ['kampf', 'kampfHuepfend', 'kampfWirbel', 'kampfMutig'],
 
+  // Wie laut die Musik in der Rufkammer ist (beim Rätsel „Wer ruft da?“),
+  // im Vergleich zur Musik draußen. Dort muss man die Rufe gut hören.
+  musikImRufraetsel: 0.25,
+
   // Wie laut die Geräusche sind (Schritte, Attacken, Rufe), von 0 bis 1.
   geraeusche: 0.8,
+
+  // Wie laut die Kalamprios rufen, im Vergleich zu den anderen Geräuschen.
+  // 1 ist so laut wie Schritte, 2 doppelt so laut.
+  rufLautstaerke: 2.2,
 
   // So weit (in Pixeln) hört man ein wildes Kalamprio rufen. Je näher man
   // hingeht, desto lauter wird es, so wie das Licht in der Mine.
@@ -63,6 +71,8 @@ export const KLAENGE = {
     zeittakel: { stimme: 'ticken', hoehe: 'hoch', silben: 6 },
     elefantia: { stimme: 'brummen', hoehe: 'tief', silben: 4 },
     zetarata: { stimme: 'ticken', hoehe: 'ganz hoch', silben: 3 },
+    robossor: { stimme: 'piepsen', hoehe: 'tief', silben: 5 },
+    eulator: { stimme: 'gurren', hoehe: 'mittel', silben: 2 },
     geheimnis: { stimme: 'zauber', hoehe: 'mittel', silben: 3 },
   },
 };

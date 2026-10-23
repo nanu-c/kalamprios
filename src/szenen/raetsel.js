@@ -7,15 +7,23 @@
 //              in derselben Reihenfolge über sie. Jede Runde leuchten mehr.
 // frage:       Rätselfragen beantworten, jedes Mal andere
 //
-// Der Rätselstein und die Klangsteine sind gemalt wie die Bäume und der
-// Mondsee: mit einem dunklen, etwas wackeligen Strich außen herum. Auch das
-// Fragezeichen ist mit der Hand gezeichnet und keine Schrift.
+// Die Rätsel im Geheimgang (farben, stimmen, paare, weg, spiegel, lichter)
+// stehen in geheimraetsel.js. Der Rätselstein erklärt auch sie.
+//
+// Der Rätselstein ist gemalt (Gegenstände/Rätselstein_….jpg), einmal für
+// ungelöst und einmal für gelöst. Er leuchtet und schimmert in seinen Farben.
+// Die Klangsteine sind gemalt wie die Bäume und der Mondsee: mit einem
+// dunklen, etwas wackeligen Strich außen herum. Auch das Fragezeichen über
+// dem Stein ist mit der Hand gezeichnet und keine Schrift.
 
+import Phaser from 'phaser';
 import { GESCHICHTE } from '../daten/geschichte.js';
 import { klangstein } from '../klang/geraeusche.js';
 import { spielstand } from '../spielstand.js';
 import { verstummen, vorlesen } from '../vorlesen.js';
 import { abstand, durcheinander, reihenfolgeTreten, reihenfolgeWuerfeln } from '../welt/weltlogik.js';
+import { belohnungZeigen } from './animationen.js';
+import { GEHEIMGANG_RAETSEL } from './geheimraetsel.js';
 import { LICHT_TIEFE, lichtschein } from './landschaft.js';
 import { schrift } from './stil.js';
 
@@ -30,6 +38,9 @@ export const RAETSEL_FARBEN = {
 };
 
 const STEIN_RADIUS = 30; // so breit steht der Rätselstein im Weg
+const STEIN_BREITE = 140; // so breit ist der gemalte Rätselstein
+// Die Farben, in denen der Rätselstein schimmert (wie seine Buntstiftfarben)
+const STEIN_SCHIMMER = [0x6fe8e0, 0xff6fa8, 0x5bb0ff];
 const SPRECH_ABSTAND = 18 + STEIN_RADIUS + 22;
 const FINDEN_ABSTAND = 50;
 const AUF_DEM_STEIN = 40; // so nah muss man an der Mitte eines Klangsteins sein
@@ -37,7 +48,7 @@ const VORNE = 100000;
 const SAETZE = GESCHICHTE.raetsel; // was der Rätselstein zwischendurch sagt
 
 // Die Farben der gemalten Sachen (wie die Steine am Mondsee)
-const STRICH = '#1a1035';
+export const STRICH = '#1a1035';
 const GOLD = '#ffd166';
 const GOLD_HELL = '#fff3c4';
 
@@ -45,7 +56,7 @@ const GOLD_HELL = '#fff3c4';
 
 // Ein Würfel, der immer dieselben Zahlen würfelt. So wackelt der Strich
 // jedes Mal gleich.
-function wuerfel(startwert) {
+export function wuerfel(startwert) {
   let zustand = startwert;
   return () => {
     zustand = (zustand * 16807) % 2147483647;
@@ -53,7 +64,7 @@ function wuerfel(startwert) {
   };
 }
 
-function farbeAlsCss(farbe, hell = 0) {
+export function farbeAlsCss(farbe, hell = 0) {
   const kanal = (verschiebung) => {
     const wert = (farbe >> verschiebung) & 0xff;
     return Math.round(hell >= 0 ? wert + (255 - wert) * hell : wert * (1 + hell));
@@ -62,7 +73,7 @@ function farbeAlsCss(farbe, hell = 0) {
 }
 
 // Ein wackeliger, runder Umriss wie mit der Hand gezeichnet.
-function klecksPfad(stift, mitteX, mitteY, breite, hoehe, zufall, unten = 1) {
+export function klecksPfad(stift, mitteX, mitteY, breite, hoehe, zufall, unten = 1) {
   const punkte = 28;
   stift.beginPath();
   for (let i = 0; i <= punkte; i += 1) {
@@ -78,7 +89,7 @@ function klecksPfad(stift, mitteX, mitteY, breite, hoehe, zufall, unten = 1) {
 }
 
 // Zieht einen Strich durch die Punkte, mit kleinen Wacklern dazwischen.
-function wackelstrich(stift, punkte, zufall, wackeln = 1.2) {
+export function wackelstrich(stift, punkte, zufall, wackeln = 1.2) {
   stift.beginPath();
   punkte.forEach(([x, y], nummer) => {
     const dx = nummer === 0 ? 0 : (zufall() - 0.5) * wackeln;
@@ -141,53 +152,8 @@ function zeichenMalen(stift, art, x, y, groesse, zufall, leuchten) {
   stift.restore();
 }
 
-// Der Rätselstein: ein runder, gemalter Stein, vorne ist das Zeichen eingeritzt.
-function raetselsteinMalen(szene, name, art) {
-  if (szene.textures.exists(name)) return;
-  const breite = 150;
-  const hoehe = 140;
-  const leinwand = szene.textures.createCanvas(name, breite, hoehe);
-  const stift = leinwand.context;
-  const zufall = wuerfel(11);
-  const mitte = { x: 75, y: 78 };
-
-  // Der Stein: oben links hell, unten rechts dunkel, wie bei den Bäumen.
-  const licht = stift.createRadialGradient(48, 42, 6, 70, 74, 80);
-  licht.addColorStop(0, '#b4a4de');
-  licht.addColorStop(0.45, '#8a76b8');
-  licht.addColorStop(1, '#4e3f78');
-  klecksPfad(stift, mitte.x, mitte.y, 64, 56, zufall, 0.82);
-  stift.fillStyle = licht;
-  stift.fill();
-
-  // Ein paar Buntstift-Striche als Schatten unten rechts
-  stift.save();
-  stift.clip();
-  stift.strokeStyle = 'rgba(30, 16, 60, 0.28)';
-  stift.lineWidth = 3;
-  stift.lineCap = 'round';
-  for (let i = 0; i < 14; i += 1) {
-    const x = 70 + i * 6;
-    wackelstrich(stift, [[x, 136], [x + 26, 70 + zufall() * 20]], zufall, 2);
-  }
-  stift.restore();
-
-  // Der dunkle Umriss, zweimal leicht versetzt wie mit einem Stift
-  stift.strokeStyle = STRICH;
-  stift.lineJoin = 'round';
-  stift.lineWidth = 5;
-  klecksPfad(stift, mitte.x, mitte.y, 64, 56, wuerfel(11), 0.82);
-  stift.stroke();
-  stift.lineWidth = 2;
-  klecksPfad(stift, mitte.x + 1, mitte.y - 1, 63, 55, wuerfel(29), 0.82);
-  stift.stroke();
-
-  zeichenMalen(stift, art, mitte.x + 2, mitte.y + 4, 0.8, wuerfel(5), art === 'frage');
-  leinwand.refresh();
-}
-
 // Das schwebende Zeichen über dem Stein, damit man ihn von weitem sieht.
-function zeichenBildMalen(szene, name, art) {
+export function zeichenBildMalen(szene, name, art) {
   if (szene.textures.exists(name)) return;
   const leinwand = szene.textures.createCanvas(name, 110, 130);
   zeichenMalen(leinwand.context, art, 55, 78, 1.3, wuerfel(5), true);
@@ -238,6 +204,9 @@ export class Raetsel {
 
     this.steinBauen();
     szene.hindernisse.push({ x: this.daten.x, y: this.daten.y - 8, radius: STEIN_RADIUS });
+    // Ein Rätsel aus dem Geheimgang bringt sein eigenes Spiel mit.
+    const GeheimgangRaetsel = GEHEIMGANG_RAETSEL[this.daten.art];
+    this.spiel = GeheimgangRaetsel ? new GeheimgangRaetsel(this) : null;
     if (this.daten.art === 'suchen') this.dingeVerstecken();
     if (this.daten.art === 'reihenfolge') this.klangsteineLegen();
   }
@@ -266,18 +235,20 @@ export class Raetsel {
 
   // ------------------------------------------------------------ Aufbauen
 
-  // Der gemalte Stein mit dem Fragezeichen. Darüber schwebt das Zeichen noch
-  // einmal größer. Solange das Rätsel nicht gelöst ist, leuchtet es.
+  // Der gemalte Rätselstein. Über ihm schwebt ein Fragezeichen, solange das
+  // Rätsel nicht gelöst ist, danach ein Stern. Das Fragezeichen leuchtet.
   steinBauen() {
     const { szene, daten } = this;
-    raetselsteinMalen(szene, 'raetselstein-frage', 'frage');
-    raetselsteinMalen(szene, 'raetselstein-stern', 'stern');
     zeichenBildMalen(szene, 'raetselzeichen-frage', 'frage');
     zeichenBildMalen(szene, 'raetselzeichen-stern', 'stern');
 
     const art = this.geloest ? 'stern' : 'frage';
-    // Im Dunkeln leuchtet der Stein ein bisschen durch, damit man ihn findet.
-    this.stein = szene.add.image(daten.x, daten.y, `raetselstein-${art}`).setOrigin(0.5, 0.92).setDepth(daten.y);
+    this.stein = szene.add
+      .image(daten.x, daten.y, this.geloest ? 'raetselstein-geloest' : 'raetselstein')
+      .setOrigin(0.5, 0.95)
+      .setDepth(daten.y);
+    this.stein.setScale(STEIN_BREITE / this.stein.width);
+    this.steinLeuchten();
     // Das Zeichen steht auch vor der Figur, wenn sie direkt davor steht,
     // damit man es immer sieht.
     const oben = daten.y - 165;
@@ -294,9 +265,66 @@ export class Raetsel {
     this.schein.setVisible(!this.geloest);
   }
 
-  // Aus dem Fragezeichen wird ein Stern.
+  // Der Stein leuchtet und schimmert: Ein Lichtschein hinter ihm wechselt
+  // langsam die Farbe, ein heller Glanz geht über ihn, und ab und zu blitzt
+  // ein Funkeln auf. Im Dunkeln scheint das Leuchten durch, damit man ihn findet.
+  steinLeuchten() {
+    const { szene, stein } = this;
+    const mitte = { x: stein.x, y: stein.y - stein.displayHeight * 0.45 };
+    const schein = lichtschein(szene, mitte.x, mitte.y, stein.displayWidth * 2.2, stein.displayHeight * 2.4, STEIN_SCHIMMER[0])
+      .setAlpha(0.45)
+      .setDepth(this.licht ?? stein.depth - 1);
+    szene.tweens.add({ targets: schein, alpha: 0.8, scale: schein.scale * 1.1, duration: 1400, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    // Die Farbe wandert reihum durch die Schimmerfarben.
+    const farbe = { wert: 0 };
+    szene.tweens.add({
+      targets: farbe,
+      wert: STEIN_SCHIMMER.length,
+      duration: 2400 * STEIN_SCHIMMER.length,
+      repeat: -1,
+      onUpdate: () => {
+        const von = Math.floor(farbe.wert) % STEIN_SCHIMMER.length;
+        const nach = (von + 1) % STEIN_SCHIMMER.length;
+        const a = Phaser.Display.Color.ValueToColor(STEIN_SCHIMMER[von]);
+        const b = Phaser.Display.Color.ValueToColor(STEIN_SCHIMMER[nach]);
+        const misch = Phaser.Display.Color.Interpolate.ColorWithColor(a, b, 100, (farbe.wert % 1) * 100);
+        schein.setTint(Phaser.Display.Color.GetColor(misch.r, misch.g, misch.b));
+      },
+    });
+
+    // Der Glanz: dasselbe Bild noch einmal, hell aufaddiert, wird mal stärker, mal schwächer.
+    this.glanz = szene.add
+      .image(stein.x, stein.y, stein.texture.key)
+      .setOrigin(stein.originX, stein.originY)
+      .setScale(stein.scale)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setAlpha(0)
+      .setDepth(stein.depth + 0.5);
+    szene.tweens.add({ targets: this.glanz, alpha: 0.45, duration: 1100, yoyo: true, repeat: -1, repeatDelay: 600, ease: 'Sine.easeInOut' });
+
+    // Funkeln auf dem Stein
+    szene.time.addEvent({
+      delay: 260,
+      loop: true,
+      callback: () => {
+        const x = stein.x + (Math.random() - 0.5) * stein.displayWidth * 0.75;
+        const y = stein.y - stein.displayHeight * (0.15 + Math.random() * 0.7);
+        const stern = szene.add
+          .image(x, y, 'funkel')
+          .setTint(Phaser.Utils.Array.GetRandom([0xffffff, ...STEIN_SCHIMMER]))
+          .setBlendMode(Phaser.BlendModes.ADD)
+          .setDepth(this.licht ?? stein.depth + 1)
+          .setScale(0);
+        szene.tweens.add({ targets: stern, scale: 0.35 + Math.random() * 0.4, angle: 90, duration: 300, yoyo: true, onComplete: () => stern.destroy() });
+      },
+    });
+  }
+
+  // Aus dem Fragezeichen wird ein Stern, und der Stein wird zum gelösten Stein.
   sternZeigen() {
-    this.stein.setTexture('raetselstein-stern');
+    this.stein.setTexture('raetselstein-geloest');
+    this.stein.setScale(STEIN_BREITE / this.stein.width);
+    this.glanz.setTexture('raetselstein-geloest').setScale(this.stein.scale);
     this.zeichen.setTexture('raetselzeichen-stern');
     this.schein.setVisible(false);
     this.szene.tweens.add({ targets: this.zeichen, scale: { from: 1.4, to: 0.8 }, duration: 600, ease: 'Back.easeOut' });
@@ -382,7 +410,9 @@ export class Raetsel {
     if (da && !this.warDa && !this.szene.gespraech) this.sprechen();
     this.warDa = da;
 
+    if (this.spiel && !this.angefangen && !this.geloest) this.spiel.vorDemAnfang();
     if (!this.angefangen || this.geloest) return;
+    if (this.spiel) this.spiel.pruefen();
     if (this.daten.art === 'suchen') this.dingeSuchen();
     if (this.daten.art === 'reihenfolge') this.steineTreten();
   }
@@ -476,9 +506,15 @@ export class Raetsel {
       this.saetzeZeigen([SAETZE.nochmalZeigen], 'Zeig es mir!', () => this.vorzeigen());
       return;
     }
-    const weiter = { suchen: 'Mach ich!', reihenfolge: 'Zeig es mir!', frage: 'Frag mich!' }[daten.art];
+    // Ein Rätsel im Geheimgang, das schon läuft: Der Stein erklärt es noch einmal.
+    if (this.angefangen && this.spiel) {
+      this.saetzeZeigen(daten.aufgabe.slice(1), 'Okay', () => this.spiel.nochmal());
+      return;
+    }
+    const weiter = { suchen: 'Mach ich!', reihenfolge: 'Zeig es mir!', frage: 'Frag mich!' }[daten.art] ?? 'Los geht’s!';
     this.saetzeZeigen(daten.aufgabe, weiter, () => {
       spielstand.raetselAngefangen[this.ortName] = true;
+      this.spiel?.anfangen();
       if (daten.art === 'suchen') this.dingeZeigen();
       if (daten.art === 'reihenfolge') this.vorzeigen();
       if (daten.art === 'frage') this.fragenAnfangen(false);
@@ -577,12 +613,21 @@ export class Raetsel {
     this.sternZeigen();
     if (daten.art === 'suchen') this.dingeZeigen();
     if (daten.art === 'reihenfolge') this.steine.forEach((stein) => this.leuchten(stein, true));
+    this.spiel?.geloestZeigen();
 
+    // Die Belohnung erscheint groß über dem Stein und fliegt in den Beutel.
+    // Danach wird es heller oder der Weg wird frei, damit man beides sieht.
     const kristalle = daten.belohnung?.fangkristalle ?? 0;
     spielstand.fangkristalle += kristalle;
-    if (kristalle > 0) this.schweben(daten, `+${kristalle} Fangkristall${kristalle === 1 ? '' : 'e'}`);
-    if (daten.belohnung?.mehrLicht) szene.lichtVergroessern?.();
-    szene.raetselGeloest?.();
+    const danach = () => {
+      if (daten.belohnung?.mehrLicht) szene.lichtVergroessern?.();
+      szene.raetselGeloest?.();
+    };
+    if (kristalle > 0) {
+      belohnungZeigen(szene, daten, { bild: 'fangkristall', anzahl: kristalle, text: `+${kristalle} Fangkristall${kristalle === 1 ? '' : 'e'}` }).then(danach);
+    } else {
+      danach();
+    }
 
     szene.gespraechSchliessen();
     verstummen();

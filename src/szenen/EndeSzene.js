@@ -58,8 +58,8 @@ export class EndeSzene extends Phaser.Scene {
     [120, 300, 465, 640, 815, 985, 1160].forEach((x, nummer) => {
       const farbe = nummer % 2 === 0 ? 'lila' : 'blau';
       const y = 330;
-      this.add.image(x, y, 'kristall-dunkel').setOrigin(0.5, 160 / 170).setScale(0.9);
-      const hell = this.add.image(x, y, `kristall-${farbe}`).setOrigin(0.5, 160 / 170).setScale(0.9).setAlpha(0);
+      this.add.image(x, y, 'kristall-ausgesaugt').setOrigin(0.5, 0.97).setScale(0.45);
+      const hell = this.add.image(x, y, 'kristall-bunt').setOrigin(0.5, 0.97).setScale(0.45).setAlpha(0);
       const schein = lichtschein(this, x, y - 70, 260, 300, farbe === 'lila' ? 0xb99cf0 : 0x9cc0f2).setAlpha(0);
       this.time.delayedCall(900 + nummer * 450, () => {
         this.tweens.add({ targets: hell, alpha: 1, duration: 500 });

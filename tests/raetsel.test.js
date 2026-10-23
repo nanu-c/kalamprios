@@ -32,6 +32,8 @@ test('durcheinander bringt jede Nummer genau einmal', () => {
 });
 
 test('Jeder Ort hat ein Rätsel, und die Daten sind ohne Fehler', () => {
-  for (const ort of Object.values(ORTE)) assert.ok(ort.raetsel, `${ort.name} hat kein Rätsel`);
+  // Nur in den Zimmern, in der Schatzkammer und unter Wasser (dort gibt es
+  // die Müll-Aufgabe) und im Regenwald (dort fotografiert man Pflanzen) gibt es kein Rätsel.
+  for (const ort of Object.values(ORTE)) assert.ok(ort.raetsel || ort.stil === 'haus' || ort.schatz || ort.muellQuest || ort.pflanzen, `${ort.name} hat kein Rätsel`);
   assert.deepEqual(datenPruefen(), []);
 });

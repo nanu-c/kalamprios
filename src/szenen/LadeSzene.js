@@ -3,6 +3,7 @@
 import Phaser from 'phaser';
 import { CHARAKTERE } from '../daten/charaktere.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
+import { REGENWALD } from '../daten/orte/regenwald.js';
 import { datenPruefen } from '../daten/pruefen.js';
 import { BREITE, schrift } from './stil.js';
 
@@ -14,8 +15,25 @@ const WEITERE_BILDER = {
   mond: 'bilder/landschaft/mond.png',
   'baum-rund': 'bilder/landschaft/baum-rund.png',
   'baum-schief': 'bilder/landschaft/baum-schief.png',
+  pilz: 'bilder/landschaft/pilz.png',
+  'haus-1': 'bilder/landschaft/haus-1.png',
+  'haus-2': 'bilder/landschaft/haus-2.png',
+  'haus-3': 'bilder/landschaft/haus-3.png',
+  stein: 'bilder/landschaft/stein.png',
+  'stein-schale': 'bilder/landschaft/stein-schale.png',
+  'stein-beine': 'bilder/landschaft/stein-beine.png',
+  'kristall-bunt': 'bilder/landschaft/kristall-bunt.png',
+  'kristall-ausgesaugt': 'bilder/landschaft/kristall-ausgesaugt.png',
   fangkristall: 'bilder/gegenstaende/fangkristall.png',
+  raetselstein: 'bilder/gegenstaende/raetselstein.png',
+  kueche: 'bilder/landschaft/kueche.jpg',
+  kinderzimmer: 'bilder/landschaft/kinderzimmer.jpg',
+  'raetselstein-geloest': 'bilder/gegenstaende/raetselstein-geloest.png',
 };
+
+// Die Pflanzen und alles andere, was im Regenwald wächst
+const PFLANZEN = [...new Set(REGENWALD.pflanzen.map((pflanze) => pflanze.art)), 'ceiba', 'wurzeln', 'busch', 'farnbusch', 'liane', 'blaetter'];
+const SACHEN = ['apfel', 'ei', 'mehl', 'milch', 'zucker', 'mondbeeren', 'wasser', 'honig', 'suppe', 'kuchen', 'pfannkuchen', 'kessel', 'truhe-zu', 'truhe-offen', 'kochbuch', 'muschel', 'beutel', 'kamera', 'fotoalbum', 'kristalltorte', 'zauberpunsch', 'festmahl', 'lungenkraut', 'plastikflasche', 'plastiktuete', 'dose', 'joghurtbecher'];
 
 // Macht von einem Bild eine kleine Fassung für den Wald, mit etwas kräftigeren
 // Linien. Stark verkleinert wären die feinen Bleistiftstriche sonst kaum zu sehen.
@@ -54,6 +72,10 @@ export class LadeSzene extends Phaser.Scene {
 
     // Gemalte Landschaft, der Fangkristall und der Titel
     for (const [name, bild] of Object.entries(WEITERE_BILDER)) this.load.image(name, bild);
+    // Die Pflanzen im Regenwald (gemalt mit werkzeuge/pflanzen_malen.py)
+    for (const art of PFLANZEN) this.load.image(`pflanze-${art}`, `bilder/pflanzen/${art}.png`);
+    // Die Sachen für die Küche und den Geheimgang (gemalt mit werkzeuge/kueche_malen.py)
+    for (const name of SACHEN) this.load.image(name, `bilder/gegenstaende/${name}.png`);
   }
 
   create() {

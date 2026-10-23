@@ -77,8 +77,9 @@ export class GeschichteSzene extends Phaser.Scene {
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
-    this.add.image(x, y, 'kristall-dunkel').setOrigin(0.5, 160 / 170).setScale(groesse);
-    const hell = this.add.image(x, y, `kristall-${farbe}`).setOrigin(0.5, 160 / 170).setScale(groesse);
+    // Der gemalte Kristall: unten ausgesaugt und grau, darüber bunt.
+    this.add.image(x, y, 'kristall-ausgesaugt').setOrigin(0.5, 0.97).setScale(groesse * 0.5);
+    const hell = this.add.image(x, y, 'kristall-bunt').setOrigin(0.5, 0.97).setScale(groesse * 0.5);
     return { x, y, groesse, farbe, licht, hell, letzterBleibt, istDunkel: false };
   }
 

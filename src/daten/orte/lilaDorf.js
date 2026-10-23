@@ -8,7 +8,14 @@ export const LILA_DORF = {
   breite: 2340,
   hoehe: 1560,
 
-  ausgaenge: [{ nach: 'kristallwald', seite: 'rechts', mitte: 830 }],
+  // Den Weg in den Kristallwald gibt die Rivalin erst frei, wenn sie einem
+  // ein Kalamprio geschenkt hat (erstNachGeschenk).
+  ausgaenge: [{ nach: 'kristallwald', seite: 'rechts', mitte: 830, erstNachGeschenk: true }],
+
+  // Am Anfang steht die Rivalin hier am Weg zum Kristallwald. Sie hat
+  // Hunger: Wer ihr bringt, was bei wuenscht steht (ein Rezept aus haus.js),
+  // dem schenkt sie zum Dank ein Kalamprio. Danach wartet sie im Kristallwald.
+  rivalinAmAnfang: { x: 2130, y: 905, wuenscht: 'sternenpfannkuchen' },
 
   start: { x: 680, y: 910 },
 
@@ -18,6 +25,13 @@ export const LILA_DORF = {
   wildeKalamprios: [],
   tiereImGras: [],
   hohesGras: [],
+
+  // Im Haus mit dem blauen Dach kann man kochen (haus.js).
+  // Im gemalten Haus ist das Kinderzimmer, wo man am Anfang aufwacht.
+  tueren: [
+    { x: 1790, y: 600, nach: 'kueche', art: 'haustuer' },
+    { x: 490, y: 598, nach: 'kinderzimmer', art: 'haustuer' },
+  ],
 
   haeuser: [
     { x: 490, y: 560 },
@@ -44,6 +58,11 @@ export const LILA_DORF = {
     { x: 1170, y: 900 },
     { x: 830, y: 1050 },
     { x: 1500, y: 1050 },
+  ],
+
+  zutaten: [
+    { art: 'honig', x: 300, y: 1250 },
+    { art: 'honig', x: 2050, y: 1150 },
   ],
 
   fangkristalle: [{ x: 1950, y: 940 }],

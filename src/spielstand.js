@@ -24,6 +24,9 @@ const anfangsStand = () => ({
   fangkristalle: REGELN.fangkristalleAmAnfang, // so viele hat man dabei
   rivalinKalamprio: null,
   rivalinBesiegt: false,
+  kamera: false, // true, sobald die Rivalin einem die Kamera geschenkt hat
+  fotos: {}, // Kurzname eines Kalamprios -> Kurzname des Ortes, an dem das Foto gemacht wurde
+  albumVoll: false, // true, sobald alle Fotos im Album sind (die Belohnung gibt es nur einmal)
 
   ort: START_ORT, // Kurzname aus orte.js: wo man gerade ist
   position: null, // wo die Figur an diesem Ort zuletzt stand
@@ -34,6 +37,17 @@ const anfangsStand = () => ({
   ruheBis: 0, // kurze Verschnaufpause nach jedem Kampf
   wildeWiederDa: {}, // Ort und Nummer des wilden Kalamprios -> ab wann es wieder da ist
   fangkristallWiederDa: {}, // Ort und Nummer des Fangkristalls -> ab wann wieder einer daliegt
+  zutatWiederDa: {}, // Ort und Nummer einer Zutat draußen -> ab wann sie wieder gewachsen ist
+  dropOrte: {}, // Fangkristall oder Zutat -> der Platz {x, y}, an dem sie als Nächstes liegt
+  rezepteGefunden: {}, // Kurzname eines Rezepts mit fundort -> true, sobald man es gefunden hat
+  gefunden: {}, // besondere Dinge (zum Beispiel das Lungenkraut) -> true, sobald man sie hat
+  pflanzenFotos: {}, // Pflanze im Regenwald -> true, sobald sie fotografiert ist
+  pflanzenalbum: false, // true, sobald man das Pflanzenalbum im Regenwald gefunden hat
+  pflanzenalbumVoll: false, // true, sobald alle Pflanzen im Album sind (Belohnung nur einmal)
+  angekommen: {}, // Ort -> true, sobald man dort einmal angekommen ist (für die ersten Sätze)
+  muell: {}, // Ort und Nummer eines Müllteils unter Wasser -> true, wenn eingesammelt
+  questAngefangen: {}, // Ort -> true, sobald die Aufgabe dort angefangen hat
+  questFertig: {}, // Ort -> true, sobald die Aufgabe dort geschafft ist
   grasOhneGeheimes: {}, // Ort -> wie viele andere Kalamprios im Gras seit dem geheimen kamen
 
   geschichteGehoert: {}, // Kurzname des Ortes -> true, wenn der dunkle Kristall erzählt hat
@@ -42,7 +56,12 @@ const anfangsStand = () => ({
   raetselRunde: {}, // Kurzname des Ortes -> so viele Runden vom Klangstein-Rätsel sind geschafft
   raetselGeloest: {}, // Kurzname des Ortes -> true, wenn das Rätsel gelöst ist
   festGefeiert: false, // true, sobald man das geheime Kalamprio besiegt und gefeiert hat
+  tuerenGefunden: {}, // Ort und Nummer der Tür -> true, wenn man schon einmal hindurchgegangen ist
+  schatzGeoeffnet: false, // true, sobald die Truhe in der Schatzkammer offen ist
+  gekochtAm: {}, // Name des Rezepts -> wann man es zuletzt gekocht hat
+  beutel: {}, // Kurzname eines Essens -> wie viele davon im Beutel sind (die Fangkristalle zählt fangkristalle)
   hinweisGesehen: false, // der Tipp zur Steuerung wird nur einmal gezeigt
+  begruesst: false, // true, sobald man im Kinderzimmer begrüßt wurde
 });
 
 export const spielstand = anfangsStand();
@@ -50,6 +69,22 @@ export const spielstand = anfangsStand();
 // Welches Level ein Kalamprio aus dem Team hat.
 export function levelVon(kurzname) {
   return levelAusErfahrung(spielstand.erfahrung[kurzname] ?? 0);
+}
+
+// Gibt jedem dieser Kalamprios so viel Erfahrung. Zurück kommt ein kurzer
+// Satz, wer dabei ein Level höher gekommen ist (oder '', wenn keins).
+// Bei vielen Kalamprios werden sie nicht alle einzeln aufgezählt.
+export function erfahrungGeben(kurznamen, menge) {
+  const aufgestiegen = kurznamen.filter((kurzname) => {
+    const vorher = levelVon(kurzname);
+    spielstand.erfahrung[kurzname] = (spielstand.erfahrung[kurzname] ?? 0) + menge;
+    return levelVon(kurzname) > vorher;
+  });
+  const namen = aufgestiegen.map((kurzname) => KALAMPRIOS[kurzname].name);
+  if (namen.length === 0) return '';
+  if (namen.length === 1) return `${namen[0]} ist jetzt Level ${levelVon(aufgestiegen[0])}!`;
+  if (namen.length <= 3) return `${namen.slice(0, -1).join(', ')} und ${namen.at(-1)} sind ein Level höher!`;
+  return `${namen.length} Kalamprios sind ein Level höher!`;
 }
 
 // Nimmt ein Kalamprio aus dem Team mit in den Kampf. Gibt false zurück,
@@ -93,8 +128,9 @@ function browserSpeicher() {
 }
 
 // Ist schon ein Spiel im Gange? Erst dann gibt es etwas zu speichern.
+// Ein Kalamprio braucht man dafür nicht: Das schenkt einem erst die Rivalin.
 function spielLaeuft() {
-  return Boolean(spielstand.charakter && spielstand.kalamprio && spielstand.team.length > 0);
+  return Boolean(spielstand.charakter);
 }
 
 // Schreibt den Spielstand in den Browser.
@@ -146,9 +182,10 @@ function gespeichertLesen(speicher) {
 
   const gibtEs = (kurzname) => Object.hasOwn(KALAMPRIOS, kurzname);
   const team = Array.isArray(alt.team) ? [...new Set(alt.team.filter(gibtEs))] : [];
-  if (!Object.hasOwn(CHARAKTERE, alt.charakter) || team.length === 0) return null;
+  if (!Object.hasOwn(CHARAKTERE, alt.charakter)) return null;
 
-  const kalamprio = team.includes(alt.kalamprio) ? alt.kalamprio : team[0];
+  // Am Anfang hat man noch kein Kalamprio (die Rivalin schenkt es einem).
+  const kalamprio = team.includes(alt.kalamprio) ? alt.kalamprio : team[0] ?? null;
   const kampfteam = (Array.isArray(alt.kampfteam) ? alt.kampfteam : [])
     .filter((kurzname) => team.includes(kurzname) && kurzname !== kalamprio)
     .slice(0, REGELN.imKampfHoechstens - 1);
@@ -163,17 +200,34 @@ function gespeichertLesen(speicher) {
     rivalin: Object.hasOwn(CHARAKTERE, alt.rivalin) ? alt.rivalin : Object.keys(CHARAKTERE).find((andere) => andere !== alt.charakter),
     kalamprio,
     team,
-    kampfteam: [kalamprio, ...kampfteam],
+    kampfteam: kalamprio ? [kalamprio, ...kampfteam] : [],
     erfahrung: liste(alt.erfahrung),
     fangkristalle: zahl(alt.fangkristalle, REGELN.fangkristalleAmAnfang),
     rivalinKalamprio: gibtEs(alt.rivalinKalamprio) ? alt.rivalinKalamprio : Object.keys(KALAMPRIOS).find((anderes) => KALAMPRIOS[anderes].zumStart && anderes !== kalamprio),
     rivalinBesiegt: alt.rivalinBesiegt === true,
+    // Wer die Rivalin schon besiegt hat, bevor es die Kamera gab, hat sie auch.
+    kamera: alt.kamera === true || alt.rivalinBesiegt === true,
+    fotos: Object.fromEntries(Object.entries(liste(alt.fotos)).filter(([kurzname]) => gibtEs(kurzname))),
+    albumVoll: alt.albumVoll === true,
     ort: ortPasst ? alt.ort : START_ORT,
     position: ortPasst ? position : null,
     erschoepftBis: liste(alt.erschoepftBis),
     ruheBis: zahl(alt.ruheBis, 0),
     wildeWiederDa: liste(alt.wildeWiederDa),
     fangkristallWiederDa: liste(alt.fangkristallWiederDa),
+    zutatWiederDa: liste(alt.zutatWiederDa),
+    rezepteGefunden: liste(alt.rezepteGefunden),
+    gefunden: liste(alt.gefunden),
+    pflanzenFotos: liste(alt.pflanzenFotos),
+    pflanzenalbum: alt.pflanzenalbum === true,
+    pflanzenalbumVoll: alt.pflanzenalbumVoll === true,
+    angekommen: liste(alt.angekommen),
+    muell: liste(alt.muell),
+    questAngefangen: liste(alt.questAngefangen),
+    questFertig: liste(alt.questFertig),
+    dropOrte: Object.fromEntries(
+      Object.entries(liste(alt.dropOrte)).filter(([, platz]) => Number.isFinite(platz?.x) && Number.isFinite(platz?.y)),
+    ),
     grasOhneGeheimes: liste(alt.grasOhneGeheimes),
     geschichteGehoert: liste(alt.geschichteGehoert),
     raetselAngefangen: liste(alt.raetselAngefangen),
@@ -185,6 +239,12 @@ function gespeichertLesen(speicher) {
     raetselRunde: liste(alt.raetselRunde),
     raetselGeloest: liste(alt.raetselGeloest),
     festGefeiert: alt.festGefeiert === true,
+    tuerenGefunden: liste(alt.tuerenGefunden),
+    schatzGeoeffnet: alt.schatzGeoeffnet === true,
+    gekochtAm: liste(alt.gekochtAm),
+    beutel: Object.fromEntries(Object.entries(liste(alt.beutel)).filter(([, anzahl]) => Number.isInteger(anzahl) && anzahl > 0)),
     hinweisGesehen: alt.hinweisGesehen === true,
+    // Wer schon ein Kalamprio hat, hat das Spiel nicht im Kinderzimmer begonnen.
+    begruesst: alt.begruesst === true || team.length > 0,
   };
 }

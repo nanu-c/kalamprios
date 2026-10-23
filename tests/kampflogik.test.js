@@ -7,6 +7,9 @@ import { REGELN } from '../src/daten/regeln.js';
 import {
   angreifen,
   attackeAusfuehren,
+  essenGeben,
+  essenHilft,
+  teamWecken,
   ausgangWuerfeln,
   fangChance,
   fangen,
@@ -62,16 +65,18 @@ test('ein neuer Kämpfer hat volle Lebenspunkte und alle Attacken bereit', () =>
 test('Schaden steigt mit Angriff und sinkt mit Verteidigung', () => {
   const mitte = immer(0.5); // Schwankung genau 1,0
   const attacke = { staerke: 10 };
-  assert.equal(schadenBerechnen(kaempfer(), kaempfer(), attacke, mitte), 10);
-  assert.equal(schadenBerechnen(kaempfer({ angriff: 20 }), kaempfer(), attacke, mitte), 20);
-  assert.equal(schadenBerechnen(kaempfer(), kaempfer({ verteidigung: 20 }), attacke, mitte), 5);
+  const mal = REGELN.schadenMal;
+  assert.equal(schadenBerechnen(kaempfer(), kaempfer(), attacke, mitte), Math.round(10 * mal));
+  assert.equal(schadenBerechnen(kaempfer({ angriff: 20 }), kaempfer(), attacke, mitte), Math.round(20 * mal));
+  assert.equal(schadenBerechnen(kaempfer(), kaempfer({ verteidigung: 20 }), attacke, mitte), Math.round(5 * mal));
 });
 
 test('Schaden schwankt so stark, wie schadenZufall sagt, und ist mindestens 1', () => {
   const attacke = { staerke: 100 };
   const z = REGELN.schadenZufall;
-  assert.equal(schadenBerechnen(kaempfer(), kaempfer(), attacke, immer(0)), Math.round(100 * (1 - z)));
-  assert.equal(schadenBerechnen(kaempfer(), kaempfer(), attacke, immer(1)), Math.round(100 * (1 + z)));
+  const mal = REGELN.schadenMal;
+  assert.equal(schadenBerechnen(kaempfer(), kaempfer(), attacke, immer(0)), Math.round(100 * mal * (1 - z)));
+  assert.equal(schadenBerechnen(kaempfer(), kaempfer(), attacke, immer(1)), Math.round(100 * mal * (1 + z)));
   assert.equal(schadenBerechnen(kaempfer({ angriff: 1 }), kaempfer({ verteidigung: 99 }), { staerke: 1 }, immer(0)), 1);
 });
 
@@ -188,7 +193,15 @@ test('mit jedem Level wird ein Kalamprio so viel stärker, wie in regeln.js steh
   assert.equal(eins.maxKp, KALAMPRIOS.kalampria.kp);
   assert.ok(drei.maxKp > eins.maxKp && drei.angriff > eins.angriff);
   assert.equal(drei.maxKp, Math.round(eins.maxKp * REGELN.staerkeJeLevel[2]));
-  assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.erfahrungFuerLevel.length);
+  // Höher als das letzte Level bei staerkeJeLevel geht es nicht.
+  assert.equal(kaempferErstellen('kalampria', 9).level, REGELN.staerkeJeLevel.length);
+});
+
+test('das geheime Kalamprio ist stärker als jedes eigene Kalamprio', () => {
+  const geheim = kaempferErstellen('geheimnis', REGELN.geheimesLevel);
+  const eigenes = kaempferErstellen('geheimnis', REGELN.erfahrungFuerLevel.length);
+  assert.equal(geheim.level, REGELN.geheimesLevel);
+  assert.ok(geheim.maxKp > eigenes.maxKp && geheim.angriff > eigenes.angriff);
 });
 
 test('manchmal geht eine Attacke daneben, der Gegner weicht aus oder wehrt ab', () => {
@@ -223,4 +236,36 @@ test('daneben macht keinen Schaden, abgewehrt nur die Hälfte, die Pause zählt 
   assert.equal(ausgang, 'abgewehrt');
   assert.equal(schaden, Math.max(1, Math.round(voll * REGELN.abgewehrtSchaden)));
   assert.equal(ziel.kp, 50 - schaden);
+});
+
+test('Essen aus dem Beutel heilt oder macht stärker', () => {
+  const k = kaempferErstellen('kalampria', 1);
+  k.kp = 10;
+  assert.equal(essenHilft(k, { heilen: 0.5 }), true);
+  assert.equal(essenGeben(k, { heilen: 0.5 }), Math.round(k.maxKp * 0.5));
+  // nie mehr als alle Lebenspunkte
+  essenGeben(k, { heilen: 1 });
+  assert.equal(k.kp, k.maxKp);
+  assert.equal(essenHilft(k, { heilen: 1 }), false);
+
+  const angriff = k.angriff;
+  essenGeben(k, { staerker: 1.5 });
+  assert.equal(k.angriff, Math.round(angriff * 1.5));
+  // stärker wird man in einem Kampf nur einmal
+  assert.equal(essenHilft(k, { staerker: 1.5 }), false);
+  essenGeben(k, { staerker: 1.5 });
+  assert.equal(k.angriff, Math.round(angriff * 1.5));
+});
+
+test('Zauberpunsch weckt alle auf, die nicht mehr kämpfen konnten', () => {
+  const a = kaempferErstellen('kalampria', 1);
+  const b = kaempferErstellen('bolo', 1);
+  const c = kaempferErstellen('mola', 1);
+  b.kp = 0;
+  c.kp = 0;
+  assert.equal(essenHilft(a, { wecken: 0.5 }, [a, b, c]), true);
+  const geweckt = teamWecken([a, b, c], 0.5);
+  assert.deepEqual(geweckt, [b, c]);
+  assert.equal(b.kp, Math.round(b.maxKp * 0.5));
+  assert.equal(essenHilft(a, { wecken: 0.5 }, [a, b, c]), false, 'jetzt sind alle wach');
 });
