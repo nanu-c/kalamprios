@@ -5,7 +5,7 @@ import { CHARAKTERE } from '../daten/charaktere.js';
 import { KALAMPRIOS } from '../daten/kalamprios.js';
 import { REGENWALD } from '../daten/orte/regenwald.js';
 import { datenPruefen } from '../daten/pruefen.js';
-import { BREITE, schrift } from './stil.js';
+import { BREITE, HOEHE, schrift } from './stil.js';
 
 const KLEIN_HOEHE = 320;
 
@@ -63,6 +63,17 @@ export class LadeSzene extends Phaser.Scene {
   }
 
   preload() {
+    // Ein Ladebalken, damit man bei langsamem Internet sieht, dass es weitergeht.
+    const mitteX = BREITE / 2;
+    const mitteY = HOEHE / 2;
+    this.add.text(mitteX, mitteY - 50, 'Kalamprios werden geweckt …', schrift(34, '#f6f0ff')).setOrigin(0.5);
+    this.add.rectangle(mitteX, mitteY + 10, 504, 34, 0x2a1650).setStrokeStyle(3, 0xa98bff);
+    const balken = this.add.rectangle(mitteX - 246, mitteY + 10, 492, 22, 0xa98bff).setOrigin(0, 0.5);
+    balken.scaleX = 0;
+    this.load.on('progress', (anteil) => {
+      balken.scaleX = anteil;
+    });
+
     this.fehlendeBilder = [];
     this.bildNamen = [];
     // Die neuen Sachen sind freiwillig: Fehlt ein Bild, malt das Spiel sie selbst.
