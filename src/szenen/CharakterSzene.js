@@ -9,6 +9,7 @@ import { musikSpielen } from '../klang/musik.js';
 import { spielstand } from '../spielstand.js';
 import { hintergrundMalen } from './hintergrund.js';
 import { scheinwerferAuswahl } from './scheinwerfer.js';
+import { weiterGehen } from './LadeSzene.js';
 import { BREITE, HOEHE, schrift } from './stil.js';
 
 export class CharakterSzene extends Phaser.Scene {
@@ -40,6 +41,6 @@ export class CharakterSzene extends Phaser.Scene {
     // Die erste andere Figur in der Liste wird zur Rivalin.
     spielstand.rivalin = Object.keys(CHARAKTERE).find((andere) => andere !== kurzname);
     this.cameras.main.fadeOut(400, 11, 5, 24);
-    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('Welt'));
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => weiterGehen(this, 'Welt'));
   }
 }

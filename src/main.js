@@ -7,7 +7,7 @@ import { CharakterSzene } from './szenen/CharakterSzene.js';
 import { EndeSzene } from './szenen/EndeSzene.js';
 import { GeschichteSzene } from './szenen/GeschichteSzene.js';
 import { KampfSzene } from './szenen/KampfSzene.js';
-import { LadeSzene } from './szenen/LadeSzene.js';
+import { LadeSzene, NachladeSzene } from './szenen/LadeSzene.js';
 import { StartSzene } from './szenen/StartSzene.js';
 import { WeltSzene } from './szenen/WeltSzene.js';
 import { ZusammenKampfSzene } from './szenen/ZusammenKampfSzene.js';
@@ -29,7 +29,7 @@ export const spiel = new Phaser.Game({
   // Die Töne macht das Spiel selbst (Ordner klang), Phaser braucht dafür nichts.
   audio: { noAudio: true },
   // Die Bildschirme des Spiels. Der erste in der Liste wird zuerst gezeigt.
-  scene: [LadeSzene, StartSzene, GeschichteSzene, CharakterSzene, WeltSzene, KampfSzene, ZusammenKampfSzene, EndeSzene],
+  scene: [LadeSzene, NachladeSzene, StartSzene, GeschichteSzene, CharakterSzene, WeltSzene, KampfSzene, ZusammenKampfSzene, EndeSzene],
 });
 
 vollbildKnopfEinrichten();

@@ -8,6 +8,7 @@ import { musikSpielen } from '../klang/musik.js';
 import { gespeichertesSpiel, laden, neuesSpiel } from '../spielstand.js';
 import { textKnopf, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
+import { weiterGehen } from './LadeSzene.js';
 import { BREITE, HOEHE, schrift } from './stil.js';
 
 export class StartSzene extends Phaser.Scene {
@@ -76,6 +77,6 @@ export class StartSzene extends Phaser.Scene {
     if (this.los) return;
     this.los = true;
     this.cameras.main.fadeOut(400, 23, 11, 44);
-    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start(szene));
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => weiterGehen(this, szene));
   }
 }

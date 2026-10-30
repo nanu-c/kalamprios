@@ -12,6 +12,7 @@ import { verstummen, vorlesen } from '../vorlesen.js';
 import { feld, textKnopf, titel } from './bausteine.js';
 import { hintergrundMalen } from './hintergrund.js';
 import { bilderErzeugen, lichtschein } from './landschaft.js';
+import { weiterGehen } from './LadeSzene.js';
 import { BREITE, HOEHE, schrift } from './stil.js';
 
 const KONFETTI = [0xff9ad5, 0xffd166, 0x8ef0ff, 0xb99cf0, 0x7be08a, 0xffffff];
@@ -180,7 +181,7 @@ export class EndeSzene extends Phaser.Scene {
       .setDepth(20);
     const weiter = textKnopf(this, 40, 620, 250, 60, 'Weiterspielen', () => {
       this.cameras.main.fadeOut(500, 23, 11, 44);
-      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => this.scene.start('Welt'));
+      this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => weiterGehen(this, 'Welt'));
     });
     const knopf = textKnopf(this, BREITE - 290, 620, 250, 60, 'Nochmal spielen', () => window.location.reload());
     for (const teil of [...weiter, ...knopf]) teil.setDepth(21);
